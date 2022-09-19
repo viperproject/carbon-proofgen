@@ -104,6 +104,13 @@ case class CarbonVerifier(override val reporter: Reporter,
       false
     }
 
+  override def generateProofs : Boolean =
+    if (config != null) {
+      config.genProofs.getOrElse(false)
+    } else {
+      false
+    }
+
   def name: String = "carbon"
   def version: String = "1.0"
   def buildVersion = version

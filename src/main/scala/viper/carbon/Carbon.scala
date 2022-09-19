@@ -98,5 +98,11 @@ class CarbonConfig(args: Seq[String]) extends SilFrontendConfig(args, "Carbon") 
     noshort = true
   )
 
+  val genProofs = opt[Boolean]("genProofs",
+    descr = "Generate proofs (default: false).",
+    default = Some(false),
+    noshort = true
+  )
+
   verify()
 }

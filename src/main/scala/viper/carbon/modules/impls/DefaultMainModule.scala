@@ -23,6 +23,8 @@ import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
 import viper.silver.reporter.{Reporter, WarningsDuringTypechecking}
 
+import viper.carbon.proofgen.StoreTheory
+
 import scala.collection.mutable
 
 /**
@@ -124,6 +126,10 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
   }
 
   def translateMethodDecl(m: sil.Method, names: Option[mutable.Map[String, String]]): Seq[Decl] = {
+    if(verifier.generateProofs) {
+      StoreTheory.storeMethodInIsaTheory(m)
+    }
+
     val mWithLoopInfo = loopModule.initializeMethod(m)
 
     env = Environment(verifier, mWithLoopInfo)
