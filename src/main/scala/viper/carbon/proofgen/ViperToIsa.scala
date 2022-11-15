@@ -150,10 +150,14 @@ object ViperToIsa {
     }
   }
 
+  def translatePureAssertion(e: sil.Exp)(implicit varTranslation: VarTranslation[sil.LocalVar]) : isa.Term = {
+      ViperIsaTerm.liftPureExpToAssertion(translateExp(e))
+  }
+
   //translates expression to assertion
   def translateExp(e: sil.Exp)(implicit varTranslation: VarTranslation[sil.LocalVar]) : isa.Term = {
     if(e.isPure) {
-      ViperIsaTerm.liftPureExpToAssertion(translatePureExp(e))
+      translatePureExp(e)
     } else {
       sys.error("Only support pure subset")
     }
@@ -173,9 +177,9 @@ object ViperToIsa {
         ViperIsaTerm.fieldAssign(rcvTerm, lhs.field, rhsTerm)
       case sil.Fold(e) => sys.error("do not support fold")
       case sil.Unfold(e) => sys.error("do not support unfold")
-      case sil.Inhale(e) => ViperIsaTerm.inhale(translateExp(e))
-      case sil.Exhale(e) => ViperIsaTerm.exhale(translateExp(e))
-      case sil.Assert(e) => ViperIsaTerm.assert(translateExp(e))
+      case sil.Inhale(e) => ViperIsaTerm.inhale(translatePureAssertion(e))
+      case sil.Exhale(e) => ViperIsaTerm.exhale(translatePureAssertion(e))
+      case sil.Assert(e) => ViperIsaTerm.assert(translatePureAssertion(e))
       case sil.Seqn(stmts, scopedDecls) =>
 
         if(stmts.length == 0) {

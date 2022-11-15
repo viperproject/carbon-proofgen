@@ -12,7 +12,7 @@ object StoreTheory {
   def storeMethodInIsaTheory(m: sil.Method) = {
     m.body match {
       case Some(mBody) =>
-        val varTranslation = DeBruijnTranslation.freshTranslation(m.formalArgs map (varDecl => varDecl.localVar))
+        val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
         val mBodyTerm = ViperToIsa.translateStmt(mBody)(varTranslation)
 
         val definition = isa.DefDecl("viper_stmt", ViperIsaType.stmt, (Seq(), mBodyTerm))
