@@ -1,5 +1,6 @@
 package viper.carbon.proofgen
 
+import isabelle.ast.TermIdent
 import isabelle.{ast => isa}
 import viper.carbon.boogie.LocalVarDecl
 import viper.silver.{ast => sil}
@@ -63,12 +64,12 @@ object ViperToIsa {
         val leftTerm = translatePureExp(left)
         val rightTerm = translatePureExp(right)
 
-        isa.TermBinary(isa.Eq, leftTerm, rightTerm)
+        ViperIsaTerm.binopPure(TermIdent("Eq"), leftTerm, rightTerm)
       case sil.NeCmp(left, right) =>
         val leftTerm = translatePureExp(left)
         val rightTerm = translatePureExp(right)
 
-        isa.TermBinary(isa.Neq, leftTerm, rightTerm)
+        ViperIsaTerm.binopPure(TermIdent("Neq"), leftTerm, rightTerm)
       case sil.DomainBinExp(left, op, right) => {
         val leftTerm = translatePureExp(left)
         val rightTerm = translatePureExp(right)

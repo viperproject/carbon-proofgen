@@ -54,7 +54,7 @@ object ViperIsaTerm {
         case sil.PermGeOp => TermIdent("Gte")
         case sil.PermGtOp => TermIdent("Gt")
         case sil.PermLeOp => TermIdent("Lte")
-        case sil.PermLtOp => TermIdent("Lte")
+        case sil.PermLtOp => TermIdent("Lt")
         case sil.PermAddOp => TermIdent("Add")
         case sil.PermMulOp => TermIdent("Mult")
         case sil.PermSubOp => TermIdent("Sub")
@@ -63,7 +63,11 @@ object ViperIsaTerm {
         case sil.PermDivOp => TermIdent("PermDiv")
       }
 
-    TermApp(TermIdent("Binop"), Seq(left, bopIsa, right))
+    binopPure(bopIsa, left, right)
+  }
+
+  def binopPure(bop: Term, left: Term, right: Term) : Term = {
+    TermApp(TermIdent("Binop"), Seq(left, bop, right))
   }
 
   def heapFieldAccess(rcv: Term, field: sil.Field) : Term = {
