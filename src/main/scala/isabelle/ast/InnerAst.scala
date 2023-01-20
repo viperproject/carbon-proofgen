@@ -46,6 +46,13 @@ case class TermWithExplicitType(t: Term, ty: TypeIsa) extends Term
 
 case class TermList(list: Seq[Term]) extends Term
 
+case class TermTuple(list: Seq[Term]) extends Term
+
+object TermTuple {
+  def apply(t1: Term, t2: Term) : TermTuple = TermTuple(Seq(t1, t2))
+
+}
+
 sealed trait QuantifierKind
 case object All extends QuantifierKind
 case object Exists extends QuantifierKind
@@ -74,6 +81,13 @@ case object Not extends UnaryOpCode
 
 case class TermBinary(bop: BinaryOpCode, left: Term, right: Term) extends Term
 
+case object TermBinary {
+  def eq(t1: Term, t2: Term) = TermBinary(Eq, t1, t2)
+  def implies(t1: Term, t2: Term) = TermBinary(Implies, t1, t2)
+
+}
+
+
 case class TermUnary(uop: UnaryOpCode, arg: Term) extends Term
 
 sealed trait Const extends Term
@@ -92,6 +106,10 @@ case class VarType(x: String) extends TypeIsa
 case class ArrowType(argType: TypeIsa, resType: TypeIsa) extends TypeIsa
 
 case class DataType(name: String, args: Seq[TypeIsa]) extends TypeIsa
+
+object DataType {
+  def apply(name: String, arg: TypeIsa) : DataType = DataType(name, Seq(arg))
+}
 
 case class TupleType(args: Seq[TypeIsa]) extends TypeIsa
 

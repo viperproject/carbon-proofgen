@@ -10,4 +10,6 @@ trait VarTranslation[T] {
 
   def translateVariableId(x: T) : Option[Int]
 
+  def availableVariables() : Seq[T]
+
 }

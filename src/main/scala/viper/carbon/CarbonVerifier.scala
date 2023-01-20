@@ -12,10 +12,15 @@ import viper.silver.ast.Program
 import viper.silver.utility.Paths
 import viper.silver.verifier._
 import verifier.{BoogieDependency, BoogieInterface, Verifier}
+import viper.carbon.proofgen.ProofGenInterface
 
 import java.io.{BufferedOutputStream, File, FileOutputStream, IOException}
 import viper.silver.frontend.{MissingDependencyException, NativeModel, VariablesModel}
 import viper.silver.reporter.Reporter
+
+import java.nio.file.{FileSystems, Files}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * The main class to perform verification of Viper programs.  Deals with command-line arguments, configuration
@@ -158,6 +163,15 @@ case class CarbonVerifier(override val reporter: Reporter,
   def verify(program: Program) = {
     _program = program
 
+    if(generateProofs) {
+      val proofGenDirSuffix = org.apache.commons.io.FilenameUtils.getBaseName(config.file.toOption.get)+ "_proof"
+      val proofGenDirName = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_").format(LocalDateTime.now) + proofGenDirSuffix
+      val proofGenDir = java.nio.file.Paths.get(System.getProperty("user.dir")).resolve(proofGenDirName)
+      Files.createDirectory(proofGenDir)
+
+      _proofGenInterface = new ProofGenInterface(proofGenDir)
+    }
+
     // reset all modules
     allModules map (m => m.reset())
     heapModule.enableAllocationEncoding = config == null || !config.disableAllocEncoding.isSupplied // NOTE: config == null happens on the build server / via sbt test
@@ -198,6 +212,15 @@ case class CarbonVerifier(override val reporter: Reporter,
               List("/mv:-")
             }
             case _ => Nil
+          }) ++
+          (if(generateProofs) {
+            /* TODO: adjust Boogie proof generation such that can use /noVerify flag here for Boogie so that need not
+               go through the entire VC generation + querying of SMT solver if just want Isabelle representation of
+               program
+             */
+            List("/isaProgNoProofs:1", "/useIdBasedLemmaNaming", "/proofOutputDir", proofGenInterface.boogieProofDir.toAbsolutePath.toString)
+          } else {
+            Nil
           })
       }
     }
@@ -227,8 +250,14 @@ case class CarbonVerifier(override val reporter: Reporter,
           }
           case _ => result
         }
+
+        if(generateProofs) {
+          proofGenInterface.finishProof(program)
+        }
+
         result
     }
+
   }
 
 
@@ -243,4 +272,7 @@ case class CarbonVerifier(override val reporter: Reporter,
   }
 
   def replaceProgram(prog : Program) = {this.program = prog}
+
+  private var _proofGenInterface: ProofGenInterface = null
+  def proofGenInterface = _proofGenInterface
 }

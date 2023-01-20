@@ -9,6 +9,9 @@ object ViperIsaType {
 
   val stmt : TypeIsa = DataType("stmt", Seq())
 
+  val varNameType: TypeIsa = IsaTypeUtil.natType
+  val viperTyType: TypeIsa = DataType("vtyp", Seq())
+
   def translate(ty : sil.Type) : Term = ty match {
     case sil.Bool => TermIdent("TBool")
     case sil.Int => TermIdent("TInt")

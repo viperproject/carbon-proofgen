@@ -1,28 +1,19 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.IsaPrettyPrinter
-import isabelle.{ast => isa}
-import viper.silver.{ast => sil}
+import isabelle.ast.{IsaPrettyPrinter, Theory}
 
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path}
 import java.nio.charset.StandardCharsets
 
 object StoreTheory {
+  def storeTheories(theories: Seq[Theory], rootDir: Path) =
+    theories.foreach(thy => storeTheory(thy, rootDir))
 
-  def storeMethodInIsaTheory(m: sil.Method) = {
-    m.body match {
-      case Some(mBody) =>
-        val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
-        val mBodyTerm = ViperToIsa.translateStmt(mBody)(varTranslation)
-
-        val definition = isa.DefDecl("viper_stmt", ViperIsaType.stmt, (Seq(), mBodyTerm))
-
-        val theory = isa.Theory(m.name, Seq("Viper.ViperLang"), Seq(definition))
-
-        val theoryString = IsaPrettyPrinter.prettyPrint(theory)
-        Files.write(Paths.get(System.getProperty("user.dir")).resolve(theory.theoryName+".thy"), theoryString.getBytes(StandardCharsets.UTF_8) )
-      case None =>
-    }
+  def storeTheory(theory: Theory, rootDir: Path) = {
+      val theoryString = IsaPrettyPrinter.prettyPrint(theory)
+      Files.write(rootDir.resolve(theory.theoryName+".thy"), theoryString.getBytes(StandardCharsets.UTF_8))
   }
 
 }
+
+

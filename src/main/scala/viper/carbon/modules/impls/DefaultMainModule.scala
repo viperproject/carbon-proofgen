@@ -11,9 +11,9 @@ import viper.silver.ast.utility.Expressions
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
+
 import java.text.SimpleDateFormat
 import java.util.Date
-
 import viper.carbon.boogie.CommentedDecl
 import viper.carbon.boogie.Procedure
 import viper.carbon.boogie.Program
@@ -23,8 +23,7 @@ import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
 import viper.silver.reporter.{Reporter, WarningsDuringTypechecking}
 
-import viper.carbon.proofgen.StoreTheory
-
+import java.nio.file.Path
 import scala.collection.mutable
 
 /**
@@ -45,6 +44,8 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
 
   override val silVarNamespace = verifier.freshNamespace("main.silver")
   implicit val mainNamespace = verifier.freshNamespace("main")
+
+  var proofDir: Option[Path] = None
 
   override def translateLocalVarSig(typ:sil.Type, v:sil.LocalVar): LocalVarDecl = {
     val t: Type = translateType(typ)
@@ -122,14 +123,11 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
         Program(header, preambles ++ members)
     }
 
-    (output.optimize.asInstanceOf[Program], nameMaps.map(e => e._1 -> e._2.toMap))
+    //Temporarily comment out optimize (output.optimize.asInstanceOf[Program], nameMaps.map(e => e._1 -> e._2.toMap))
+    (output, nameMaps.map(e => e._1 -> e._2.toMap))
   }
 
   def translateMethodDecl(m: sil.Method, names: Option[mutable.Map[String, String]]): Seq[Decl] = {
-    if(verifier.generateProofs) {
-      StoreTheory.storeMethodInIsaTheory(m)
-    }
-
     val mWithLoopInfo = loopModule.initializeMethod(m)
 
     env = Environment(verifier, mWithLoopInfo)
@@ -157,6 +155,11 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
                 inhalePre,
                 MaybeCommentBlock(initOldStateComment, initOld),
                 checkPost, body, exhalePost))
+
+            if(verifier.generateProofs) {
+              verifier.proofGenInterface.generateProofForMethod(m, proc, env)
+            }
+
         CommentedDecl(s"Translation of method $name", proc)
     }
 

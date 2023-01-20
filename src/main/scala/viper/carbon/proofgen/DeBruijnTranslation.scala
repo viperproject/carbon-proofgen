@@ -1,6 +1,5 @@
 package viper.carbon.proofgen
 import isabelle.ast.Term
-import viper.carbon.proofgen
 
 class DeBruijnTranslation[T](val debruijnMapping: Map[T, Int]) extends VarTranslation[T] {
 
@@ -14,6 +13,7 @@ class DeBruijnTranslation[T](val debruijnMapping: Map[T, Int]) extends VarTransl
 
   override def translateVariableId(x: T): Option[Int] = debruijnMapping.get(x)
 
+  override def availableVariables(): Seq[T] = debruijnMapping.keySet.toSeq
 }
 
 object DeBruijnTranslation {
@@ -22,7 +22,7 @@ object DeBruijnTranslation {
     if(xs.length == 0) {
       m0
     } else {
-      val xsWithIds = xs zip Range(0, xs.length).reverse
+      val xsWithIds = xs zip Range(0, xs.length)
       val mShifted = m0.transform((x, id) => id+xs.length)
 
       xsWithIds.foldLeft[Map[T, Int]](mShifted) {
@@ -34,7 +34,7 @@ object DeBruijnTranslation {
   def freshTranslation[T](xs: Seq[T]) : DeBruijnTranslation[T] = {
     val res = updateMapWithFreshVars(Map.empty : Map[T, Int],  xs)
 
-    new proofgen.DeBruijnTranslation(res)
+    new DeBruijnTranslation(res)
   }
 
 }

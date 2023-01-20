@@ -5,9 +5,9 @@ object IsaPrettyPrinter {
 
   def prettyPrint(ty: TypeIsa) : String = ty match {
     case VarType(x) => x
-    case ArrowType(t1, t2) => "(" + t1 + " => " + t2 + ")"
-    case DataType(name, args) => "(" + name + " " + (args map prettyPrint).mkString(" ")  + ")"
-    case TupleType(args) => "(" + args.mkString(",") + ")"
+    case ArrowType(t1, t2) => "(" + prettyPrint(t1) + " => " + prettyPrint(t2) + ")"
+    case DataType(name, args) => "(" + (args map prettyPrint).mkString(" ")  + " " + name + ")"
+    case TupleType(args) => "(" + (args map prettyPrint).mkString("\\<times>") + ")"
     case BoolType => "bool"
     case NatType => "nat"
     case IntType => "int"
@@ -38,6 +38,7 @@ object IsaPrettyPrinter {
     case TermApp(f, arg) => "("+prettyPrint(f) + " " + (arg map prettyPrint).mkString(" ")  +")"
     case TermWithExplicitType(t, ty) => "(" + prettyPrint(t) + ":" + prettyPrint(ty) + ")"
     case TermList(xs) => "[" + xs.mkString(",") + "]"
+    case TermTuple(xs) => "(" + xs.mkString(",") + ")"
     case TermQuantifier(qkind, boundVars, body) =>
       val boundVarsString : Seq[String] =  (boundVars map (x => x.toString()))
       val qkindString = qkind match {
@@ -46,7 +47,7 @@ object IsaPrettyPrinter {
         case MetaAll => "\\<And>"
         case Lambda => "\\<lambda>"
       }
-      "(" + qkindString + " " + boundVarsString.mkString(" ") + "::" + prettyPrint(body) + ")"
+      "(" + qkindString + " " + boundVarsString.mkString(" ") + "." + prettyPrint(body) + ")"
     case TermBinary(bop, left, right) =>
       "(" + prettyPrint(left) + prettyPrint(bop) + prettyPrint(right) + ")"
     case TermUnary(uop, arg) =>
@@ -58,31 +59,117 @@ object IsaPrettyPrinter {
   }
 
   def prettyPrint(d: OuterDecl, sb: StringBuilder) : StringBuilder = d match {
-    case DefDecl(name, typ, equation) =>
-      sb.append("definition ").append(name).append(" :: ")
-      appendInner(sb, prettyPrint(typ)).append(" where ")append(System.lineSeparator())
-      sb.append(" "*2)
-      appendInner(sb, name + " " + (equation._1 map prettyPrint).mkString(" ") + " = " + prettyPrint(equation._2))
+    case _ : DefDecl => prettyPrintEquationDecl(d, sb)
+    case _ : AbbrevDecl => prettyPrintEquationDecl(d, sb)
+    case _ : FunDecl => prettyPrintEquationDecl(d, sb)
+    case LemmaDecl(name, context, statements, proof) =>
+      sb.append(s"lemma $name : ").newLine
+      prettyPrintContextElem(context, sb).newLine
+      sb.append(statements.map(stmt => innerTerm(prettyPrint(stmt))).mkString(" and ")).newLine
+      prettyPrintProof(proof, sb)
+    case LocaleDecl(name, context, body) =>
+      sb.append(s"locale $name =").newLine
+      prettyPrintContextElem(context, sb).newLine
+      sb.append("begin").newLine
+      prettyPrintOuterDecls(body, sb)
+      sb.newLine.append("end")
+    case MLDecl(code ,kind) =>
+      sb.append(kind.declId).append("\\<open>").newLine.append(code.mkString(System.lineSeparator())).newLine.append("\\<close>")
+    case DeclareDecl(declaration) => sb.append("declare ").append(declaration)
     case _ => sys.error("not supported outer declaration")
   }
 
-  def appendInner(sb: StringBuilder, s: String): StringBuilder = {
-    sb.append("\"").append(s).append("\"")
+  def prettyPrintProof(p: Proof, sb: StringBuilder) : StringBuilder = {
+    p.methods.foreach(proofMethod => sb.append(proofMethod).newLine)
+    sb
+  }
+
+  def prettyPrintEquationDecl(d: OuterDecl, sb: StringBuilder) : StringBuilder =  {
+    val (keyword, equality, typ, equations) = d match {
+      case abbrev: AbbrevDecl => ("abbreviation", " \\<equiv> ", abbrev.typ, Seq(abbrev.equation))
+      case defDecl: DefDecl  => ("definition", " = ", defDecl.typ, Seq(defDecl.equation))
+      case funDecl: FunDecl => ("definition", " = ", funDecl.typ, funDecl.equations)
+    }
+
+    sb.append(keyword).append(" ").append(d.name)
+    typ.foreach(t => { sb.append(" :: ").appendInner(prettyPrint(t)) } )
+    sb.append(" where ").newLine.append(" "*2)
+    printEquation(d.name, equations.head, equality, sb).newLine
+
+    equations.tail.foreach(
+      eq => {
+        sb.append(" "*2).append("|")
+        printEquation(d.name, eq, equality, sb)
+      }
+    )
+
+    sb
+  }
+
+  def prettyPrintContextElem(c: ContextElem, sb: StringBuilder) : StringBuilder = {
+    if(!c.fixedVariables.isEmpty) {
+      sb.append("fixes ")
+
+      c.fixedVariables.foreach({ case (varName, varType) =>
+        sb.append(s"${prettyPrint(varName)} :: ${innerTerm(prettyPrint(varType))}").newLine
+      })
+    }
+
+
+    if(!c.assumptions.isEmpty) {
+      sb.append("assumes ")
+
+      var first = true
+      for (assm <- c.assumptions) {
+        if (first) {
+          first = false
+        } else {
+          sb.append(" and ").newLine
+        }
+        assm._1.foreach(label => sb.append(s"${label}: "))
+        sb.appendInner(prettyPrint(assm._2))
+      }
+    }
+
+    sb
+  }
+
+  def printEquation(name: String, equation: (Seq[Term], Term), equality: String, sb: StringBuilder) :  StringBuilder = {
+    sb.appendInner(name + " " + (equation._1 map prettyPrint).mkString(" ") + equality + prettyPrint(equation._2))
+  }
+
+  def innerTerm(s: String) : String = "\""+s+"\""
+
+  def prettyPrintOuterDecls(decls: Seq[OuterDecl], sb: StringBuilder) : StringBuilder = {
+    decls.foreach(
+      decl => prettyPrint(decl, sb).append(System.lineSeparator()*2)
+    )
+    sb
   }
 
   def prettyPrint(theory: Theory) : String  = {
     val outerDeclsString = {
       val stringBuilder = new StringBuilder()
-      theory.decls.foldLeft(())(
-        (_, decl) => prettyPrint(decl, stringBuilder).append(System.lineSeparator()*2)
-      )
-      stringBuilder.toString()
+      prettyPrintOuterDecls(theory.decls, stringBuilder).toString
     }
-    "theory " + theory.theoryName + " imports " + theory.importTheories.mkString(" ") + System.lineSeparator() +
+
+    "theory " + theory.theoryName + System.lineSeparator() +
+      " imports " + theory.importTheories.map(
+      //make sure that actual paths that are not referring directly to the same folder are surrounded by quotes
+      s => if(s.contains("\\") || s.contains("/")) { "\""+s+"\"" } else { s }
+    ).mkString(" ") + System.lineSeparator() +
     "begin" + System.lineSeparator() +
       outerDeclsString +
     "end"
   }
 
+  implicit class StringBuilderExtension(sb: StringBuilder) {
+    def newLine: StringBuilder = sb.append(System.lineSeparator())
+
+    def appendInner(s: String): StringBuilder = {
+      sb.append("\"").append(s).append("\"")
+    }
+  }
 
 }
+
