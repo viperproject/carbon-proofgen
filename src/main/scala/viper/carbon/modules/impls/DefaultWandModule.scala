@@ -12,6 +12,7 @@ import viper.carbon.verifier.Verifier
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
 import viper.carbon.modules.components.{DefinednessComponent, StmtComponent}
+import viper.carbon.proofgen.hints.ComponentProofHint
 import viper.silver.ast.utility.Expressions
 import viper.silver.ast.{MagicWand, MagicWandStructure}
 import viper.silver.verifier.{PartialVerificationError, reasons}
@@ -195,7 +196,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
     val inhaleLeft = MaybeComment("Inhaling left hand side of current wand into hypothetical state",
       exchangeAssumesWithBoolean(inhaleModule.inhaleWithDefinednessCheck(wand.left, mainError, hypState::Nil, true), hypState.boolVar))
 
-    val defineLhsState = stmtModule.translateStmt(sil.Label("lhs"+lhsID, Nil)(wand.pos, wand.info), hypState::Nil, hypState.boolVar, true)
+    val defineLhsState = stmtModule.translateStmt(sil.Label("lhs"+lhsID, Nil)(wand.pos, wand.info), hypState::Nil, hypState.boolVar, true)._1
     activeWandsStack = activeWandsStack:+lhsID
     lhsID += 1
 
@@ -269,7 +270,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
   {
     UNIONState = OPS
     stateModule.replaceState(OPS.state)
-    If(allStateAssms, stmtModule.translateStmt(s, ops::states, allStateAssms , true), Statements.EmptyStmt)
+    If(allStateAssms, stmtModule.translateStmt(s, ops::states, allStateAssms , true)._1, Statements.EmptyStmt)
   }
 
 
@@ -652,11 +653,14 @@ case class PackageSetup(hypState: StateRep, usedState: StateRep, initStmt: Stmt)
   /**
     * Wraps all statements inside package statement inside If condition depending on the state variables.
     */
-  override  def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), inWand: Boolean = false): (Seqn => Seqn) = {
-    if(wandModule.nestingDepth > 0) // if 's' is inside a package statement
-      stmt => If(allStateAssms, modifyAssert(stmt, OPS.boolVar), Statements.EmptyStmt)::Nil
-    else
-      stmt => stmt
+  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), inWand: Boolean = false): (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])= {
+    if(wandModule.nestingDepth > 0) { // if 's' is inside a package statement
+      //proofs for wands are not supported; just propagate proof hints without adding any hints
+      case (stmt, proofHints) => (If(allStateAssms, modifyAssert(stmt, OPS.boolVar), Statements.EmptyStmt) :: Nil, proofHints)
+    }
+    else {
+      case (stmt, proofHints) => (stmt, proofHints)
+    }
   }
 
 

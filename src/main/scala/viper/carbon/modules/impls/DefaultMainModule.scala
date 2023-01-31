@@ -17,6 +17,7 @@ import java.util.Date
 import viper.carbon.boogie.CommentedDecl
 import viper.carbon.boogie.Procedure
 import viper.carbon.boogie.Program
+import viper.carbon.proofgen.hints.StmtProofHint
 import viper.carbon.verifier.Environment
 import viper.silver.verifier.{TypecheckerWarning, errors}
 import viper.carbon.verifier.Verifier
@@ -147,7 +148,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             else Nil
             val postsWithErrors = posts map (p => (p, errors.PostconditionViolated(p, mWithLoopInfo)))
             val exhalePost = MaybeCommentBlock("Exhaling postcondition", exhale(postsWithErrors))
-            val body: Stmt = translateStmt(method.bodyOrAssumeFalse)
+            val (body, bodyProofHint) : (Stmt, StmtProofHint) = translateStmt(method.bodyOrAssumeFalse)
               /* TODO: Might be worth special-casing on methods with empty bodies */
             val proc = Procedure(Identifier(name), ins, outs,
               Seq(init,
@@ -163,7 +164,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             )
 
             if(verifier.generateProofs) {
-              verifier.proofGenInterface.generateProofForMethod(m, proc, env)
+              verifier.proofGenInterface.generateProofForMethod(m, proc, env, bodyProofHint)
             }
 
         CommentedDecl(s"Translation of method $name", proc)

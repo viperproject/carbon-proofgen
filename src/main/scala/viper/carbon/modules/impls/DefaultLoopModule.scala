@@ -6,6 +6,7 @@ import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
 import viper.carbon.modules.components.StmtComponent
+import viper.carbon.proofgen.hints.ComponentProofHint
 import viper.carbon.utility._
 import viper.silver.ast.utility.ViperStrategy
 import viper.silver.cfg.utility.{IdInfo, LoopDetector, LoopInfo}
@@ -443,7 +444,7 @@ class DefaultLoopModule(val verifier: Verifier) extends LoopModule with StmtComp
             Comment("Check and assume guard") ++
             checkDefinedness(w.cond, errors.WhileFailed(w.cond)) ++
             Assume(guard) ++ stateModule.assumeGoodState ++
-            MaybeCommentBlock("Translate loop body", stmtModule.translateStmt(w.body)) ++
+            MaybeCommentBlock("Translate loop body", stmtModule.translateStmt(w.body)._1) ++ //TODO: incorporate proof hints
             MaybeComment("Exhale invariant", executeUnfoldings(invs, (inv => errors.LoopInvariantNotPreserved(inv))) ++ exhale(invs map (e => (e, errors.LoopInvariantNotPreserved(e))))) ++
             MaybeComment("Terminate execution", Assume(FalseLit()))
           stateModule.replaceState(prevState)
@@ -456,17 +457,18 @@ class DefaultLoopModule(val verifier: Verifier) extends LoopModule with StmtComp
         )
   }
 
-  override def handleStmt(s: sil.Stmt, statesStackOfPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Seqn => Seqn) = {
-    if(useLoopDetector) {
-      handleStmtLoopDetector(s, statesStackOfPackageStmt, allStateAssms,insidePackageStmt)
-    } else {
-      inner =>
-        s match {
-          case w@sil.While(_,_,_) => inner ++ handleWhile(w)
-          case sil.Goto(_) => sys.error("Loop Module is incorrectly initialized: Goto is translated, but loop detector is not used")
-          case _ => inner
-        }
-    }
+  override def handleStmt(s: sil.Stmt, statesStackOfPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint]) = {
+      if(useLoopDetector) {
+        case (inner: Seqn, proofHint) =>
+          (handleStmtLoopDetector(s, statesStackOfPackageStmt, allStateAssms,insidePackageStmt)(inner), proofHint)
+      } else {
+        case (inner: Seqn, proofHint) =>
+          s match {
+            case w@sil.While(_,_,_) => (inner ++ handleWhile(w), proofHint)
+            case sil.Goto(_) => sys.error("Loop Module is incorrectly initialized: Goto is translated, but loop detector is not used")
+            case _ => (inner, proofHint)
+          }
+      }
   }
 
   private def handleStmtLoopDetector(s: sil.Stmt, statesStackOfPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Seqn => Seqn) = {

@@ -6,6 +6,7 @@ import java.nio.file.{Files, Path, Paths}
 import viper.silver.{ast => sil}
 import isabelle.{ast => isa}
 import viper.carbon.boogie.Procedure
+import viper.carbon.proofgen.hints.StmtProofHint
 import viper.carbon.verifier.Environment
 
 import java.nio.charset.StandardCharsets
@@ -33,7 +34,7 @@ class ProofGenInterface(val proofDir: Path) {
 
   def methodProgTheory(m: sil.Method) : String = m.name+"_vpr_prog"
 
-  def generateProofForMethod(m: sil.Method, procBpl: Procedure, procBplEnv: Environment) = {
+  def generateProofForMethod(m: sil.Method, procBpl: Procedure, procBplEnv: Environment, bodyProofHint: StmtProofHint) = {
     m.body match {
       case Some(_) =>
         val dir: Path = Files.createDirectory(methodProofPath(m))

@@ -9,6 +9,7 @@ package viper.carbon.modules
 import viper.carbon.modules.components.{ComponentRegistry, StmtComponent}
 import viper.silver.{ast => sil}
 import viper.carbon.boogie.{Exp, Namespace, Stmt, TrueLit}
+import viper.carbon.proofgen.hints.StmtProofHint
 
 /**
  * A module for translating Viper statements.
@@ -31,7 +32,7 @@ trait StmtModule extends Module with ComponentRegistry[StmtComponent] {
     */
   def initStmt(methodBody: sil.Stmt) : Stmt
 
-  def translateStmt(stmt: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): Stmt
+  def translateStmt(stmt: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Stmt, StmtProofHint)
 
   def labelNamespace: Namespace
 }

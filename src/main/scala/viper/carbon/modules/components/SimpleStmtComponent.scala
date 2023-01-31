@@ -8,6 +8,7 @@ package viper.carbon.modules.components
 
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
+import viper.carbon.proofgen.hints.ComponentProofHint
 
 /**
  * A statement component that only contributes at the end.
@@ -20,7 +21,7 @@ trait SimpleStmtComponent extends StmtComponent {
    * is desired, then [[viper.carbon.boogie.Statements.EmptyStmt]] can be used as a
    * return value.
    */
-  def simpleHandleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): Stmt
+  def simpleHandleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Stmt, Seq[ComponentProofHint])
 
   /**
     * statesStackForPackageStmt: stack of states used in translating statements during packaging a wand (carries currentState and LHS of wands)
@@ -30,6 +31,6 @@ trait SimpleStmtComponent extends StmtComponent {
     * These wand-related parameters (mentioned above) are used when translating statements during packaging a wand.
     * For more details refer to the general note in 'wandModule'.
     */
-  override def handleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn => Seqn)
+  override def handleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])
 //  = (simpleHandleStmt(s),Statements.EmptyStmt )
 }

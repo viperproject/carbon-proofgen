@@ -13,6 +13,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
+import viper.carbon.proofgen.hints.{LocalVarAssignHint, ComponentProofHint, IfComponentHint, IfHint, SeqnProofHint, StmtProofHint}
 import viper.silver.verifier.{PartialVerificationError, errors, reasons}
 import viper.silver.ast.utility.Expressions
 
@@ -87,13 +88,18 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
     * These wand-related parameters are used when the method is called during packaging a wand.
     * For more details see the general node in 'wandModule'
     */
-  override def handleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn => Seqn) = {
-    val (bef, aft) =
+  override def handleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint]) = {
+    val ((bef, aft), sHints) =
       s match {
-        case s: sil.Fold => translateFold(s, statesStackForPackageStmt, insidePackageStmt)
-        case _ => (simpleHandleStmt(s, statesStackForPackageStmt, allStateAssms, insidePackageStmt), Statements.EmptyStmt) // put code *first*
+        case s: sil.Fold => (translateFold(s, statesStackForPackageStmt, insidePackageStmt), Seq()) //once fold produces hints need to also adjust hint ordering below
+        case _ => {
+          val (simpleStmts, simpleProofHints) = simpleHandleStmt(s, statesStackForPackageStmt, allStateAssms, insidePackageStmt)
+          ((simpleStmts, Statements.EmptyStmt), simpleProofHints)
+        } // put code *first*
       }
-    stmts => bef ++ stmts ++ aft
+    {
+      case (stmts, hints) => (bef ++ stmts ++ aft, sHints ++ hints)
+    }
   }
 
   /**
@@ -104,45 +110,50 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
     * These wand-related parameters are used when the method is called during packaging a wand.
     * For more details see the general node in 'wandModule'
     */
-  override def simpleHandleStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): Stmt = {
+  override def simpleHandleStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Stmt, Seq[ComponentProofHint]) = {
     if(loopModule.isLoopDummyStmt(stmt)) {
       //statement was just added for loop information purposes (only loopModule cares about it)
-      return Nil
+      return (Nil, Seq())
     }
 
     stmt match {
       case assign@sil.LocalVarAssign(lhs, rhs) =>
-        checkDefinedness(lhs, errors.AssignmentFailed(assign), insidePackageStmt = insidePackageStmt) ++
-          checkDefinedness(rhs, errors.AssignmentFailed(assign), insidePackageStmt = insidePackageStmt) ++
-        {if(insidePackageStmt)
-          Assign(translateExpInWand(lhs), translateExpInWand(rhs))
-        else
-          Assign(translateExp(lhs), translateExp(rhs))}
+        (
+          checkDefinedness(lhs, errors.AssignmentFailed(assign), insidePackageStmt = insidePackageStmt) ++
+            checkDefinedness(rhs, errors.AssignmentFailed(assign), insidePackageStmt = insidePackageStmt) ++
+          {if(insidePackageStmt)
+            Assign(translateExpInWand(lhs), translateExpInWand(rhs))
+          else
+            Assign(translateExp(lhs), translateExp(rhs))}
+          , Seq()
+        )
       case assign@sil.FieldAssign(lhs, rhs) =>
-        checkDefinedness(lhs.rcv, errors.AssignmentFailed(assign)) ++
-          checkDefinedness(rhs, errors.AssignmentFailed(assign))
+        (checkDefinedness(lhs.rcv, errors.AssignmentFailed(assign)) ++
+          checkDefinedness(rhs, errors.AssignmentFailed(assign)), Seq())
       case fold@sil.Fold(e) => sys.error("Internal error: translation of fold statement cannot be handled by simpleHandleStmt code; found:" + fold.toString())
       case unfold@sil.Unfold(e) =>
-        translateUnfold(unfold, statesStack, insidePackageStmt)
+        (translateUnfold(unfold, statesStack, insidePackageStmt), Seq())
       case inh@sil.Inhale(e) =>
-        inhaleWithDefinednessCheck(whenInhaling(e), errors.InhaleFailed(inh), statesStack, insidePackageStmt)
+        (inhaleWithDefinednessCheck(whenInhaling(e), errors.InhaleFailed(inh), statesStack, insidePackageStmt), Seq())
       case exh@sil.Exhale(e) =>
         val transformedExp = whenExhaling(e)
-        checkDefinedness(transformedExp, errors.ExhaleFailed(exh), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true)++
-        exhale((transformedExp, errors.ExhaleFailed(exh)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
+        ( checkDefinedness(transformedExp, errors.ExhaleFailed(exh), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true)++
+        exhale((transformedExp, errors.ExhaleFailed(exh)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt), Seq())
       case a@sil.Assert(e) =>
         val transformedExp = whenExhaling(e)
-        if (transformedExp.isPure) {
-          // if e is pure, then assert and exhale are the same
-          checkDefinedness(transformedExp, errors.AssertFailed(a), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true) ++
-            exhale((transformedExp, errors.AssertFailed(a)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
-        } else {
-          // we create a temporary state to ignore the side-effects
-          val (backup, snapshot) = freshTempState("Assert")
-          val exhaleStmt = exhale((transformedExp, errors.AssertFailed(a)), isAssert =  true, statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt, havocHeap = false)
-          replaceState(snapshot)
-            checkDefinedness(transformedExp, errors.AssertFailed(a), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true) :: backup :: exhaleStmt :: Nil
-        }
+        val stmtRes =
+          if (transformedExp.isPure) {
+            // if e is pure, then assert and exhale are the same
+            checkDefinedness(transformedExp, errors.AssertFailed(a), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true) ++
+              exhale((transformedExp, errors.AssertFailed(a)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
+          } else {
+            // we create a temporary state to ignore the side-effects
+            val (backup, snapshot) = freshTempState("Assert")
+            val exhaleStmt = exhale((transformedExp, errors.AssertFailed(a)), isAssert =  true, statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt, havocHeap = false)
+            replaceState(snapshot)
+              checkDefinedness(transformedExp, errors.AssertFailed(a), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true) :: backup :: exhaleStmt :: Nil
+          }
+        (stmtRes, Seq())
       case mc@sil.MethodCall(methodName, args, targets) =>
         val method = verifier.program.findMethod(methodName)
         // save pre-call state
@@ -196,36 +207,44 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
           toUndefine map mainModule.env.undefine
           res
         }
-        res
+        (res, Seq())
       case sil.While(_, _, _) =>
         //handled by LoopModule
-        Nil
+        (Nil, Seq())
       case i@sil.If(cond, thn, els) =>
-        checkDefinedness(cond, errors.IfFailed(cond), insidePackageStmt = insidePackageStmt) ++
-        If((allStateAssms) ==> translateExpInWand(cond),
-          translateStmt(thn, statesStack, allStateAssms, insidePackageStmt),
-          translateStmt(els, statesStack, allStateAssms, insidePackageStmt))
+        val defCheck = checkDefinedness(cond, errors.IfFailed(cond), insidePackageStmt = insidePackageStmt)
+        val condTr = (allStateAssms) ==> translateExpInWand(cond)
+        val (thnTr, thnProofHints) = translateStmt(thn, statesStack, allStateAssms, insidePackageStmt)
+        val (elsTr, elsProofHints) = translateStmt(els, statesStack, allStateAssms, insidePackageStmt)
+        (
+          defCheck ++
+          If(condTr, thnTr, elsTr),
+          Seq(IfComponentHint(thnProofHints, elsProofHints))
+        )
       case sil.Label(name, _) => {
         val labelState = LabelHelper.getLabelState[stateModule.StateSnapshot](
           name,
           stateModule.freshTempStateKeepCurrent,
           stateModule.stateRepositoryGet, stateModule.stateRepositoryPut)
         //first label, then init statement: otherwise gotos to this label will skip the initialization
+        (
         Label(Lbl(Identifier(name)(lblNamespace))) ++
           stateModule.initToCurrentStmt(labelState) ++
           labelBooleanGuards.get(name).fold[Stmt](Nil)(labelGuardDecl => Seq(labelGuardDecl.l := TrueLit()))  //label is defined
+        , Seq()
+        )
       }
       case sil.Goto(_) =>
         /* Handled by loop module, since the loop module decides whether the goto should be translated as a goto. */
-        Nil
+        (Nil, Seq())
       case pa@sil.Package(wand, proof) => {
         checkDefinedness(wand, errors.MagicWandNotWellformed(wand), insidePackageStmt = insidePackageStmt)
-        translatePackage(pa, errors.PackageFailed(pa), statesStack, allStateAssms, insidePackageStmt)
+        (translatePackage(pa, errors.PackageFailed(pa), statesStack, allStateAssms, insidePackageStmt), Seq())
       }
       case a@sil.Apply(wand) =>
-        translateApply(a, errors.ApplyFailed(a), statesStack, allStateAssms, insidePackageStmt)
+        (translateApply(a, errors.ApplyFailed(a), statesStack, allStateAssms, insidePackageStmt), Seq())
       case _ =>
-        Nil
+        (Nil, Seq())
     }
   }
 
@@ -237,7 +256,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
     * These wand-related parameters are used when the method is called during packaging a wand.
     * For more details see the general node in 'wandModule'
     */
-  override def translateStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), duringPackage: Boolean = false): Stmt = {
+  override def translateStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), duringPackage: Boolean = false): (Stmt, StmtProofHint) = {
     if(duringPackage) {
         wandModule.translatingStmtsInWandInit()
     }
@@ -248,8 +267,13 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         val locals = scopedDecls.collect {case l: sil.LocalVarDecl => l}
         locals map (v => mainModule.env.define(v.localVar)) // add local variables to environment
         val s =
-          MaybeCommentBlock("Assumptions about local variables", locals map (a => mainModule.allAssumptionsAboutValue(a.typ, mainModule.translateLocalVarDecl(a), true))) ++
-          Seqn(ss map (st => translateStmt(st, statesStack, allStateAssms, duringPackage)))
+          {
+            val assmsLocalVars =
+              MaybeCommentBlock("Assumptions about local variables", locals map (a => mainModule.allAssumptionsAboutValue(a.typ, mainModule.translateLocalVarDecl(a), true)))
+            val translatedStmtsAndProofHints = ss map (st => translateStmt(st, statesStack, allStateAssms, duringPackage))
+            val (translatedStmts, translatedProofs) = translatedStmtsAndProofHints.unzip
+            (Seqn(assmsLocalVars++translatedStmts), SeqnProofHint(translatedProofs, scopedDecls))
+          }
         locals map (v => mainModule.env.undefine(v.localVar)) // remove local variables from environment
         // return to avoid adding a comment, and to avoid the extra 'assumeGoodState'
         return s
@@ -260,12 +284,14 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       case _ =>
     }
 
-    var stmts = Seqn(Nil)
+    var (stmts, proofHints) : (Seqn, Seq[ComponentProofHint]) = (Seqn(Nil), Seq())
     for (c <- components) { // NOTE: this builds up the translation inside-out, so the *first* component defines the innermost code.
       //      val (before, after) = c.handleStmt(stmt, statesStack, allStateAssms, inWand)
       //      stmts = before ++ stmts ++ after
       val f = c.handleStmt(stmt, statesStack, allStateAssms, duringPackage)
-      stmts = f(stmts)
+      val (stmtsNew,proofHintsNew) = f(stmts, proofHints)
+      stmts = stmtsNew
+      proofHints = proofHintsNew
     }
     if (stmts.children.size == 0 && !loopModule.isLoopDummyStmt(stmt)) {
       assert(assertion = false, "Translation of " + stmt + " is not defined")
@@ -278,7 +304,31 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       }) ::
       Nil
 
-    CommentBlock(comment + s" -- ${stmt.pos}", translation)
+    (CommentBlock(comment + s" -- ${stmt.pos}", translation), proofHint(stmt, proofHints))
+  }
+
+  private def proofHint(s: sil.Stmt, proofHints: Seq[ComponentProofHint]) : StmtProofHint = {
+    s match {
+      case sil.NewStmt(lhs, fields) => ???
+      case assign@sil.LocalVarAssign(lhs, rhs) => LocalVarAssignHint(assign, mainModule.env.get(lhs), proofHints)
+      case sil.FieldAssign(lhs, rhs) => ???
+      case sil.MethodCall(methodName, args, targets) => ???
+      case sil.Exhale(exp) => ???
+      case sil.Inhale(exp) => ???
+      case sil.Assert(exp) => ???
+      case sil.Assume(exp) => ???
+      case sil.Fold(acc) => ???
+      case sil.Unfold(acc) => ???
+      case sil.Package(wand, proofScript) => ???
+      case sil.Apply(exp) => ???
+      case sil.Seqn(ss, scopedDecls) => ???
+      case sil.If(cond, thn, els) => IfHint(cond, proofHints)
+      case sil.While(cond, invs, body) => ???
+      case sil.Label(name, invs) => ???
+      case sil.Goto(target) => ???
+      case sil.LocalVarDeclStmt(decl) => ???
+      case _: sil.ExtensionStmt => ???
+    }
   }
 
 

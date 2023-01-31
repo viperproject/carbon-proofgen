@@ -36,6 +36,7 @@ import viper.carbon.boogie.Assign
 import viper.carbon.boogie.Func
 import viper.carbon.boogie.TypeAlias
 import viper.carbon.boogie.FuncApp
+import viper.carbon.proofgen.hints.ComponentProofHint
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
 import viper.silver.ast.Implies
@@ -1484,19 +1485,21 @@ class QuantifiedPermModule(val verifier: Verifier)
       (bvs map (v => Assume((v > noPerm) && (v < fullPerm))))
   }
 
-  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn => Seqn) = {
-    stmts =>
-      s match {
-        case n@sil.NewStmt(target, fields) =>
-          stmts ++ (for (field <- fields) yield {
-            currentMaskAssignUpdate(sil.FieldAccess(target, field)(), currentPermission(sil.FieldAccess(target, field)()) + fullPerm)
-          })
-        case assign@sil.FieldAssign(fa, rhs) =>
-           stmts ++ Assert(permGe(currentPermission(fa), fullPerm, true), errors.AssignmentFailed(assign).dueTo(reasons.InsufficientPermission(fa))) // add the check after the definedness checks for LHS/RHS (in heap module)
-        case _ =>
-          //        (Nil, Nil)
-          stmts
-      }
+  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])= {
+    case (stmts, proofHints) =>
+      val res : Seqn =
+        s match {
+          case n@sil.NewStmt(target, fields) =>
+            stmts ++ (for (field <- fields) yield {
+              currentMaskAssignUpdate(sil.FieldAccess(target, field)(), currentPermission(sil.FieldAccess(target, field)()) + fullPerm)
+            })
+          case assign@sil.FieldAssign(fa, rhs) =>
+             stmts ++ Assert(permGe(currentPermission(fa), fullPerm, true), errors.AssignmentFailed(assign).dueTo(reasons.InsufficientPermission(fa))) // add the check after the definedness checks for LHS/RHS (in heap module)
+          case _ =>
+            //        (Nil, Nil)
+            stmts
+        }
+      (res, proofHints)
   }
 
   private def permEq(a: Exp, b: Exp): Exp = {

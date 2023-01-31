@@ -12,6 +12,7 @@ import viper.silver.ast.utility.Expressions
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
+import viper.carbon.proofgen.hints.ComponentProofHint
 import viper.carbon.verifier.Verifier
 import viper.carbon.utility.{MapDesugarHelper, MapRep}
 import viper.silver.ast.utility.QuantifiedPermissions.QuantifiedPermissionAssertion
@@ -619,18 +620,19 @@ class DefaultHeapModule(val verifier: Verifier)
     FuncApp(locationIdentifier(pred), args, t)
   }
 
-  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn => Seqn) = {
+  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])= {
 
-      stmt => (
+    case (stmt, proofHint) => (
         s match {
           case sil.MethodCall(_, _, targets) if enableAllocationEncoding =>
-            stmt ++ (targets filter (_.typ == sil.Ref) map translateExp map {
+            ((stmt ++ (targets filter (_.typ == sil.Ref) map translateExp map {
               t =>
                 Assume(validReference(t))
-            })
+            })), proofHint)
           case sil.Fold(sil.PredicateAccessPredicate(loc, perm)) => // AS: this should really be taken care of in the FuncPredModule (and factored out to share code with unfolding case, if possible)
             if(usingOldState) sys.error("heap module: fold is executed while using old state")
-            stmt ++ ({val newVersion = LocalVar(Identifier("freshVersion"), funcPredModule.predicateVersionType)
+            val resStmt =
+              stmt ++ ({val newVersion = LocalVar(Identifier("freshVersion"), funcPredModule.predicateVersionType)
               val resetPredicateInfo : Stmt =
                 curHeapAssignUpdatePredWandMask(predicateMask(loc).maskField, zeroPMask) ++
                 Havoc(newVersion) ++
@@ -638,30 +640,35 @@ class DefaultHeapModule(val verifier: Verifier)
 
               If(UnExp(Not,hasDirectPerm(loc)), resetPredicateInfo, Nil) ++
                 addPermissionToPMask(loc) ++ stateModule.assumeGoodState}  )
+            (resStmt, proofHint)
           case sil.FieldAssign(lhs, rhs) =>
             if(usingOldState) sys.error("heap module: field is assigned while using old state")
-            stmt ++ (currentHeapAssignUpdate(lhs, translateExp(rhs))) // after all checks
-          case _ => simpleHandleStmt(s) ++ stmt
+            (stmt ++ (currentHeapAssignUpdate(lhs, translateExp(rhs))), Seq()) // after all checks
+          case _ =>
+            val (stmtSimple, proofHintSimple) = simpleHandleStmt(s)
+            (stmtSimple ++ stmt, proofHintSimple ++ proofHint)
         }
       )
 
   }
 
-  override def simpleHandleStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): Stmt = {
-    stmt match {
-      case sil.NewStmt(target,fields) =>
-        Havoc(freshObjectVar) ::
-          // assume the fresh object is non-null and not allocated yet.
-          // this means that whenever we allocate a new object and havoc freshObjectVar, we
-          // assume that we consider a newly allocated cell, which gives the prover
-          // the information that this object is different from anything allocated
-          // earlier. Note that "validReference" must be used in appropriate places
-          // in the encoding to get this fact (e.g. below for method targets, and also
-          // for loops (see the StateModule implementation)
-          Assume(if(enableAllocationEncoding) (freshObjectVar !== nullLit) && alloc(freshObjectVar).not else (freshObjectVar !== nullLit)) ::
-          (if(enableAllocationEncoding) allocUpdateRef(freshObjectVar) :: (translateExp(target) := freshObjectVar) :: Nil else (translateExp(target) := freshObjectVar) :: Nil)
-      case _ => Statements.EmptyStmt
-    }
+  override def simpleHandleStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Stmt, Seq[ComponentProofHint]) = {
+    val res : Stmt =
+      stmt match {
+        case sil.NewStmt(target,fields) =>
+          Havoc(freshObjectVar) ::
+            // assume the fresh object is non-null and not allocated yet.
+            // this means that whenever we allocate a new object and havoc freshObjectVar, we
+            // assume that we consider a newly allocated cell, which gives the prover
+            // the information that this object is different from anything allocated
+            // earlier. Note that "validReference" must be used in appropriate places
+            // in the encoding to get this fact (e.g. below for method targets, and also
+            // for loops (see the StateModule implementation)
+            Assume(if(enableAllocationEncoding) (freshObjectVar !== nullLit) && alloc(freshObjectVar).not else (freshObjectVar !== nullLit)) ::
+            (if(enableAllocationEncoding) allocUpdateRef(freshObjectVar) :: (translateExp(target) := freshObjectVar) :: Nil else (translateExp(target) := freshObjectVar) :: Nil)
+        case _ => Statements.EmptyStmt
+      }
+    (res, Seq())
   }
 
   override def freeAssumptions(e: sil.Exp): Stmt = {

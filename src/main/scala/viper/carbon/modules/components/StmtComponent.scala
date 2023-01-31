@@ -8,6 +8,7 @@ package viper.carbon.modules.components
 
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
+import viper.carbon.proofgen.hints.ComponentProofHint
 import viper.silver.ast.LocalVar
 
 /**
@@ -30,7 +31,7 @@ trait StmtComponent extends Component {
     * These wand-related parameters (mentioned above) are used when translating statements during packaging a wand.
     * For more details refer to the general note in 'wandModule'.
    */
-  def handleStmt(s: sil.Stmt, statesStackOfPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Seqn => Seqn)
+  def handleStmt(s: sil.Stmt, statesStackOfPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])
 
   /**
    * This method is called when translating a "fresh" statement, and by default does nothing
