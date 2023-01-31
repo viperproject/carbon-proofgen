@@ -11,4 +11,13 @@ object ViperBoogieMLUtil {
   def createExpRelInfo(typeSafetyThmMap: String, lookupVarRelTac: String, vprLitBplExpRelTac: String, lookupVarThms: String) : String =
     MLUtil.app("ExpRelInfo0", MLUtil.createTuple(Seq(typeSafetyThmMap, lookupVarRelTac, vprLitBplExpRelTac, lookupVarThms)))
 
+
+  def createStmtRelInfo(ctxtWfThm: String, trDefThm: String, varRelTac: String, varContextVprTac: String) : String =
+      MLUtil.createRecord(Seq(
+        ("ctxt_wf_thm", ctxtWfThm),
+        ("tr_def_thm", trDefThm),
+        ("var_rel_tac", varRelTac),
+        ("var_context_vpr_tac", varContextVprTac)
+      ))
+
 }

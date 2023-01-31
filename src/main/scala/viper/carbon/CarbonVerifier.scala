@@ -8,17 +8,20 @@ package viper.carbon
 
 import boogie.{BoogieModelTransformer, Namespace}
 import modules.impls._
-import viper.silver.ast.Program
+import viper.silver.{ast => sil}
 import viper.silver.utility.Paths
 import viper.silver.verifier._
 import verifier.{BoogieDependency, BoogieInterface, Verifier}
 import viper.carbon.proofgen.ProofGenInterface
+import viper.silver.ast.Program
+import viper.silver.ast.utility.QuantifiedPermissions.SourceQuantifiedPermissionAssertion
+import viper.silver.ast.utility.Visitor
 
 import java.io.{BufferedOutputStream, File, FileOutputStream, IOException}
 import viper.silver.frontend.{MissingDependencyException, NativeModel, VariablesModel}
 import viper.silver.reporter.Reporter
 
-import java.nio.file.{FileSystems, Files}
+import java.nio.file.Files
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -116,6 +119,13 @@ case class CarbonVerifier(override val reporter: Reporter,
       false
     }
 
+  def onlyCheckProofGenSupport : Boolean =
+    if(config != null) {
+      config.onlyCheckProofGenSupport.getOrElse(false)
+    } else {
+      false
+    }
+
   def name: String = "carbon"
   def version: String = "1.0"
   def buildVersion = version
@@ -163,14 +173,7 @@ case class CarbonVerifier(override val reporter: Reporter,
   def verify(program: Program) = {
     _program = program
 
-    if(generateProofs) {
-      val proofGenDirSuffix = org.apache.commons.io.FilenameUtils.getBaseName(config.file.toOption.get)+ "_proof"
-      val proofGenDirName = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_").format(LocalDateTime.now) + proofGenDirSuffix
-      val proofGenDir = java.nio.file.Paths.get(System.getProperty("user.dir")).resolve(proofGenDirName)
-      Files.createDirectory(proofGenDir)
-
-      _proofGenInterface = new ProofGenInterface(proofGenDir)
-    }
+    proofGenInit(program)
 
     // reset all modules
     allModules map (m => m.reset())
@@ -260,8 +263,6 @@ case class CarbonVerifier(override val reporter: Reporter,
 
   }
 
-
-
   private var _translated: viper.carbon.boogie.Program = null
   def translated = _translated
 
@@ -275,4 +276,65 @@ case class CarbonVerifier(override val reporter: Reporter,
 
   private var _proofGenInterface: ProofGenInterface = null
   def proofGenInterface = _proofGenInterface
+
+  private def proofGenInit(program: Program) : Unit = {
+    if(generateProofs || onlyCheckProofGenSupport) {
+      val unsupportedNodeOpt = proofGenSupportsProgram(program)
+      unsupportedNodeOpt match {
+        case Some(unsupportedNode) =>
+          println("Failure: Proof generation does not support program because of node " + unsupportedNode.toString)
+          sys.exit(-2)
+        case None =>
+      }
+
+      if(onlyCheckProofGenSupport) {
+        //early exit if only proof generation support needs to be checked
+        println("Success: Proof generation supports program.")
+        sys.exit(0)
+      }
+
+      val proofGenDirSuffix = org.apache.commons.io.FilenameUtils.getBaseName(config.file.toOption.get)+ "_proof"
+      val proofGenDirName = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_").format(LocalDateTime.now) + proofGenDirSuffix
+      val proofGenDir = java.nio.file.Paths.get(System.getProperty("user.dir")).resolve(proofGenDirName)
+      Files.createDirectory(proofGenDir)
+
+      _proofGenInterface = new ProofGenInterface(proofGenDir)
+    }
+  }
+
+  /***
+    *
+    * @param program
+    * @return None if proof generation supports program and otherwise Some(n) where n is the cause for why proof generation
+    *         does not support the program
+    */
+  private def proofGenSupportsProgram(program: Program) : Option[sil.Node] =
+      Visitor.find(program, sil.utility.Nodes.subnodes)(
+        {
+          node =>
+            node match {
+              //TODO: also include Quasihavoc as unsupported once merge Quasihavoc features
+              case SourceQuantifiedPermissionAssertion(_, _) => node
+              case _: sil.SetType => node
+              case _: sil.Domain => node
+              case _: sil.SeqType => node
+              case _ : sil.MultisetType => node
+              case _ : sil.MapType => node
+              case _ : sil.BackendType => node
+              case sil.Goto(_) => node
+              case _: sil.MagicWand => node
+              case _: sil.Package => node
+              case _ : sil.Apply => node
+              case _: sil.NewStmt => node
+              case _: sil.LabelledOld => node
+              case _: sil.ExtensionStmt => node
+              case _: sil.CurrentPerm => node
+              case _: sil.ForPerm => node
+              case _: sil.ExtensionExp => node
+              case _: sil.InhaleExhaleExp => node
+              case _: sil.WildcardPerm => node
+              case _: sil.EpsilonPerm => node //epsilon should not occur in Viper programs (old feature that has been dropped)
+            }
+        }
+      )
 }

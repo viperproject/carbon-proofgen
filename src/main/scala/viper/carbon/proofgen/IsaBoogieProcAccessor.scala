@@ -80,7 +80,7 @@ class IsaBoogieProcAccessor(
 
   val varContextWfThm: String = procDataDecl("var_context_wf")
 
-  val procBodyAstDef: String = "proc_body"
+  val procBodyAstDef: String = procDataDecl("proc_body")
 
 }
 
@@ -92,7 +92,8 @@ case object IsaBoogieProcAccessor {
       ZeroMaskConst,
       ZeroPMaskConst,
       NoPermConst,
-      FullPermConst)
+      FullPermConst,
+      EmptyFrameConst)
 
   private val constantsIdMap : Map[BoogieConstGlobal, Int] =
     constantsOrder.zipWithIndex.toMap
@@ -113,6 +114,7 @@ case object ZeroMaskConst extends BoogieConstGlobal
 case object ZeroPMaskConst extends BoogieConstGlobal
 case object NoPermConst extends BoogieConstGlobal
 case object FullPermConst extends BoogieConstGlobal
+case object EmptyFrameConst extends BoogieConstGlobal
 
 case object HeapGlobalVar extends BoogieConstGlobal
 case object MaskGlobalVar extends BoogieConstGlobal

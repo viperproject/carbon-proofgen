@@ -104,5 +104,12 @@ class CarbonConfig(args: Seq[String]) extends SilFrontendConfig(args, "Carbon") 
     noshort = true
   )
 
+  val onlyCheckProofGenSupport = opt[Boolean]("onlyCheckProofGenSupport",
+    descr = "Only check whether proof generation is supported for program. That is, the program is not verified and proofs " +
+      "are not produced. (default: false).",
+    default = Some(false),
+    noshort = true
+  )
+
   verify()
 }

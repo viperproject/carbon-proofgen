@@ -9,6 +9,8 @@ object MLUtil {
   def app(fun: String, arg: String) : String = app(fun, Seq(arg))
 
   def createTuple(elems: Seq[String]) : String = s"(${elems.mkString(", ")})"
+  def createRecord(elems: Seq[(String, String)]) : String =
+    s"{${elems.map({ case (name,value) => s"$name = $value" }).mkString(", ")}}"
 
   def isaToMLThm(isaThm: String) : String = s"@{thm $isaThm}"
 
@@ -20,9 +22,12 @@ object MLUtil {
     }
   }
 
-  def contextAniquotation() = "@{context}"
+  val contextAniquotation = "@{context}"
 
   def simp(thms: String) : String =
     s"assm_full_simp_solved_with_thms_tac $thms"
+
+  def mlTacticToIsa(mlTactic: String) : String =
+    s"tactic \\<open> $mlTactic \\<close>"
 
 }

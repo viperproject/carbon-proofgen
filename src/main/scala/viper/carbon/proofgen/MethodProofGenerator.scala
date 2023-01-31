@@ -5,10 +5,9 @@ import viper.silver.{ast => sil}
 import isabelle.ast._
 
 import scala.collection.mutable.ListBuffer
-
 import isabelle.ast.ProofUtil._
 import isabelle.ast.IsaUtil._
-import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms}
+import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa}
 
 
 case class MethodProofGenerator(
@@ -129,6 +128,8 @@ case class MethodProofGenerator(
         "TotalViper.ExpProofGenTest",
         "TotalViper.ViperBoogieTranslationInterface",
         "TotalViper.ExprWfRelML",
+        "TotalViper.CPGHelperML",
+        "TotalViper.StmtRelML",
         "Boogie_Lang.TypingML",
         vprProg.methodTheoryPath,
         boogieProg.procTheoryPath
@@ -137,10 +138,10 @@ case class MethodProofGenerator(
     )
   }
 
-  def mainProofLocale() : LocaleDecl = {
+  private def mainProofLocale() : LocaleDecl = {
     val exprContextBpl = TermIdent("ectxt")
 
-    val ctxtWfLabelVpr = "CtxtWf"
+    val bplCtxtWfLabel = "CtxtWf"
 
     val funInterpWfBpl = "WfFunBpl"
 
@@ -151,7 +152,7 @@ case class MethodProofGenerator(
       //assumes
       Seq( (Some("VarContextBpl [simp]"), TermBinary.eq(BoogieExpressionContext.varContext(exprContextBpl), TermIdent(varContextBoogieName))),
            (Some("TyInterpBpl [simp]"), TermBinary.eq(BoogieExpressionContext.typeInterp(exprContextBpl), TermIdent(typeInterpBplName))),
-        (Some(ctxtWfLabelVpr), BoogieExpressionContext.wellFormed(
+        (Some(bplCtxtWfLabel), BoogieExpressionContext.wellFormed(
            viperProgram = viperProgram,
             tyReprBpl = tyReprBasic,
           fieldMap = TermIdent("f_None"),
@@ -179,7 +180,7 @@ case class MethodProofGenerator(
             BoogieIsaTerm.wfTy(TermIdent(tId))
           )
         ),
-        Proof(Seq(using(boogieProg.varContextWfThm, by(simp))))
+        Proof(Seq(using(boogieProg.varContextWfThm, byTac(simp))))
       )
 
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
@@ -189,6 +190,8 @@ case class MethodProofGenerator(
     val litRelTac = "tac2"
     val typeSafetyThmMap = "type_safety_thm_map"
     val expRelInfo = "exp_rel_info"
+    val stmtRelInfo = "stmt_rel_info"
+    val stmtRelHints = "stmt_rel_hints"
 
     val mlInitializationCode =
       Seq(
@@ -203,11 +206,18 @@ case class MethodProofGenerator(
         ),
 
         //TODO: more fine-grained approach (specify required lookup theorems for different expressions)
-        // TOOD: take lookup theorems for constants and globals into account
+        // TODO: take lookup theorems for constants and globals into account
         MLUtil.defineVal("lookupThms", isaToMLThms(
           boogieProg.getAllLocalVariables().map(l => boogieProg.getLookupThyThm(l)).toSeq)
         ),
-        MLUtil.defineVal(expRelInfo, ViperBoogieMLUtil.createExpRelInfo(typeSafetyThmMap, lookupVarRelTac, litRelTac, "lookupThms"))
+        MLUtil.defineVal(expRelInfo, ViperBoogieMLUtil.createExpRelInfo(typeSafetyThmMap, lookupVarRelTac, litRelTac, "lookupThms")),
+        MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
+          isaToMLThm(bplCtxtWfLabel),
+          isaToMLThm(definitionLemmaFromName(translationRecordName)),
+          lookupVarRelTac,
+          "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))))
+        ),
+        MLUtil.defineVal(stmtRelHints, stmtRelHints)
       )
 
     outerDecls += MLDecl(mlInitializationCode, MLNormal)
@@ -225,12 +235,73 @@ case class MethodProofGenerator(
         stmtVpr= vprProg.methodBody(),
         configBplEnter=ViperIsaTerm.convertAstToProgramPoint(TermIdent(boogieProg.procBodyAstDef)),
         configBplExit=BoogieIsaTerm.finalProgramPoint),
-      Proof(Seq("oops"))
+      Proof(
+        initBoogieStateProof(bplCtxtWfLabel) ++
+        mainProof(stmtRelHints, stmtRelHints) ++
+        Seq(doneTac)
+      )
     )
 
     outerDecls += mainTheorem
 
     LocaleDecl("method_proof", contextElem, outerDecls.toSeq)
+  }
+
+  private def mainProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
+    Seq(
+      applyTac(unfoldTac(IsaUtil.definitionLemmaFromName(vprProg.methodBody().toString))),
+      applyTac(ViperBoogieRelationIsa.stmtRelPropagatePreSameRelTac),
+      applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
+      applyTac(ViperBoogieRelationIsa.progressBplTac(MLUtil.contextAniquotation)),
+    )
+  }
+
+  private def initBoogieStateProof(ctxtBplWfThm: String): Seq[String] = {
+    Seq(
+      applyTac(unfoldTac(Seq(IsaUtil.definitionLemmaFromName(ViperBoogieRelationIsa.stateRelEmptyName),
+                             IsaUtil.definitionLemmaFromName(boogieProg.procBodyAstDef)))),
+      applyTac(BoogieIsaTerm.simplifyAstToProgramPointTac),
+      applyTac(ViperBoogieRelationIsa.stmtRelPropagatePreTac),
+      applyTac(ruleTac("exI")),
+      applyTac(BoogieIsaTerm.unfoldASTBlockInGoalTac),
+      applyTac(BoogieIsaTerm.redAstPropagateRelTac),
+      applyTac(BoogieIsaTerm.redAstOneSimpleCmdTac),
+      applyTac(BoogieIsaTerm.assignIntroAltTac),
+      applyTac(simpTac(boogieProg.getLookupThyThm(MaskGlobalVar))),
+      applyTac(ruleTac(BoogieIsaTerm.redVarThm)),
+      applyTac(ViperBoogieRelationIsa.zeroMaskLookupTactic(IsaUtil.definitionLemmaFromName(translationRecordName))),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(tyReprBasic.toString))),
+    ) ++
+      initUpdatedStateInRelation() ++
+      initAssumeGoodState(ctxtBplWfThm)
+  }
+
+  private def initUpdatedStateInRelation() : Seq[String] = {
+    Seq(
+      applyTac(ruleTac(ViperBoogieRelationIsa.stateRelMaskUpdateThm)),
+      applyTac(fastforceTac),
+      applyTac(simpTac),
+      applyTac(ruleTac(ViperBoogieRelationIsa.zeroMaskRelThm)),
+      applyTac(simpTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecordName))),
+      applyTac(simpTac),
+      applyTac(simpTac)
+    )
+  }
+
+  private def initAssumeGoodState(ctxtBplWfThm: String) : Seq[String] = {
+    Seq(
+      applyTac(BoogieIsaTerm.redAstPropagateRelTac),
+      applyTac(BoogieIsaTerm.redAstOneSimpleCmdTac),
+      applyTac(ViperBoogieRelationIsa.redAssumeGoodStateTac(IsaUtil.definitionLemmaFromName(translationRecordName),
+        MLUtil.isaToMLThm(ctxtBplWfThm)
+        )),
+      applyTac(assumeTac),
+      applyTac(ruleTac("conjI")),
+      applyTac(simpTac),
+      applyTac(BoogieIsaTerm.redAstReflTac),
+      applyTac(assumeTac)
+    )
   }
 
 }
