@@ -16,5 +16,7 @@ case class IfHint(cond: sil.Exp, componentHints: Seq[ComponentProofHint]) extend
 
 case class WhileHint(cond: sil.Exp, invs: Seq[sil.Exp], componentHints: Seq[ComponentProofHint]) extends StmtProofHint
 
+/*
 //the following hint should only occur for Viper methods that contain statements not supported by proof generation
 case class ProofNotSupportedHint(unsupportedNode: sil.Stmt) extends StmtProofHint
+ */

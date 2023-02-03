@@ -18,7 +18,8 @@ object IsaVprProgramGenerator {
     val mBodyTerm = ViperToIsa.translateStmt(m.body.get)(varTranslation)
     val mBodyDecl = DefDecl("method_body", Some(ViperIsaType.stmt), (Seq(), mBodyTerm))
 
-    val mArgs = m.formalArgs.map(varDecl =>  {
+    //for now keep arguments and return variables in the same list
+    val mArgsAndReturns = (m.formalArgs ++ m.formalReturns).map(varDecl =>  {
       varTranslation.translateVariableId(varDecl.localVar) match {
         case Some(id) =>
           println(s"${varDecl.localVar.name},${id.toString}")
@@ -28,9 +29,9 @@ object IsaVprProgramGenerator {
     })
 
     val mArgsDecl = AbbrevDecl(
-      "method_args",
+      "method_args_and_returns",
       Some(IsaTypeUtil.listType( TupleType(Seq(ViperIsaType.varNameType, ViperIsaType.viperTyType)) )),
-      (Seq(), TermList(mArgs))
+      (Seq(), TermList(mArgsAndReturns))
     )
 
     val theory = Theory(theoryName, Seq("Viper.ViperLang"), Seq(mBodyDecl, mArgsDecl))

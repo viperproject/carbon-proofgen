@@ -272,7 +272,12 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
               MaybeCommentBlock("Assumptions about local variables", locals map (a => mainModule.allAssumptionsAboutValue(a.typ, mainModule.translateLocalVarDecl(a), true)))
             val translatedStmtsAndProofHints = ss map (st => translateStmt(st, statesStack, allStateAssms, duringPackage))
             val (translatedStmts, translatedProofs) = translatedStmtsAndProofHints.unzip
-            (Seqn(assmsLocalVars++translatedStmts), SeqnProofHint(translatedProofs, scopedDecls))
+
+            /**
+              * in Isabelle we represent Seqn( Seq(s) ) as s
+              * TODO: take scopes into account also if size is only 1
+              */
+            (Seqn(assmsLocalVars++translatedStmts), if(ss.size == 1) { translatedProofs(0) } else { SeqnProofHint(translatedProofs, scopedDecls) })
           }
         locals map (v => mainModule.env.undefine(v.localVar)) // remove local variables from environment
         // return to avoid adding a comment, and to avoid the extra 'assumeGoodState'

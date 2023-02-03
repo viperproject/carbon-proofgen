@@ -44,6 +44,9 @@ object ViperBoogieRelationIsa {
   val stmtRelPropagatePreTac : String = ruleTac("stmt_rel_propagate")
   val stmtRelPropagatePreSameRelTac : String = ruleTac("stmt_rel_propagate_same_rel")
 
+  val stmtRelPropagatePostTac : String = ruleTac("stmt_rel_propagate_2")
+  val stmtRelPropagatePostSameRelTac : String = ruleTac("stmt_rel_propagate_2_same_rel")
+
   def zeroMaskLookupTactic(translationRecordDefThm: String) : String =
     MLUtil.mlTacticToIsa(
       MLUtil.app("zero_mask_lookup_tac", Seq(MLUtil.contextAniquotation, MLUtil.isaToMLThm(translationRecordDefThm), "1"))

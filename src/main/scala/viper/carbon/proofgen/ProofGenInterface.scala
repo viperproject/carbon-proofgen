@@ -60,7 +60,8 @@ class ProofGenInterface(val proofDir: Path) {
           "relational_proof",
           mAccessor,
           varTranslation,
-          bplProcAccessor)
+          bplProcAccessor,
+          bodyProofHint)
 
         val relationalProofTheory = methodProofGenerator.generateProof()
 

@@ -8,13 +8,15 @@ import scala.collection.mutable.ListBuffer
 import isabelle.ast.ProofUtil._
 import isabelle.ast.IsaUtil._
 import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa}
+import viper.carbon.proofgen.hints.{IfHint, LocalVarAssignHint, MLHintGenerator, SeqnProofHint, StmtProofHint, WhileHint}
 
 
 case class MethodProofGenerator(
                     theoryName: String,
                     vprProg: IsaMethodAccessor,
                     vprTranslation: VarTranslation[sil.LocalVar],
-                    boogieProg: IsaBoogieProcAccessor)
+                    boogieProg: IsaBoogieProcAccessor,
+                    stmtProofHint: StmtProofHint)
 {
 
   val varContextViperName = "var_ctxt_viper"
@@ -217,7 +219,7 @@ case class MethodProofGenerator(
           lookupVarRelTac,
           "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))))
         ),
-        MLUtil.defineVal(stmtRelHints, stmtRelHints)
+        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateHintsInML(stmtProofHint, boogieProg, expRelInfo))
       )
 
     outerDecls += MLDecl(mlInitializationCode, MLNormal)
@@ -237,7 +239,7 @@ case class MethodProofGenerator(
         configBplExit=BoogieIsaTerm.finalProgramPoint),
       Proof(
         initBoogieStateProof(bplCtxtWfLabel) ++
-        mainProof(stmtRelHints, stmtRelHints) ++
+        mainProof(stmtRelInfo, stmtRelHints) ++
         Seq(doneTac)
       )
     )
@@ -250,7 +252,7 @@ case class MethodProofGenerator(
   private def mainProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
     Seq(
       applyTac(unfoldTac(IsaUtil.definitionLemmaFromName(vprProg.methodBody().toString))),
-      applyTac(ViperBoogieRelationIsa.stmtRelPropagatePreSameRelTac),
+      applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac),
       applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
       applyTac(ViperBoogieRelationIsa.progressBplTac(MLUtil.contextAniquotation)),
     )
