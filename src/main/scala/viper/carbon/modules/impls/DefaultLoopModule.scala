@@ -444,7 +444,7 @@ class DefaultLoopModule(val verifier: Verifier) extends LoopModule with StmtComp
             Comment("Check and assume guard") ++
             checkDefinedness(w.cond, errors.WhileFailed(w.cond)) ++
             Assume(guard) ++ stateModule.assumeGoodState ++
-            MaybeCommentBlock("Translate loop body", stmtModule.translateStmt(w.body)._1) ++ //TODO: incorporate proof hints
+            MaybeCommentBlock("Translate loop body", stmtModule.translateStmt(w.body)._1) ++ //TODO proof_gen: incorporate proof hints
             MaybeComment("Exhale invariant", executeUnfoldings(invs, (inv => errors.LoopInvariantNotPreserved(inv))) ++ exhale(invs map (e => (e, errors.LoopInvariantNotPreserved(e))))) ++
             MaybeComment("Terminate execution", Assume(FalseLit()))
           stateModule.replaceState(prevState)

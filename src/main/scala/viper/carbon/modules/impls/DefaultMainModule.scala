@@ -124,8 +124,12 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
         Program(header, preambles ++ members)
     }
 
-    //Temporarily comment out optimize (output.optimize.asInstanceOf[Program], nameMaps.map(e => e._1 -> e._2.toMap))
-    (output, nameMaps.map(e => e._1 -> e._2.toMap))
+    if(generateProofs) {
+      //TODO proof_gen: support optimization in proof generation
+      (output, nameMaps.map(e => e._1 -> e._2.toMap))
+    } else {
+      (output.optimize.asInstanceOf[Program], nameMaps.map(e => e._1 -> e._2.toMap))
+    }
   }
 
   def translateMethodDecl(m: sil.Method, names: Option[mutable.Map[String, String]]): Seq[Decl] = {
@@ -157,7 +161,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
                 (if(!generateProofs) {
                   Seq(MaybeCommentBlock(initOldStateComment, initOld))
                 } else {
-                  //TODO: currently do not handle old expressions in proofs
+                  //TODO proof_gen: currently do not handle old expressions in proofs
                   Nil
                 }) ++
                 Seq(checkPost, body, exhalePost)
