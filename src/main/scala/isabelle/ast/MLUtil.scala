@@ -12,6 +12,8 @@ object MLUtil {
   def createRecord(elems: Seq[(String, String)]) : String =
     s"{${elems.map({ case (name,value) => s"$name = $value" }).mkString(", ")}}"
 
+  def createList(elems: Seq[String]) : String = s"[${elems.mkString(", ")}]"
+
   def isaToMLThm(isaThm: String) : String = s"@{thm $isaThm}"
 
   def isaToMLThms(isaThms: Seq[String]) : String = {
