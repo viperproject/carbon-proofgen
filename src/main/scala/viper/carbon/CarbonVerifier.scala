@@ -255,7 +255,7 @@ case class CarbonVerifier(override val reporter: Reporter,
         }
 
         if(generateProofs) {
-          proofGenInterface.finishProof(program)
+          proofGenInterface.finishProof()
         }
 
         result
@@ -298,7 +298,7 @@ case class CarbonVerifier(override val reporter: Reporter,
       val proofGenDir = java.nio.file.Paths.get(System.getProperty("user.dir")).resolve(proofGenDirName)
       Files.createDirectory(proofGenDir)
 
-      _proofGenInterface = new ProofGenInterface(proofGenDir)
+      _proofGenInterface = new ProofGenInterface(proofGenDir, program)
     }
   }
 

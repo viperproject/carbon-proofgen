@@ -1,15 +1,64 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{AbbrevDecl, DefDecl, IsaTypeUtil, TermIdent, TermList, TermTuple, Theory, TupleType}
+import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, NatConst, OuterDecl, StringConst, Term, TermIdent, TermList, TermTuple, Theory, TupleType}
 import viper.silver.{ast => sil}
 
-import java.nio.file.Paths
+import scala.collection.mutable.ListBuffer
 
 object IsaVprProgramGenerator {
 
+  def globalData(p: sil.Program, boogieGlobalAccessor: IsaBoogieGlobalAccessor, theoryName: String, pathToTheoryDir: String) : (Theory, IsaViperGlobalDataAccessor) =
+    {
+      val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
+
+      val fieldsToTerm : Map[sil.Field, Term] = p.fields.map(f => (f, StringConst(f.name))).toMap
+
+      val fieldsList = TermList(p.fields.map(f => TermTuple(fieldsToTerm.get(f).get, ViperIsaType.translate(f.typ))))
+
+      val fieldsListDef = DefDecl("fields", None, (Seq(), fieldsList))
+      outerDecls += fieldsListDef
+
+      val fieldRelationList = {
+        TermList(
+          p.fields.map(f => {
+            val vprFieldConstTerm = fieldsToTerm.get(f).get
+            val bplFieldConstId = boogieGlobalAccessor.getVarId(FieldConst(f))
+            TermTuple(vprFieldConstTerm, NatConst(bplFieldConstId))
+          }
+          )
+        )
+      }
+
+      val fieldRelationListDef = DefDecl(
+        "field_rel",
+        None,
+        (Seq(), fieldRelationList)
+      )
+
+      outerDecls += fieldRelationListDef
+
+      val programDef = DefDecl("vpr_prog",
+        Some(ViperIsaType.vprProgramType),
+        (Seq(), IsaTermUtil.makeRecord(ViperIsaType.vprProgramTypeName, Seq(
+          TermIdent("f_None"),//TODO: methods
+          TermIdent("f_None"),//TODO: predicates
+          TermIdent("f_None"),//TODO: functions
+          IsaTermUtil.mapOf(TermIdent(fieldsListDef.name)), //functions
+          NatConst(0)) //domains
+        ))
+      )
+
+      outerDecls += programDef
+
+      (
+        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalUtil"), outerDecls.toSeq),
+        DefaultIsaViperGlobalDataAccessor(theoryName, pathToTheoryDir, programDef.name, fieldsListDef.name, fieldsToTerm)
+      )
+    }
+
 
   //m must not be abstract
-  def isaProgramRepr(m: sil.Method, theoryName: String, varTranslation: VarTranslation[sil.LocalVar]) : (Theory, IsaMethodAccessor) =
+  def isaProgramRepr(m: sil.Method, theoryName: String, varTranslation: VarTranslation[sil.LocalVar]) : (Theory, IsaViperMethodAccessor) =
   {
     if(m.body.isEmpty) {
       sys.error("invoked isaProgramRepr with abstrasct method")
@@ -35,7 +84,7 @@ object IsaVprProgramGenerator {
     )
 
     val theory = Theory(theoryName, Seq("Viper.ViperLang"), Seq(mBodyDecl, mArgsDecl))
-    val mAccessor = DefaultIsaMethodAccessor(methodTheoryPath = theoryName, methodBodyIdent = mBodyDecl.name, methodArgsIdent = mArgsDecl.name)
+    val mAccessor = DefaultIsaMethodAccessor(theoryName = theoryName, methodBodyIdent = mBodyDecl.name, methodArgsIdent = mArgsDecl.name)
 
     (theory, mAccessor)
   }

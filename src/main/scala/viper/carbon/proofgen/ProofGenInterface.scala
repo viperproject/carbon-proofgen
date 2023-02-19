@@ -13,17 +13,30 @@ import java.nio.charset.StandardCharsets
 import scala.collection.mutable
 
 //a directory with path proofGenDir must exist
-class ProofGenInterface(val proofDir: Path) {
+class ProofGenInterface(val proofDir: Path, val vprProg: sil.Program) {
 
   val boogieProofDirName : String = "boogie_proofs"
   val boogieProofDir : Path = proofDir.resolve(boogieProofDirName)
+
+  val globalDataTheoryName = "global_data_vpr"
+
+  val globalDataBpl : IsaBoogieGlobalAccessor = IsaBoogieGlobalAccessor("global_data", vprProg.fields)
+
+  val vprProgGlobalData : IsaViperGlobalDataAccessor =
+    {
+
+      //we assume that proofs accessing global data are always be one level deeper (that's why the path "../")
+      val (theory, globalDataAccessor) = IsaVprProgramGenerator.globalData(vprProg, globalDataBpl, globalDataTheoryName, "../")
+      StoreTheory.storeTheory(theory, proofDir)
+      globalDataAccessor
+    }
 
   /***
     * Creates and stores the Isabelle proof relating the Viper and Boogie programs
     *
     * Should only be invoked if Boogie has already been run and produced a proof at [[boogieProofDir()]]
     */
-  def finishProof(p: sil.Program) : Unit = {
+  def finishProof() : Unit = {
     if(!Files.exists(boogieProofDir)) {
       sys.error(s"Cannot generate CPG proof: Boogie proofs are not stored at ${boogieProofDir.toAbsolutePath.toString}")
     }
@@ -54,6 +67,7 @@ class ProofGenInterface(val proofDir: Path) {
         val bplProcAccessor = new IsaBoogieProcAccessor(
           procBpl,
           procBplEnv,
+          globalDataBpl,
           bplProgTheoryPath)
 
         val methodProofGenerator = MethodProofGenerator(

@@ -12,12 +12,14 @@ import viper.carbon.proofgen.hints.{IfHint, LocalVarAssignHint, MLHintGenerator,
 
 
 case class MethodProofGenerator(
-                    theoryName: String,
-                    vprProg: IsaMethodAccessor,
-                    vprTranslation: VarTranslation[sil.LocalVar],
-                    boogieProg: IsaBoogieProcAccessor,
-                    stmtProofHint: StmtProofHint)
+                                 theoryName: String,
+                                 vprProg: IsaViperMethodAccessor,
+                                 vprTranslation: VarTranslation[sil.LocalVar],
+                                 boogieProg: IsaBoogieProcAccessor,
+                                 stmtProofHint: StmtProofHint)
 {
+
+  val globalBplData = boogieProg.globalDataAccessor
 
   val varContextViperName = "var_ctxt_viper"
   val varContextBoogieName = "var_ctxt_bpl"
@@ -26,6 +28,7 @@ case class MethodProofGenerator(
   val viperProgram = TermIdent("Pr_trivial")
 
   val varRelationListName = "var_relation_list_1"
+  val fieldRelationListName = "field_relation_list"
   val translationRecordName = "tr_vpr_bpl_0"
   val stateRelInitialName = "state_rel_initial"
 
@@ -67,8 +70,8 @@ case class MethodProofGenerator(
     outerDecls += varRelationListDef
 
     val translationRecord = TranslationRecord.makeTranslationRecord(
-      heapVar = NatConst(boogieProg.getVarId(HeapGlobalVar)),
-      maskVar = NatConst(boogieProg.getVarId(MaskGlobalVar)),
+      heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
+      maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
       maskRead = TermApp(TermIdent("read_mask_concrete"), TermIdent("fun_repr_concrete")),
       heapRead = TermApp(TermIdent("read_heap_concrete"), TermIdent("fun_repr_concrete")),
       fieldTranslation = TermIdent("f_None"),
@@ -133,7 +136,7 @@ case class MethodProofGenerator(
         "TotalViper.CPGHelperML",
         "TotalViper.StmtRelML",
         "Boogie_Lang.TypingML",
-        vprProg.methodTheoryPath,
+        vprProg.theoryName,
         boogieProg.procTheoryPath
       ),
       decls = outerDecls.toSeq
@@ -163,7 +166,7 @@ case class MethodProofGenerator(
           ) ),
         (Some(funInterpWfBpl), BoogieIsaTerm.funInterpWf(
           typeInterp = BoogieExpressionContext.typeInterp(exprContextBpl),
-          funDecls = boogieProg.funDecls,
+          funDecls = globalBplData.funDecls,
           funInterp = BoogieExpressionContext.funInterp(exprContextBpl)
           ))
       )
@@ -201,7 +204,7 @@ case class MethodProofGenerator(
         MLUtil.defineVal(litRelTac, MLUtil.simp(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName))))),
         MLUtil.defineVal(typeSafetyThmMap, ViperBoogieMLUtil.genTypeSafetyThmMap(
           isaToMLThm(funInterpWfBpl),
-          isaToMLThm(boogieProg.funDeclsWf.toString),
+          isaToMLThm(globalBplData.funDeclsWf.toString),
           isaToMLThm(varContextWfBplLemma.name),
           isaToMLThm(ViperBoogieRelationIsa.stateRelationWellTypedThm.toString)
           )

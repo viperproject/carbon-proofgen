@@ -13,4 +13,5 @@ object IsaTermUtil {
   val none = TermIdent("None")
 
   def convertOpt(termOpt: Option[Term]) : Term = termOpt.fold[Term](none)(t => some(t))
+
 }

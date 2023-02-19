@@ -55,7 +55,7 @@ object IsaPrettyPrinter {
     case IntConst(i) => i.toString()
     case NatConst(i) => i.toString()
     case BoolConst(b) => if(b) "True" else "False"
-    case StringConst(s) => s
+    case StringConst(s) => s"''$s''"
   }
 
   def prettyPrint(d: OuterDecl, sb: StringBuilder) : StringBuilder = d match {

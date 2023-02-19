@@ -6,11 +6,13 @@ import viper.carbon.verifier.Environment
 import viper.silver.{ast => sil}
 
 class IsaBoogieProcAccessor(
-     val proc: Procedure,
-     val procEnv: Environment,
-     val procTheoryPath: String
+                             val proc: Procedure,
+                             val procEnv: Environment,
+                             val globalDataAccessor: IsaBoogieGlobalAccessor,
+                             val procTheoryPath: String
    )
 {
+
 
   val theoryName = org.apache.commons.io.FilenameUtils.getBaseName(procTheoryPath)
 
@@ -36,45 +38,24 @@ class IsaBoogieProcAccessor(
   def getVarId(varBpl: LocalVar) : Int = {
     procVarMapping.get(varBpl) match {
       case Some(idBpl) =>
-        //TODO when fields and predicates are added, then will need to adjust this
-        IsaBoogieProcAccessor.constantsIdMap.size + IsaBoogieProcAccessor.globalsOrderMap.size +
-          idBpl
+          globalDataAccessor.numGlobalsAndConstants+idBpl
       case None => sys.error(s"Could not find related Boogie variable for Viper variable ${varBpl.name}")
     }
   }
 
-  def getLookupThyThm(g: BoogieConstGlobal) = lookupThyThmFromId(getVarId(g))
-
+  def getLookupThyThm(g: BoogieConstGlobal) : String = lookupThyThmFromId(globalDataAccessor.getVarId(g))
   def getLookupThyThm(x: LocalVar) : String = lookupThyThmFromId(getVarId(x))
 
   private def lookupThyThmFromId(id: Int) : String = procDataDecl("lvar"+id)+"(2)"
 
-  def getVarId(d: BoogieConstGlobal) : Int = {
-    IsaBoogieProcAccessor.constantsIdMap.get(d).fold
-       //None case: guaranteed to obtain value from map, since using sealed trait and both maps cover all possible values
-      //TODO when fields and predicates are added, then will need to adjust this
-      { IsaBoogieProcAccessor.constantsIdMap.size + IsaBoogieProcAccessor.globalsOrderMap.get(d).get  }
-       //Some case
-      { id => id }
-  }
-
-  private val globalDataTheoryName: String = "global_data"
-  private def globalDataDecl(declName: String) = IsaUtil.qualifyName(globalDataTheoryName, declName)
-
-  val funDecls : TermIdent = TermIdent(globalDataDecl("fdecls"))
-
-  val funDeclsWf: TermIdent = TermIdent(globalDataDecl("funcs_wf"))
-
   private def procDataDecl(declName: String) = IsaUtil.qualifyName(theoryName, declName)
 
-  val constDecls : TermIdent = TermIdent(globalDataDecl("constants_vdecls"))
-  val globalDecls : TermIdent = TermIdent(globalDataDecl("globals_vdecls"))
   val paramsDecls : TermIdent = TermIdent(procDataDecl("params_vdecls"))
   val localsDecls : TermIdent = TermIdent(procDataDecl("locals_vdecls"))
 
   val varContext : Term =
     TermTuple(
-      IsaTermUtil.appendList(constDecls, globalDecls),
+      IsaTermUtil.appendList(globalDataAccessor.constDecls, globalDataAccessor.globalDecls),
       IsaTermUtil.appendList(paramsDecls, localsDecls)
     )
 
@@ -84,37 +65,3 @@ class IsaBoogieProcAccessor(
 
 }
 
-case object IsaBoogieProcAccessor {
-
-  private val constantsOrder : Seq[BoogieConstGlobal] =
-    Seq(NullConst,
-      AllocatedConst,
-      ZeroMaskConst,
-      ZeroPMaskConst,
-      NoPermConst,
-      FullPermConst,
-      EmptyFrameConst)
-
-  private val constantsIdMap : Map[BoogieConstGlobal, Int] =
-    constantsOrder.zipWithIndex.toMap
-
-  private val globalsOrder :  Seq[BoogieConstGlobal] =
-    Seq(HeapGlobalVar, MaskGlobalVar)
-
-  private val globalsOrderMap : Map[BoogieConstGlobal, Int] =
-    globalsOrder.zipWithIndex.toMap
-
-}
-
-sealed trait BoogieConstGlobal
-
-case object NullConst extends BoogieConstGlobal
-case object AllocatedConst extends BoogieConstGlobal
-case object ZeroMaskConst extends BoogieConstGlobal
-case object ZeroPMaskConst extends BoogieConstGlobal
-case object NoPermConst extends BoogieConstGlobal
-case object FullPermConst extends BoogieConstGlobal
-case object EmptyFrameConst extends BoogieConstGlobal
-
-case object HeapGlobalVar extends BoogieConstGlobal
-case object MaskGlobalVar extends BoogieConstGlobal
