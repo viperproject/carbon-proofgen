@@ -55,7 +55,7 @@ class ProofGenInterface(val proofDir: Path, val vprProg: sil.Program) {
         /* Viper program representation */
         val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
 
-        val (theory, mAccessor) = IsaVprProgramGenerator.isaProgramRepr(m, methodProgTheory(m), varTranslation)
+        val (theory, mAccessor) = IsaVprProgramGenerator.isaProgramRepr(m, methodProgTheory(m), varTranslation, vprProgGlobalData)
         StoreTheory.storeTheory(theory, dir)
 
         /* Viper <-> Boogie proof */

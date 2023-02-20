@@ -3,20 +3,18 @@ import isabelle.ast.{IsaUtil, Term, TermIdent}
 import viper.silver.ast.Field
 import viper.silver.{ast => sil}
 
-case class DefaultIsaViperGlobalDataAccessor(
-                                         override val theoryName: String,
-                                         theoryDirPath: String,
-                                         vprProgramIdent: String,
-                                         fieldsIdent: String,
-                                         private val fieldToTerm : Map[sil.Field, Term]) extends IsaViperGlobalDataAccessor {
+case class DefaultIsaViperGlobalDataAccessor( override val theoryName: String,
+                                              vprProgramIdent: String,
+                                              fieldsIdent: String,
+                                              private val fieldToTerm : Map[sil.Field, Term],
+                                              fieldRelIdent: String) extends IsaViperGlobalDataAccessor {
+  private def qualifyName(name: String) =  IsaUtil.qualifyName(theoryName, name)
 
-  val theoryPath = theoryDirPath+"/"+theoryName
+  override val vprProgram: TermIdent = TermIdent(qualifyName(vprProgramIdent))
 
-  private def qualifyName(name: String) =  IsaUtil.qualifyName(theoryPath, name)
-
-  override def vprProgram(): TermIdent = TermIdent(qualifyName(vprProgramIdent))
-
-  override def fields(): TermIdent = TermIdent(qualifyName(fieldsIdent))
+  override val fields: TermIdent = TermIdent(qualifyName(fieldsIdent))
+  override val fieldRel: TermIdent = TermIdent(qualifyName(fieldRelIdent))
   override def fieldIdent(f: Field): Term = fieldToTerm.get(f).get
   override def fieldLookupLemma(fieldName: String): String = ???
+
 }

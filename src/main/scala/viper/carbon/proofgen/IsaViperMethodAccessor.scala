@@ -5,9 +5,10 @@ import viper.silver.{ast => sil}
 
 trait IsaViperGlobalDataAccessor {
 
-  val theoryName: String
-  def vprProgram() : TermIdent
-  def fields() : TermIdent
+  def theoryName : String
+  def vprProgram : TermIdent
+  def fields : TermIdent
+  def fieldRel : TermIdent
   def fieldIdent(f: sil.Field) : Term
   def fieldLookupLemma(fieldName: String) : String
 
@@ -15,9 +16,9 @@ trait IsaViperGlobalDataAccessor {
 
 trait IsaViperMethodAccessor {
 
-  val theoryName: String
-  def methodBody() : TermIdent
-  def methodArgs() : TermIdent
-}
+  def theoryName: String
+  def globalDataAccessor : IsaViperGlobalDataAccessor
+  def methodBody : TermIdent
+  def methodArgs : TermIdent
 
-case class IsaViperProgAccessor(globalDataAccessor: IsaViperGlobalDataAccessor, methodAccessor: IsaViperMethodAccessor)
+}

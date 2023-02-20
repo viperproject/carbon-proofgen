@@ -3,6 +3,7 @@ package viper.carbon.proofgen
 import isabelle.ast.{IsaUtil, TermIdent}
 
 case class DefaultIsaMethodAccessor(override val theoryName: String,
+                                    override val globalDataAccessor: IsaViperGlobalDataAccessor,
                                     methodBodyIdent: String,
                                     methodArgsIdent: String) extends IsaViperMethodAccessor  {
 
@@ -11,4 +12,5 @@ case class DefaultIsaMethodAccessor(override val theoryName: String,
   override val methodBody: TermIdent = TermIdent(qualifyName(methodBodyIdent))
 
   override val methodArgs: TermIdent  = TermIdent(qualifyName(methodArgsIdent))
+
 }
