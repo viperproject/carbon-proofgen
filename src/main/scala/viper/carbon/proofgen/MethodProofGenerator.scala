@@ -192,10 +192,13 @@ case class MethodProofGenerator(
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
     outerDecls += varContextWfBplLemma
 
-    val lookupVarRelTac = "tac1"
-    val litRelTac = "tac2"
+    val lookupVarRelTac = "lookup_var_rel_tac"
+    val simpWithTrDef = "simp_with_tr_def_tac"
+    val simpWithTyReprDef = "simp_with_ty_repr_def_tac"
     val typeSafetyThmMap = "type_safety_thm_map"
     val expRelInfo = "exp_rel_info"
+    val expWfRelInfo = "exp_wf_rel_info"
+
     val stmtRelInfo = "stmt_rel_info"
     val stmtRelHints = "stmt_rel_hints"
 
@@ -204,10 +207,14 @@ case class MethodProofGenerator(
     val fieldRelTac  = "field_rel_tac"
     val fieldLookupTac = "field_lookup_tac"
 
+    val fieldAccInitTac = "field_acc_init_tac"
+    val fieldAccessWfRelTacAuxInst = "field_access_wf_rel_tac_aux_inst"
+
     val mlInitializationCode =
       Seq(
         MLUtil.defineVal(lookupVarRelTac, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), definitionLemmaFromName(varRelationListName))))),
-        MLUtil.defineVal(litRelTac, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName))))),
+        MLUtil.defineVal(simpWithTrDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName))))),
+        MLUtil.defineVal(simpWithTyReprDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(tyReprBasic.toString))))),
         MLUtil.defineVal(typeSafetyThmMap, ViperBoogieMLUtil.genTypeSafetyThmMap(
           isaToMLThm(funInterpWfBpl),
           isaToMLThm(globalBplData.funDeclsWf.toString),
@@ -257,7 +264,7 @@ case class MethodProofGenerator(
         MLUtil.defineVal(expRelInfo, ViperBoogieMLUtil.createExpRelInfo(
           typeSafetyThmMap,
           lookupVarRelTac,
-          litRelTac,
+          simpWithTrDef,
           lookupVarThms = "lookupThms",
           field_access_rel_pre_tac =
             ViperBoogieMLUtil.fieldAccessRelPreTac(
@@ -268,13 +275,33 @@ case class MethodProofGenerator(
             )
         )),
 
+        MLUtil.defineFun(fieldAccInitTac, Seq("ctxt"), MLUtil.resolveTac("ctxt",
+          MLUtil.isaToMLThms(Seq(ProofUtil.OF("syn_field_access_wf_rel", Seq(bplCtxtWfLabel, "wf_ty_repr_basic"))))
+        )),
+
+        MLUtil.defineVal(fieldAccessWfRelTacAuxInst,
+          ViperBoogieMLUtil.fieldAccessWfRelTacAuxInst(
+            fieldAccInitTac = fieldAccInitTac,
+            lookupMaskVarTac = simpWithTrDef,
+            fieldRelTac = fieldRelTac,
+            fieldLookupTac = fieldLookupTac,
+            tyArgsEqTac =  simpWithTyReprDef,
+            expRelInfo = expRelInfo
+          )
+        ),
+
+        MLUtil.defineVal(expWfRelInfo,
+          ViperBoogieMLUtil.createExpWfRelInfo(fieldAccessWfRelTacAuxInst)
+          ),
+
         MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
           isaToMLThm(bplCtxtWfLabel),
           isaToMLThm(definitionLemmaFromName(translationRecordName)),
           lookupVarRelTac,
           "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))))
         ),
-        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateHintsInML(stmtProofHint, boogieProg, expRelInfo))
+
+        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
       )
 
     outerDecls += MLDecl(mlInitializationCode, MLNormal)

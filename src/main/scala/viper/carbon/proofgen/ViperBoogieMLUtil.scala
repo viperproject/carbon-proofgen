@@ -19,9 +19,15 @@ object ViperBoogieMLUtil {
       )
     )
 
+  def createExpWfRelInfo(fieldAccessWfRelSynTac: String) : String =
+    MLUtil.createRecord(Seq(("field_access_wf_rel_syn_tac", fieldAccessWfRelSynTac)))
+
   def fieldAccessRelPreTac(heapReadWfTac: String, heapReadMatchTac: String, fieldRelTac: String, fieldLookupTac: String) : String =
     MLUtil.app("field_access_rel_pre_tac_aux", Seq(heapReadWfTac, heapReadMatchTac, fieldRelTac, fieldLookupTac))
 
+  def fieldAccessWfRelTacAuxInst(fieldAccInitTac: String, lookupMaskVarTac: String, fieldRelTac: String, fieldLookupTac: String,
+                                 tyArgsEqTac: String, expRelInfo: String) =
+    MLUtil.app("field_access_wf_rel_tac_aux", Seq(fieldAccInitTac, lookupMaskVarTac, fieldRelTac, fieldLookupTac, tyArgsEqTac, expRelInfo))
 
   def createStmtRelInfo(ctxtWfThm: String, trDefThm: String, varRelTac: String, varContextVprTac: String) : String =
       MLUtil.createRecord(Seq(

@@ -6,6 +6,7 @@ case class Proof(methods: Seq[String])
 object ProofUtil {
 
   def OF(thm: String, instThm: String) : String = s"$thm[OF $instThm]"
+  def OF(thm: String, instThms: Seq[String]) : String = s"$thm[OF ${instThms.mkString(" ")}]"
 
   def applyTac(tactic: String) : String = s"apply ($tactic)"
 
