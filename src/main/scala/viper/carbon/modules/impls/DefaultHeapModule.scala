@@ -14,7 +14,7 @@ import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
 import viper.carbon.proofgen.hints.ComponentProofHint
 import viper.carbon.verifier.Verifier
-import viper.carbon.utility.{MapDesugarHelper, MapRep}
+import viper.carbon.utility.{PolyMapDesugarHelper, PolyMapRep}
 import viper.silver.ast.utility.QuantifiedPermissions.QuantifiedPermissionAssertion
 import viper.silver.verifier.PartialVerificationError
 
@@ -104,10 +104,7 @@ class DefaultHeapModule(val verifier: Verifier)
 
   override def refType = NamedType("Ref")
 
-  override def heapMapDesugarHelper = MapDesugarHelper(
-    refType,
-    (t1: Type, t2: Type) => NamedType(fieldTypeName, Seq(t1, t2)).asInstanceOf[Type],
-    heapNamespace)
+  override def fieldTypeConstructor = (2, (ts: Seq[Type]) => NamedType(fieldTypeName, ts).asInstanceOf[Type])
 
   override def preamble = {
     val obj = LocalVarDecl(Identifier("o")(axiomNamespace), refType)
@@ -119,7 +116,6 @@ class DefaultHeapModule(val verifier: Verifier)
     val predField = LocalVarDecl(Identifier("pm_f")(axiomNamespace),
       predicateVersionFieldType("C"))
     val useSumOfStatesAxioms = loopModule.sumOfStatesAxiomRequired
-    val heapDesugaringRep : MapRep = heapMapDesugarHelper.desugarMap(heapTyp, (readHeapName, updateHeapName), t1 => t1.freeTypeVars(1))
 
     TypeDecl(refType) ++
       GlobalVarDecl(heapName, heapTyp) ++
@@ -154,7 +150,11 @@ class DefaultHeapModule(val verifier: Verifier)
       } ++
       {
         if(!verifier.usePolyMapsInEncoding) {
-          heapDesugaringRep.select ++ heapDesugaringRep.store
+          val heapMapDesugarHelper = PolyMapDesugarHelper(refType, fieldTypeConstructor, heapNamespace)
+          val heapDesugaringRep : PolyMapRep = heapMapDesugarHelper.desugarPolyMap(heapTyp, (readHeapName, updateHeapName), t1 => t1.freeTypeVars(1))
+          heapDesugaringRep.select ++
+          heapDesugaringRep.store ++
+          MaybeCommentedDecl("Read and update axioms for the heap", heapDesugaringRep.axioms)
         } else {
           Nil
         }
@@ -185,14 +185,6 @@ class DefaultHeapModule(val verifier: Verifier)
       val identicalFuncApp = FuncApp(identicalOnKnownLocsName, vars map (_.l), Bool)
       val identicalLiberalFuncApp = FuncApp(identicalOnKnownLocsLiberalName, vars map (_.l), Bool)
 
-      val readAndUpdateHeapAxioms =
-        if(!verifier.usePolyMapsInEncoding) {
-          MaybeCommentedDecl("Read and update axioms for the heap", heapDesugaringRep.axioms)
-        } else {
-          Nil
-        }
-
-      readAndUpdateHeapAxioms ++
       identicalOnKnownLocsAxioms(false) ++
         MaybeCommentedDecl("Updated Heaps are Successor Heaps", {
           val value = LocalVarDecl(Identifier("v"), TypeVar("B"));
@@ -504,6 +496,10 @@ class DefaultHeapModule(val verifier: Verifier)
   }
 
 
+  /**
+    * @param maskField the field with which the predicate mask is accessed in the heap
+    * @param mask the predicate mask itself (for example, Heap[null, [[maskField]]])
+    */
   case class PredicateMask(maskField: Exp, mask: Exp)
 
   private def predicateMask(loc: sil.PredicateAccess) : PredicateMask = {
@@ -555,12 +551,12 @@ class DefaultHeapModule(val verifier: Verifier)
     if(verifier.usePolyMapsInEncoding) {
       MapSelect(h, Seq(o, f))
     } else {
-      /*  Bool is not the correct type. To obtain the correct type one would have to infer the type of f. Since
+      /**  Bool is not the correct type. To obtain the correct type one would have to infer the type of f. Since
           Boogie type checks the generated Boogie program, there is no issue (moreover, primitive return types in
-          @{code FuncApp} are ignored in the default case; the return type is not required for Boogie's type checker in
+          {@code FuncApp} are ignored in the default case; the return type is not required for Boogie's type checker in
           general).
        */
-      FuncApp( if(isPMask) { permModule.knownFoldedMaskRep.selectId } else { readHeapName }, Seq(h,o,f), Bool)
+      FuncApp( if(isPMask) { permModule.pmaskTypeDesugared.selectId } else { readHeapName }, Seq(h,o,f), Bool)
     }
   }
 
@@ -588,7 +584,7 @@ class DefaultHeapModule(val verifier: Verifier)
     if(verifier.usePolyMapsInEncoding)
       MapUpdate(heap, Seq(rcv, field), newVal)
     else
-      FuncApp(if(isPMask) { permModule.knownFoldedMaskRep.storeId } else { updateHeapName }, Seq(heap, rcv, field, newVal), Bool)
+      FuncApp(if(isPMask) { permModule.pmaskTypeDesugared.storeId } else { updateHeapName }, Seq(heap, rcv, field, newVal), Bool)
   }
 
   override def translateLocationAccess(f: sil.LocationAccess): Exp = {

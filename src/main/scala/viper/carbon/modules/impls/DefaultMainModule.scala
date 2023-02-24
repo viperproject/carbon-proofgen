@@ -21,6 +21,7 @@ import viper.carbon.proofgen.hints.StmtProofHint
 import viper.carbon.verifier.Environment
 import viper.silver.verifier.{TypecheckerWarning, errors}
 import viper.carbon.verifier.Verifier
+import viper.silver.ast.Quasihavoc
 import viper.silver.ast.utility.rewriter.Traverse
 import viper.silver.reporter.{Reporter, WarningsDuringTypechecking}
 
@@ -73,13 +74,14 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             }
             res
           }
+          case q: Quasihavoc => desugarQuasihavoc(q)
         },
         Traverse.TopDown)
     )
 
-    val backendFuncs = new mutable.HashSet[sil.BackendFunc]()
-    p.visit{
-      case sf: sil.BackendFuncApp => backendFuncs.add(sf.backendFunc)
+    val backendFuncs = new mutable.HashSet[sil.DomainFunc]()
+    for (d <- p.domains) {
+      backendFuncs.addAll(d.functions.filter(f => f.interpretation.isDefined))
     }
 
     // We record the Boogie names of all Viper variables in this map.
@@ -271,5 +273,44 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
     val res = translateDomain(d)
     env = null
     res
+  }
+
+  /***
+    * Desugar a quasihavoc into an exhale followed by an inhale statement
+    * @param q should be a field or pedicate quasihavoc
+    * @return
+    */
+  private def desugarQuasihavoc(q: sil.Quasihavoc) = {
+    val curPermVarDecl = sil.LocalVarDecl("perm_temp_quasihavoc_", sil.Perm)()
+    val curPermVar = curPermVarDecl.localVar
+    val resourceCurPerm =
+      q.exp match {
+        case r : sil.FieldAccess =>
+          sil.FieldAccessPredicate(r, curPermVar)()
+        case r: sil.PredicateAccess =>
+          sil.PredicateAccessPredicate(r, curPermVar)()
+        case _ => sys.error("Not supported resource in quasihavoc")
+      }
+
+    val curPermInhExPermission =
+      sil.Seqn(
+        sil.LocalVarAssign(curPermVar, sil.CurrentPerm(q.exp)())() +:
+          Seq(
+            sil.Exhale(resourceCurPerm)(),
+            sil.Inhale(resourceCurPerm)()
+          )
+        ,
+        Seq(curPermVarDecl)
+      )()
+
+    q.lhs match {
+      case Some(cond) =>
+        sil.If(cond,
+          curPermInhExPermission,
+          sil.Seqn(Seq(), Seq())()
+        )()
+      case None =>
+        sil.Seqn(curPermInhExPermission, Seq())()
+    }
   }
 }

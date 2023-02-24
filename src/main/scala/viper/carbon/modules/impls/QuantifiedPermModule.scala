@@ -37,6 +37,7 @@ import viper.carbon.boogie.Func
 import viper.carbon.boogie.TypeAlias
 import viper.carbon.boogie.FuncApp
 import viper.carbon.proofgen.hints.ComponentProofHint
+import viper.carbon.utility.PolyMapDesugarHelper
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
 import viper.silver.ast.Implies
@@ -128,15 +129,13 @@ class QuantifiedPermModule(val verifier: Verifier)
   private val readPMaskName = Identifier("readPMask")
   private val updatePMaskName = Identifier("updPMask")
 
-  override val knownFoldedMaskRep = KnownFoldedMaskRep(NamedType(pmaskTypeName), readPMaskName, updatePMaskName)
+  override val pmaskTypeDesugared = PMaskDesugaredRep(readPMaskName, updatePMaskName)
 
   override def preamble = {
     val obj = LocalVarDecl(Identifier("o")(axiomNamespace), refType)
     val field = LocalVarDecl(Identifier("f")(axiomNamespace), fieldType)
     val permInZeroMask = currentPermission(zeroMask, obj.l, field.l)
     val permInZeroPMask = currentPermission(zeroPMask, obj.l, field.l, true)
-    val maskRep = heapMapDesugarHelper.desugarMap(maskType, (readMaskName, updateMaskName), _ => permType)
-    val pmaskRep = heapMapDesugarHelper.desugarMap(pmaskType, (readPMaskName, updatePMaskName), _ => Bool)
 
     // permission type
     TypeAlias(permType, Real) ::
@@ -177,6 +176,10 @@ class QuantifiedPermModule(val verifier: Verifier)
       Func(permConstructName, Seq(LocalVarDecl(Identifier("a"), Real), LocalVarDecl(Identifier("b"), Real)), permType) :: Nil ++
       //read and update mask/pmask
       (if(!verifier.usePolyMapsInEncoding) {
+        val maskPolyMapDesugarHelper = PolyMapDesugarHelper(refType, fieldTypeConstructor, namespace)
+        val maskRep = maskPolyMapDesugarHelper.desugarPolyMap(maskType, (readMaskName, updateMaskName), _ => permType)
+        val pmaskRep = maskPolyMapDesugarHelper.desugarPolyMap(pmaskType, (readPMaskName, updatePMaskName), _ => Bool)
+
         MaybeCommentedDecl("read and update permission mask",
           maskRep.select ++ maskRep.store ++ maskRep.axioms) ++
         MaybeCommentedDecl("read and update known-folded mask",
@@ -257,7 +260,6 @@ class QuantifiedPermModule(val verifier: Verifier)
 
   override def reset = {
     mask = originalMask
-    allowLocationAccessWithoutPerm = false
     qpId = 0
     inverseFuncs = new ListBuffer[Func]();
     rangeFuncs = new ListBuffer[Func]();
@@ -502,9 +504,8 @@ class QuantifiedPermModule(val verifier: Verifier)
               validateTriggers(translatedLocals,Seq(Trigger(Seq(translateLocationAccess(translatedRecv, translatedLocation))),Trigger(Seq(currentPermission(qpMask,translatedRecv , translatedLocation))))) else Seq(recvTrigger)
 
             val providedTriggers : Seq[Trigger] = validateTriggers(translatedLocals, translatedTriggers)
-            // add default trigger if triggers were generated automatically
-            val tr1: Seq[Trigger] = /*if (e.info.getUniqueInfo[sil.AutoTriggered.type].isDefined)*/ candidateTriggers ++ providedTriggers /*else providedTriggers*/
 
+            val tr1: Seq[Trigger] = funcPredModule.rewriteTriggersToExpressionsUsedInTriggers(candidateTriggers ++ providedTriggers)
 
 
             //inverse assumptions
@@ -662,8 +663,8 @@ class QuantifiedPermModule(val verifier: Verifier)
             lazy val candidateTriggers : Seq[Trigger] = validateTriggers(translatedLocals, Seq(Trigger(translateLocationAccess(predAccPred.loc)),Trigger(currentPermission(translateNull, translatedLocation))))
 
             val providedTriggers : Seq[Trigger] = validateTriggers(translatedLocals, translatedTriggers)
-            // add default trigger if triggers were generated automatically
-            val tr1: Seq[Trigger] = /*if (e.info.getUniqueInfo[sil.AutoTriggered.type].isDefined)*/ candidateTriggers ++ providedTriggers /*else providedTriggers*/
+
+            val tr1: Seq[Trigger] = funcPredModule.rewriteTriggersToExpressionsUsedInTriggers(candidateTriggers ++ providedTriggers)
 
             var equalities : Exp =  TrueLit()
             for (i <- 0 until funApps.length) {
@@ -1023,9 +1024,8 @@ class QuantifiedPermModule(val verifier: Verifier)
              validateTriggers(translatedLocals, Seq(Trigger(Seq(translateLocationAccess(translatedRecv, translatedLocation))), Trigger(Seq(currentPermission(qpMask, translatedRecv, translatedLocation))))) else Seq(recvTrigger)
 
            val providedTriggers: Seq[Trigger] = validateTriggers(translatedLocals, translatedTriggers)
-           // add default trigger if triggers were generated automatically
-           val tr1: Seq[Trigger] = /*if (e.info.getUniqueInfo[sil.AutoTriggered.type].isDefined)*/ candidateTriggers ++ providedTriggers /*else providedTriggers*/
 
+           val tr1: Seq[Trigger] = funcPredModule.rewriteTriggersToExpressionsUsedInTriggers(candidateTriggers ++ providedTriggers)
 
            val assm1Rhs = (0 until invFuns.length).foldLeft(rangeFunRecvApp: Exp)((soFar, i) => BinExp(soFar, And, FuncApp(invFuns(i).name, Seq(translatedRecv), invFuns(i).typ) === translatedLocals(i).l))
 
@@ -1186,8 +1186,8 @@ class QuantifiedPermModule(val verifier: Verifier)
            lazy val candidateTriggers : Seq[Trigger] = validateTriggers(translatedLocals, Seq(Trigger(translateLocationAccess(predAccPred.loc)),Trigger(currentPermission(translateNull, translatedLocation))))
 
            val providedTriggers : Seq[Trigger] = validateTriggers(translatedLocals, translatedTriggers)
-           // add default trigger if triggers were generated automatically
-           val tr1: Seq[Trigger] = /*if (e.info.getUniqueInfo[sil.AutoTriggered.type].isDefined)*/ candidateTriggers ++ providedTriggers /*else providedTriggers*/
+
+           val tr1: Seq[Trigger] = funcPredModule.rewriteTriggersToExpressionsUsedInTriggers(candidateTriggers ++ providedTriggers)
 
            val equalities = (0 until funApps.length).foldLeft(TrueLit(): Exp)((soFar, i) => BinExp(soFar, And, funApps(i) === translatedLocals(i).l))
 
@@ -1373,10 +1373,14 @@ class QuantifiedPermModule(val verifier: Verifier)
     currentPermission(maskExp, rcv, location)
   }
   def currentPermission(mask: Exp, rcv: Exp, location: Exp, isPMask: Boolean = false): Exp = {
-    if(verifier.usePolyMapsInEncoding)
+    if(verifier.usePolyMapsInEncoding) {
       MapSelect(mask, Seq(rcv, location))
-    else
-      FuncApp( if(isPMask) { readPMaskName } else { readMaskName }, Seq(mask, rcv, location), permType)
+    } else {
+      FuncApp( if(isPMask) { readPMaskName } else { readMaskName },
+               Seq(mask, rcv, location),
+               if(isPMask) { Bool } else { permType }
+      )
+    }
   }
 
   override def permissionLookup(la: sil.LocationAccess) : Exp = {
@@ -1525,28 +1529,14 @@ class QuantifiedPermModule(val verifier: Verifier)
     permLe(b, a, forField)
   }
 
-  // AS: this is a trick to avoid well-definedness checks for the outermost heap dereference in an AccessPredicate node (since it describes the location to which permission is provided).
-  // The trick is somewhat fragile, in that it relies on the ordering of the calls to this method (but generally works out because of the recursive traversal of the assertion).
-  private var allowLocationAccessWithoutPerm = false
-  override def simplePartialCheckDefinednessBefore(e: sil.Exp, error: PartialVerificationError, makeChecks: Boolean): Stmt = {
+  override def simplePartialCheckDefinednessAfter(e: sil.Exp, error: PartialVerificationError, makeChecks: Boolean): Stmt = {
 
     val stmt: Stmt = if(makeChecks) (
       e match {
-        case sil.CurrentPerm(loc) =>
-          allowLocationAccessWithoutPerm = true
-          Nil
-        case sil.AccessPredicate(loc, perm) =>
-          allowLocationAccessWithoutPerm = true
-          Nil
         case fa@sil.LocationAccess(_) =>
-          if (allowLocationAccessWithoutPerm) {
-            allowLocationAccessWithoutPerm = false
-            Nil
-          } else {
-              Assert(hasDirectPerm(fa), error.dueTo(reasons.InsufficientPermission(fa)))
-          }
+          Assert(hasDirectPerm(fa), error.dueTo(reasons.InsufficientPermission(fa)))
         case sil.PermDiv(a, b) =>
-            Assert(translateExp(b) !== IntLit(0), error.dueTo(reasons.DivisionByZero(b)))
+          Assert(translateExp(b) !== IntLit(0), error.dueTo(reasons.DivisionByZero(b)))
         case sil.PermPermDiv(a, b) =>
           Assert(translatePerm(b) !== RealLit(0.0), error.dueTo(reasons.DivisionByZero(b)))
         case _ => Nil

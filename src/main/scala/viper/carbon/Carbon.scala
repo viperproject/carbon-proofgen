@@ -28,6 +28,8 @@ class CarbonFrontend(override val reporter: Reporter,
 
   private var carbonInstance: CarbonVerifier = _
 
+  override def backendTypeFormat: Option[String] = Some("Boogie")
+
   def createVerifier(fullCmd: String) = {
     carbonInstance = CarbonVerifier(reporter, Seq("Arguments: " -> fullCmd))
 
@@ -93,8 +95,8 @@ class CarbonConfig(args: Seq[String]) extends SilFrontendConfig(args, "Carbon") 
   )
 
   val desugarPolymorphicMaps = opt[Boolean]("desugarPolymorphicMaps",
-    descr = "Do not use polymorphic maps in the Boogie encoding and instead desugar them (default: true).",
-    default = Some(true),
+    descr = "Do not use polymorphic maps in the Boogie encoding and instead desugar them (default: false).",
+    default = Some(false),
     noshort = true
   )
 

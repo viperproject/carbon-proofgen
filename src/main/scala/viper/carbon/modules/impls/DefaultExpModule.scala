@@ -106,7 +106,7 @@ class DefaultExpModule(val verifier: Verifier) extends ExpModule with Definednes
         substitutedBody
       case sil.CondExp(cond, thn, els) =>
         CondExp(translateExp(cond), translateExp(thn), translateExp(els))
-      case sil.Exists(vars, triggers, exp) => {
+      case q@sil.Exists(vars, triggers, exp) => {
         // alpha renaming, to avoid clashes in context
         val renamedVars: Seq[sil.LocalVarDecl] = vars map (v => {
           val v1 = env.makeUniquelyNamed(v); env.define(v1.localVar); v1
@@ -116,11 +116,15 @@ class DefaultExpModule(val verifier: Verifier) extends ExpModule with Definednes
           (t => (funcPredModule.toExpressionsUsedInTriggers(t.exps map (e => translateExp(renaming(e)))))
             map (Trigger(_)) // build a trigger for each sequence element returned (in general, one original trigger can yield multiple alternative new triggers)
             )).flatten
-        val res = Exists(renamedVars map translateLocalVarDecl, ts, translateExp(renaming(exp)))
+        val weight = q.info match {
+          case sil.WeightedQuantifier(value) => Some(value)
+          case _ => None
+        }
+        val res = Exists(renamedVars map translateLocalVarDecl, ts, translateExp(renaming(exp)), weight)
         renamedVars map (v => env.undefine(v.localVar))
         res
       }
-      case sil.Forall(vars, triggers, exp) => {
+      case q@sil.Forall(vars, triggers, exp) => {
         // alpha renaming, to avoid clashes in context
         val renamedVars: Seq[sil.LocalVarDecl] = vars map (v => {
           val v1 = env.makeUniquelyNamed(v); env.define(v1.localVar); v1
@@ -130,7 +134,11 @@ class DefaultExpModule(val verifier: Verifier) extends ExpModule with Definednes
           (t => (funcPredModule.toExpressionsUsedInTriggers(t.exps map (e => translateExp(renaming(e)))))
             map (Trigger(_)) // build a trigger for each sequence element returned (in general, one original trigger can yield multiple alternative new triggers)
             )).flatten
-        val res = Forall(renamedVars map translateLocalVarDecl, ts, translateExp(renaming(exp)))
+        val weight = q.info match {
+          case sil.WeightedQuantifier(value) => Some(value)
+          case _ => None
+        }
+        val res = Forall(renamedVars map translateLocalVarDecl, ts, translateExp(renaming(exp)), Nil, weight)
         renamedVars map (v => env.undefine(v.localVar))
         res
       }
@@ -383,9 +391,10 @@ class DefaultExpModule(val verifier: Verifier) extends ExpModule with Definednes
         def translate(e: sil.Exp): Seqn = {
           val checks = components map (_.partialCheckDefinedness(e, error, makeChecks = makeChecks))
           val stmt = checks map (_._1())
+
           // AS: note that some implementations of the definedness checks rely on the order of these calls (i.e. parent nodes are checked before children, and children *are* always checked after parents.
-          val stmt2 = for (sub <- e.subnodes if sub.isInstanceOf[sil.Exp]) yield {
-            checkDefinednessImpl(sub.asInstanceOf[sil.Exp], error, makeChecks = makeChecks)
+          val stmt2 = for (sub <- subexpressionsForDefinedness(e)) yield {
+            checkDefinednessImpl(sub, error, makeChecks = makeChecks)
           }
           val stmt3 = checks map (_._2())
 
@@ -446,6 +455,17 @@ class DefaultExpModule(val verifier: Verifier) extends ExpModule with Definednes
           case _ =>
             translate(e)
         }
+    }
+  }
+
+  /***
+    * Returns subexpressions that are relevant for definedness checks
+    */
+  private def subexpressionsForDefinedness(e: sil.Exp) : Seq[sil.Exp] = {
+    e match {
+      case sil.AccessPredicate(res : sil.LocationAccess, perm) => res.subExps ++ Seq(perm)
+      case sil.CurrentPerm(res: sil.LocationAccess) => res.subExps
+      case _ => e.subExps
     }
   }
 
