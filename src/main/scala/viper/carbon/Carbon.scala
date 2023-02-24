@@ -113,5 +113,11 @@ class CarbonConfig(args: Seq[String]) extends SilFrontendConfig(args, "Carbon") 
     noshort = true
   )
 
+  validateOpt(genProofs, desugarPolymorphicMaps, disableAllocEncoding) {
+    case (Some(true), desugarPolyMapOption, disableAllocOption) if !desugarPolyMapOption.getOrElse(false) || !disableAllocOption.getOrElse(false) =>
+      Left(s"Option ${genProofs.name} option requires options ${desugarPolymorphicMaps.name} and ${disableAllocEncoding.name}")
+    case _ => Right()
+  }
+
   verify()
 }
