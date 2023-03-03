@@ -20,5 +20,6 @@ trait IsaViperMethodAccessor {
   def globalDataAccessor : IsaViperGlobalDataAccessor
   def methodBody : TermIdent
   def methodArgs : TermIdent
+  def origProgram: sil.Program
 
 }

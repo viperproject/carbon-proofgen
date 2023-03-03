@@ -8,14 +8,15 @@ object ViperBoogieMLUtil {
     MLUtil.app("gen_type_safety_thm_map", Seq(funInterpWf, funDeclsWf, varContextWf, stateWf))
   }
 
-  def createExpRelInfo(typeSafetyThmMap: String, lookupVarRelTac: String, vprLitBplExpRelTac: String, lookupVarThms: String, field_access_rel_pre_tac: String) : String =
+  def createExpRelInfo(typeSafetyThmMap: String, lookupVarRelTac: String, vprLitBplExpRelTac: String, lookupVarThms: String, lookupFunBplThms: String, fieldAccessRelPreTac: String) : String =
     MLUtil.createRecord(
       Seq(
         ("type_safety_thm_map", typeSafetyThmMap),
         ("lookup_var_rel_tac", lookupVarRelTac),
         ("vpr_lit_bpl_exp_rel_tac", vprLitBplExpRelTac),
         ("lookup_var_thms", lookupVarThms),
-        ("field_access_rel_pre_tac", field_access_rel_pre_tac)
+        ("lookup_fun_bpl_thms", lookupFunBplThms),
+        ("field_access_rel_pre_tac", fieldAccessRelPreTac)
       )
     )
 

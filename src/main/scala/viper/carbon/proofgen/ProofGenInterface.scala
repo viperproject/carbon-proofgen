@@ -1,19 +1,24 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{IsaPrettyPrinter, Theory}
-
 import java.nio.file.{Files, Path, Paths}
 import viper.silver.{ast => sil}
-import isabelle.{ast => isa}
 import viper.carbon.boogie.Procedure
+import viper.carbon.modules.{HeapModule, PermModule}
+import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.StmtProofHint
 import viper.carbon.verifier.Environment
 
-import java.nio.charset.StandardCharsets
-import scala.collection.mutable
-
 //a directory with path proofGenDir must exist
-class ProofGenInterface(val proofDir: Path, val vprProg: sil.Program) {
+
+case class CarbonModules(
+                        heapModule: HeapModule,
+                        permModule: PermModule
+                        )
+class ProofGenInterface( val proofDir: Path,
+                         val vprProg: sil.Program,
+                         val carbonModules: CarbonModules) {
+
+  val funProofGenInterface = new FunctionProofGenInterface(carbonModules.heapModule, carbonModules.permModule)
 
   val boogieProofDirName : String = "boogie_proofs"
   val boogieProofDir : Path = proofDir.resolve(boogieProofDirName)
@@ -55,7 +60,7 @@ class ProofGenInterface(val proofDir: Path, val vprProg: sil.Program) {
         /* Viper program representation */
         val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
 
-        val (theory, mAccessor) = IsaVprProgramGenerator.isaProgramRepr(m, methodProgTheory(m), varTranslation, vprProgGlobalData)
+        val (theory, mAccessor) = IsaVprProgramGenerator.isaProgramRepr(m, methodProgTheory(m), varTranslation, vprProgGlobalData, vprProg)
         StoreTheory.storeTheory(theory, dir)
 
         /* Viper <-> Boogie proof */
@@ -75,7 +80,8 @@ class ProofGenInterface(val proofDir: Path, val vprProg: sil.Program) {
           mAccessor,
           varTranslation,
           bplProcAccessor,
-          bodyProofHint)
+          bodyProofHint,
+          funProofGenInterface)
 
         val relationalProofTheory = methodProofGenerator.generateProof()
 

@@ -1,6 +1,5 @@
 package viper.carbon.proofgen
 
-import isabelle.ast
 import viper.silver.{ast => sil}
 import isabelle.ast._
 
@@ -8,6 +7,7 @@ import scala.collection.mutable.ListBuffer
 import isabelle.ast.ProofUtil._
 import isabelle.ast.IsaUtil._
 import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa}
+import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{IfHint, LocalVarAssignHint, MLHintGenerator, SeqnProofHint, StmtProofHint, WhileHint}
 
 
@@ -16,7 +16,8 @@ case class MethodProofGenerator(
                                  vprProg: IsaViperMethodAccessor,
                                  vprTranslation: VarTranslation[sil.LocalVar],
                                  boogieProg: IsaBoogieProcAccessor,
-                                 stmtProofHint: StmtProofHint)
+                                 stmtProofHint: StmtProofHint,
+                                 functionProofGenInterface: FunctionProofGenInterface)
 {
 
   val globalBplData = boogieProg.globalDataAccessor
@@ -186,7 +187,7 @@ case class MethodProofGenerator(
             BoogieIsaTerm.wfTy(TermIdent(tId))
           )
         ),
-        Proof(Seq(using(boogieProg.varContextWfThm, byTac(simp))))
+        Proof(Seq((using(boogieProg.varContextWfThm, byTac(simp)) : String)))
       )
 
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
@@ -196,6 +197,9 @@ case class MethodProofGenerator(
     val simpWithTrDef = "simp_with_tr_def_tac"
     val simpWithTyReprDef = "simp_with_ty_repr_def_tac"
     val typeSafetyThmMap = "type_safety_thm_map"
+    val lookupVarBplThms = "lookup_var_bpl_thms"
+    val lookupFunBplThms = "lookup_fun_bpl_thms"
+
     val expRelInfo = "exp_rel_info"
     val expWfRelInfo = "exp_wf_rel_info"
 
@@ -225,9 +229,21 @@ case class MethodProofGenerator(
 
         //TODO: more fine-grained approach (specify required lookup theorems for different expressions)
         // TODO: take lookup theorems for constants and globals into account
-        MLUtil.defineVal("lookupThms", isaToMLThms(
-          boogieProg.getAllLocalVariables().map(l => boogieProg.getLookupThyThm(l)).toSeq)
-        ),
+        MLUtil.defineVal(lookupVarBplThms, isaToMLThms(
+          /** include all Boogie variable lookup theorems that are required for Boogie expressions corresponding to Viper
+            * expressions
+            */
+          Seq(
+            boogieProg.getLookupThyThm(HeapGlobalVar),
+            boogieProg.getLookupThyThm(MaskGlobalVar)
+          ) ++
+          boogieProg.getAllLocalVariables().map(l => boogieProg.getLookupThyThm(l)).toSeq ++
+          vprProg.origProgram.fields.map(field => boogieProg.getLookupThyThm(FieldConst(field)))
+        )),
+
+        MLUtil.defineVal(lookupFunBplThms, isaToMLThms(
+          functionProofGenInterface.allFunBplLookupLemmasForViperExpressions(vprProg.origProgram.functions)
+        )),
 
         MLUtil.defineFun(heapReadWfTac, Seq("ctxt"),
           MLUtil.seqPrimeTac(
@@ -265,8 +281,9 @@ case class MethodProofGenerator(
           typeSafetyThmMap,
           lookupVarRelTac,
           simpWithTrDef,
-          lookupVarThms = "lookupThms",
-          field_access_rel_pre_tac =
+          lookupVarThms = lookupVarBplThms,
+          lookupFunBplThms = lookupFunBplThms,
+          fieldAccessRelPreTac =
             ViperBoogieMLUtil.fieldAccessRelPreTac(
               heapReadWfTac = heapReadWfTac,
               heapReadMatchTac = heapReadMatchTac,

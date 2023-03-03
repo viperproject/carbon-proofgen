@@ -63,7 +63,7 @@ object IsaVprProgramGenerator {
 
 
   //m must not be abstract
-  def isaProgramRepr(m: sil.Method, theoryName: String, varTranslation: VarTranslation[sil.LocalVar], globalDataAccessor: IsaViperGlobalDataAccessor) : (Theory, IsaViperMethodAccessor) =
+  def isaProgramRepr(m: sil.Method, theoryName: String, varTranslation: VarTranslation[sil.LocalVar], globalDataAccessor: IsaViperGlobalDataAccessor, vprProg: sil.Program) : (Theory, IsaViperMethodAccessor) =
   {
     if(m.body.isEmpty) {
       sys.error("invoked isaProgramRepr with abstrasct method")
@@ -89,7 +89,12 @@ object IsaVprProgramGenerator {
     )
 
     val theory = Theory(theoryName, Seq("Viper.ViperLang"), Seq(mBodyDecl, mArgsDecl))
-    val mAccessor = DefaultIsaMethodAccessor(theoryName = theoryName, globalDataAccessor, methodBodyIdent = mBodyDecl.name, methodArgsIdent = mArgsDecl.name)
+    val mAccessor = DefaultIsaMethodAccessor(
+      theoryName = theoryName,
+      globalDataAccessor = globalDataAccessor,
+      methodBodyIdent = mBodyDecl.name,
+      methodArgsIdent = mArgsDecl.name,
+      origProgram = vprProg)
 
     (theory, mAccessor)
   }
