@@ -32,7 +32,6 @@ case class MethodProofGenerator(
   val translationRecordName = "tr_vpr_bpl_0"
   val stateRelInitialName = "state_rel_initial"
 
-  val tyReprBasic = TermIdent("ty_repr_basic")
   val constReprBasic = TermIdent("const_repr_basic")
 
   val funReprConcrete = TermIdent("fun_repr_concrete")
@@ -73,7 +72,9 @@ case class MethodProofGenerator(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
       maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
       maskRead = TermApp(TermIdent("read_mask_concrete"), TermIdent("fun_repr_concrete")),
+      maskUpdate = TermApp(TermIdent("update_mask_concrete"), TermIdent("fun_repr_concrete")),
       heapRead = TermApp(TermIdent("read_heap_concrete"), TermIdent("fun_repr_concrete")),
+      heapUpdate = TermApp(TermIdent("update_heap_concrete"), TermIdent("fun_repr_concrete")),
       fieldTranslation = IsaTermUtil.mapOf(vprProg.globalDataAccessor.fieldRel),
       funTranslation = TermIdent("f_None"),
       varTranslation = IsaTermUtil.mapOf(TermIdent(varRelationListDef.name)),
@@ -101,10 +102,10 @@ case class MethodProofGenerator(
       AbbrevDecl(
         stateRelInitialName,
         None,
-        (Seq(TermIdent("Pr"), TermIdent("ctxt"), TermIdent("w"), TermIdent("ns")),
+        (Seq(TermIdent("A"), TermIdent("Pr"), TermIdent("ctxt"), TermIdent("w"), TermIdent("ns")),
           ViperBoogieRelationIsa.stateRelation(
             TermIdent("Pr"),
-            tyReprBasic,
+            TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A")),
             TermIdent(translationRecordDef.name),
             TermIdent("ctxt"),
             TranslationRecord.maskVar(TermIdent(translationRecordDef.name)),
@@ -121,7 +122,7 @@ case class MethodProofGenerator(
       AbbrevDecl(
         typeInterpBplName,
         None,
-        (Seq(), ViperBoogieRelationIsa.viperBoogieAbstractTypeInterp(tyReprBasic))
+        (Seq(TermIdent("A")), ViperBoogieRelationIsa.viperBoogieAbstractTypeInterp(TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A"))))
       )
 
     outerDecls += typeInterpBplAbbrev
@@ -147,21 +148,29 @@ case class MethodProofGenerator(
 
   private def mainProofLocale() : LocaleDecl = {
     val exprContextBpl = TermIdent("ectxt")
+    val totalContextVpr = TermIdent("ctxt_vpr")
 
+    val tyInterpEqBpl = "TyInterpBpl"
     val bplCtxtWfLabel = "CtxtWf"
 
     val funInterpWfBpl = "WfFunBpl"
 
+    val absvalInterpVpr = ViperTotalContext.absvalInterpTotal(totalContextVpr)
+
     val contextElem = ContextElem(
       //fixes
-      Seq( (exprContextBpl, ViperBoogieRelationIsa.expressionContextType(VarType("'a"))) ),
+      Seq( ( exprContextBpl, ViperBoogieRelationIsa.expressionContextType(VarType("'a")) ),
+           ( totalContextVpr, ViperIsaType.totalContext(VarType("'a")))
+      ),
 
       //assumes
       Seq( (Some("VarContextBpl [simp]"), TermBinary.eq(BoogieExpressionContext.varContext(exprContextBpl), TermIdent(varContextBoogieName))),
-           (Some("TyInterpBpl [simp]"), TermBinary.eq(BoogieExpressionContext.typeInterp(exprContextBpl), TermIdent(typeInterpBplName))),
+           (Some(s"$tyInterpEqBpl [simp]"), TermBinary.eq(BoogieExpressionContext.typeInterp(exprContextBpl),
+             TermApp(TermIdent(typeInterpBplName), absvalInterpVpr))
+           ),
         (Some(bplCtxtWfLabel), BoogieExpressionContext.wellFormed(
            viperProgram = vprProg.globalDataAccessor.vprProgram,
-           tyReprBpl = tyReprBasic,
+           tyReprBpl = TypeRepresentation.makeBasicTypeRepresentation(absvalInterpVpr),
            fieldMap = IsaTermUtil.mapOf(vprProg.globalDataAccessor.fieldRel),
            funMap = funReprConcrete,
            exprContext = exprContextBpl
@@ -170,7 +179,8 @@ case class MethodProofGenerator(
           typeInterp = BoogieExpressionContext.typeInterp(exprContextBpl),
           funDecls = globalBplData.funDecls,
           funInterp = BoogieExpressionContext.funInterp(exprContextBpl)
-          ))
+          )),
+        (Some ("VprProgramTotal [simp]"), TermBinary.eq(ViperTotalContext.programTotal(totalContextVpr), vprProg.globalDataAccessor.vprProgram))
       )
     )
 
@@ -203,6 +213,7 @@ case class MethodProofGenerator(
     val expRelInfo = "exp_rel_info"
     val expWfRelInfo = "exp_wf_rel_info"
 
+    val basicStmtRelInfo = "basic_stmt_rel_info"
     val stmtRelInfo = "stmt_rel_info"
     val stmtRelHints = "stmt_rel_hints"
 
@@ -218,7 +229,7 @@ case class MethodProofGenerator(
       Seq(
         MLUtil.defineVal(lookupVarRelTac, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), definitionLemmaFromName(varRelationListName))))),
         MLUtil.defineVal(simpWithTrDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName))))),
-        MLUtil.defineVal(simpWithTyReprDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(tyReprBasic.toString))))),
+        MLUtil.defineVal(simpWithTyReprDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(TypeRepresentation.tyReprBasicName))))),
         MLUtil.defineVal(typeSafetyThmMap, ViperBoogieMLUtil.genTypeSafetyThmMap(
           isaToMLThm(funInterpWfBpl),
           isaToMLThm(globalBplData.funDeclsWf.toString),
@@ -255,7 +266,7 @@ case class MethodProofGenerator(
         MLUtil.defineFun(heapReadMatchTac, Seq("ctxt"),
             MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(
               definitionLemmaFromName(translationRecordName),
-              definitionLemmaFromName(tyReprBasic.toString),
+              definitionLemmaFromName(TypeRepresentation.tyReprBasicName),
               definitionLemmaFromName("read_heap_concrete"))
             ), "ctxt"),
           ),
@@ -311,12 +322,19 @@ case class MethodProofGenerator(
           ViperBoogieMLUtil.createExpWfRelInfo(fieldAccessWfRelTacAuxInst)
           ),
 
-        MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
+        MLUtil.defineVal(basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
           isaToMLThm(bplCtxtWfLabel),
           isaToMLThm(definitionLemmaFromName(translationRecordName)),
           lookupVarRelTac,
-          "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))))
+          "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
+          MLUtil.isaToMLThm(tyInterpEqBpl)
+          )
         ),
+
+        MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
+          basicStmtRelInfo = basicStmtRelInfo,
+          atomicRelTac = "atomic_rel_inst_tac"
+        )),
 
         MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
       )
@@ -326,9 +344,9 @@ case class MethodProofGenerator(
     val mainTheorem = LemmaDecl("method_rel_proof",
       ContextElem.empty(),
       ViperBoogieRelationIsa.stmtRel(
-        stateRelEnter=ViperBoogieRelationIsa.stateRelEmpty(TermApp(TermIdent(stateRelInitialName), vprProg.globalDataAccessor.vprProgram, exprContextBpl)),
-        stateRelExit=TermApp(TermIdent(stateRelInitialName), vprProg.globalDataAccessor.vprProgram, exprContextBpl),
-        totalContextVpr=TermIdent("total_context_trivial"),
+        stateRelEnter=ViperBoogieRelationIsa.stateRelEmpty(TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, vprProg.globalDataAccessor.vprProgram, exprContextBpl))),
+        stateRelExit=TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, vprProg.globalDataAccessor.vprProgram, exprContextBpl)),
+        totalContextVpr=totalContextVpr,
         stateConsistency=TermIdent("StateCons"),
         varContextVpr=TermIdent(varContextViperName),
         programVpr=TermIdent("P"),
@@ -371,7 +389,7 @@ case class MethodProofGenerator(
       applyTac(simpTac(boogieProg.getLookupThyThm(MaskGlobalVar))),
       applyTac(ruleTac(BoogieIsaTerm.redVarThm)),
       applyTac(ViperBoogieRelationIsa.zeroMaskLookupTactic(IsaUtil.definitionLemmaFromName(translationRecordName))),
-      applyTac(simpTac(IsaUtil.definitionLemmaFromName(tyReprBasic.toString))),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName))),
     ) ++
       initUpdatedStateInRelation() ++
       initAssumeGoodState(ctxtBplWfThm)

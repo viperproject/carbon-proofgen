@@ -15,6 +15,9 @@ object ViperIsaType {
   val vprProgramTypeName : String = "program"
   val vprProgramType: TypeIsa = DataType(vprProgramTypeName, Seq())
 
+  def totalContext(absType: TypeIsa) = DataType("total_context", absType)
+
+
   def translate(ty : sil.Type) : Term = ty match {
     case sil.Bool => TermIdent("TBool")
     case sil.Int => TermIdent("TInt")

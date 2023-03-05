@@ -13,7 +13,8 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
-import viper.carbon.proofgen.hints.{LocalVarAssignHint, ComponentProofHint, IfComponentHint, IfHint, SeqnProofHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{AtomicHint, ComponentProofHint, FieldAssignHint, IfComponentHint, IfHint, LocalVarAssignHint, SeqnProofHint, StmtProofHint}
+import viper.silver.ast.FieldAssign
 import viper.silver.verifier.{PartialVerificationError, errors, reasons}
 import viper.silver.ast.utility.Expressions
 
@@ -213,7 +214,8 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         (Nil, Seq())
       case i@sil.If(cond, thn, els) =>
         val defCheck = checkDefinedness(cond, errors.IfFailed(cond), insidePackageStmt = insidePackageStmt)
-        val condTr = (allStateAssms) ==> translateExpInWand(cond)
+        //TODO proof_gen: merge this change into Carbon master (makes proof easier)
+        val condTr = if(allStateAssms == TrueLit()) { translateExpInWand(cond) } else { (allStateAssms) ==> translateExpInWand(cond) }
         val (thnTr, thnProofHints) = translateStmt(thn, statesStack, allStateAssms, insidePackageStmt)
         val (elsTr, elsProofHints) = translateStmt(els, statesStack, allStateAssms, insidePackageStmt)
         (
@@ -315,8 +317,8 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
   private def proofHint(s: sil.Stmt, proofHints: Seq[ComponentProofHint]) : StmtProofHint = {
     s match {
       case sil.NewStmt(lhs, fields) => ???
-      case assign@sil.LocalVarAssign(lhs, rhs) => LocalVarAssignHint(assign, mainModule.env.get(lhs), proofHints)
-      case sil.FieldAssign(lhs, rhs) => ???
+      case assign@sil.LocalVarAssign(lhs, rhs) => AtomicHint(LocalVarAssignHint(assign, mainModule.env.get(lhs), proofHints))
+      case fa@sil.FieldAssign(lhs, rhs) => AtomicHint(FieldAssignHint(fa, proofHints))
       case sil.MethodCall(methodName, args, targets) => ???
       case sil.Exhale(exp) => ???
       case sil.Inhale(exp) => ???

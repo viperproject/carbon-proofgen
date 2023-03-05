@@ -30,12 +30,18 @@ object ViperBoogieMLUtil {
                                  tyArgsEqTac: String, expRelInfo: String) =
     MLUtil.app("field_access_wf_rel_tac_aux", Seq(fieldAccInitTac, lookupMaskVarTac, fieldRelTac, fieldLookupTac, tyArgsEqTac, expRelInfo))
 
-  def createStmtRelInfo(ctxtWfThm: String, trDefThm: String, varRelTac: String, varContextVprTac: String) : String =
+  def createBasicStmtRelInfo(ctxtWfThm: String, trDefThm: String, varRelTac: String, varContextVprTac: String, tyInterpEContextBplEq: String) : String =
       MLUtil.createRecord(Seq(
         ("ctxt_wf_thm", ctxtWfThm),
         ("tr_def_thm", trDefThm),
         ("var_rel_tac", varRelTac),
-        ("var_context_vpr_tac", varContextVprTac)
+        ("var_context_vpr_tac", varContextVprTac),
+        ("type_interp_econtext", tyInterpEContextBplEq)
       ))
 
+  def createStmtRelInfo(basicStmtRelInfo: String, atomicRelTac: String) : String =
+    MLUtil.createRecord(Seq(
+      ("basic_stmt_rel_info", basicStmtRelInfo),
+      ("atomic_rel_tac", atomicRelTac)
+    ))
 }

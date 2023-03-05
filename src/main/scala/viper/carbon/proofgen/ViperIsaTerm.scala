@@ -118,6 +118,10 @@ object ViperIsaTerm {
 
   def convertAstToProgramPoint(procBody: Term) =
     TermApp(TermIdent("convert_ast_to_program_point"), procBody)
+}
 
+object ViperTotalContext {
+  def absvalInterpTotal(totalContext: Term) : Term = TermApp(TermIdent("absval_interp_total"), totalContext)
+  def programTotal(totalContext: Term) : Term = TermApp(TermIdent("program_total"), totalContext)
 
 }

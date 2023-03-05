@@ -5,10 +5,17 @@ import viper.carbon.proofgen.IsaBoogieProcAccessor
 
 object MLHintGenerator {
 
-  def generateHintsInML(stmtProofHint: StmtProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
-    stmtProofHint match {
+  def generateAtomicHintsInML(atomicProofHint: AtomicStmtProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String ={
+    atomicProofHint match {
       case LocalVarAssignHint(assignVpr, lhsBpl, hints) =>
         MLUtil.app("AssignHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, MLUtil.isaToMLThm(boogieProcAccessor.getLookupThyThm(lhsBpl)))))
+      case FieldAssignHint(fieldAssignVpr, hints) =>
+        MLUtil.app("FieldAssignHint", MLUtil.createTuple(Seq(expWfRelInfo, expWfRelInfo, expRelInfo, expRelInfo)))
+    }
+  }
+
+  def generateHintsInML(stmtProofHint: StmtProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
+    stmtProofHint match {
       case SeqnProofHint(hints, scopedDecls) =>
         MLUtil.app("SeqnHint", MLUtil.createList(hints.map(hint => generateHintsInML(hint, boogieProcAccessor, expWfRelInfo, expRelInfo))))
       case IfHint(cond, componentHints) =>
@@ -20,6 +27,8 @@ object MLHintGenerator {
           case _ => sys.error("if hint has unexpected form")
         }
       case WhileHint(cond, invs, componentHints) => ???
+      case AtomicHint(atomicHint) =>
+        MLUtil.app("AtomicHint" ,generateAtomicHintsInML(atomicHint, boogieProcAccessor, expWfRelInfo, expRelInfo))
     }
   }
 }

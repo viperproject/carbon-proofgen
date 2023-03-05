@@ -110,11 +110,13 @@ object IsaPrettyPrinter {
     if(!c.fixedVariables.isEmpty) {
       sb.append("fixes ")
 
-      c.fixedVariables.foreach({ case (varName, varType) =>
-        sb.append(s"${prettyPrint(varName)} :: ${innerTerm(prettyPrint(varType))}").newLine
-      })
-    }
+      val fixVariablesString =
+        c.fixedVariables.map({ case (varName, varType) =>
+          s"${prettyPrint(varName)} :: ${innerTerm(prettyPrint(varType))}"
+        }).mkString(" and ")
 
+      sb.append(fixVariablesString)
+    }
 
     if(!c.assumptions.isEmpty) {
       sb.append("assumes ")

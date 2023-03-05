@@ -72,6 +72,17 @@ object ViperBoogieRelationIsa {
     )
 }
 
+case object TypeRepresentation {
+
+  val tyReprBasicName : String = "ty_repr_basic"
+
+  private val tyReprBasic = TermIdent(tyReprBasicName)
+
+  def makeBasicTypeRepresentation(absValInterpVpr: Term) : Term = {
+    TermApp(tyReprBasic, absValInterpVpr)
+  }
+}
+
 case object TranslationRecord {
   val translationRecordTypeName = "tr_vpr_bpl"
   val translationRecordType = DataType(translationRecordTypeName, Seq())
@@ -79,13 +90,15 @@ case object TranslationRecord {
   def makeTranslationRecord( heapVar: Term,
                              maskVar: Term,
                              maskRead: Term,
+                             maskUpdate: Term,
                              heapRead: Term,
+                             heapUpdate: Term,
                              fieldTranslation: Term,
                              funTranslation: Term,
                              varTranslation: Term,
                              constRepr: Term): Term =
     IsaTermUtil.makeRecord(translationRecordTypeName,
-      Seq(heapVar, maskVar, maskRead, heapRead, fieldTranslation, funTranslation, varTranslation, constRepr)
+      Seq(heapVar, maskVar, maskRead, maskUpdate, heapRead, heapUpdate, fieldTranslation, funTranslation, varTranslation, constRepr)
     )
 
   def maskVar(translationRecord: Term) : Term = TermApp(TermIdent("mask_var"), translationRecord)
