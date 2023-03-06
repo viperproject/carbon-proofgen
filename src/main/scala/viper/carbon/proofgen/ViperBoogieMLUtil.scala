@@ -23,12 +23,12 @@ object ViperBoogieMLUtil {
   def createExpWfRelInfo(fieldAccessWfRelSynTac: String) : String =
     MLUtil.createRecord(Seq(("field_access_wf_rel_syn_tac", fieldAccessWfRelSynTac)))
 
-  def fieldAccessRelPreTac(heapReadWfTac: String, heapReadMatchTac: String, fieldRelTac: String, fieldLookupTac: String) : String =
-    MLUtil.app("field_access_rel_pre_tac_aux", Seq(heapReadWfTac, heapReadMatchTac, fieldRelTac, fieldLookupTac))
+  def fieldAccessRelPreTac(heapReadWfTac: String, heapReadMatchTac: String, fieldRelSingleTac: String) : String =
+    MLUtil.app("field_access_rel_pre_tac_aux", Seq(heapReadWfTac, heapReadMatchTac, fieldRelSingleTac))
 
-  def fieldAccessWfRelTacAuxInst(fieldAccInitTac: String, lookupMaskVarTac: String, fieldRelTac: String, fieldLookupTac: String,
+  def fieldAccessWfRelTacAuxInst(fieldAccInitTac: String, lookupMaskVarTac: String, fieldRelSingleTac: String,
                                  tyArgsEqTac: String, expRelInfo: String) =
-    MLUtil.app("field_access_wf_rel_tac_aux", Seq(fieldAccInitTac, lookupMaskVarTac, fieldRelTac, fieldLookupTac, tyArgsEqTac, expRelInfo))
+    MLUtil.app("field_access_wf_rel_tac_aux", Seq(fieldAccInitTac, lookupMaskVarTac, fieldRelSingleTac, tyArgsEqTac, expRelInfo))
 
   def createBasicStmtRelInfo(ctxtWfThm: String,
                              trDefThm: String,

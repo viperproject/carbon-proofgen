@@ -132,7 +132,6 @@ case class MethodProofGenerator(
     Theory(
       theoryName = theoryName,
       importTheories = Seq(
-        "TotalViper.ExpProofGenTest",
         "TotalViper.ViperBoogieTranslationInterface",
         "TotalViper.ExprWfRelML",
         "TotalViper.CPGHelperML",
@@ -303,21 +302,19 @@ case class MethodProofGenerator(
             ViperBoogieMLUtil.fieldAccessRelPreTac(
               heapReadWfTac = heapReadWfTac,
               heapReadMatchTac = heapReadMatchTac,
-              fieldRelTac = fieldRelTac,
-              fieldLookupTac = fieldLookupTac
+              fieldRelSingleTac = fieldRelSingleTac
             )
         )),
 
         MLUtil.defineFun(fieldAccInitTac, Seq("ctxt"), MLUtil.resolveTac("ctxt",
-          MLUtil.isaToMLThms(Seq(ProofUtil.OF("syn_field_access_wf_rel", Seq(bplCtxtWfLabel, "wf_ty_repr_basic"))))
+          MLUtil.isaToMLThms(Seq(ProofUtil.OF("syn_field_access_valid_wf_rel", Seq(bplCtxtWfLabel, "wf_ty_repr_basic"))))
         )),
 
         MLUtil.defineVal(fieldAccessWfRelTacAuxInst,
           ViperBoogieMLUtil.fieldAccessWfRelTacAuxInst(
             fieldAccInitTac = fieldAccInitTac,
             lookupMaskVarTac = simpWithTrDef,
-            fieldRelTac = fieldRelTac,
-            fieldLookupTac = fieldLookupTac,
+            fieldRelSingleTac = fieldRelSingleTac,
             tyArgsEqTac =  simpWithTyReprDef,
             expRelInfo = expRelInfo
           )
