@@ -221,6 +221,7 @@ case class MethodProofGenerator(
     val heapReadMatchTac = "heap_read_match_tac"
     val fieldRelTac  = "field_rel_tac"
     val fieldLookupTac = "field_lookup_tac"
+    val fieldRelSingleTac = "field_rel_single_tac"
 
     val fieldAccInitTac = "field_acc_init_tac"
     val fieldAccessWfRelTacAuxInst = "field_access_wf_rel_tac_aux_inst"
@@ -259,7 +260,7 @@ case class MethodProofGenerator(
         MLUtil.defineFun(heapReadWfTac, Seq("ctxt"),
           MLUtil.seqPrimeTac(
             MLUtil.app(MLUtil.simpAsm(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName)))), "ctxt"),
-            MLUtil.resolveTac("ctxt", MLUtil.isaToMLThms(Seq("heap_wf_concrete[OF wf_ty_repr_basic CtxtWf]")))
+            MLUtil.resolveTac("ctxt", MLUtil.isaToMLThms(Seq("heap_wf_concrete[OF CtxtWf wf_ty_repr_basic]")))
           )
         ),
 
@@ -286,6 +287,10 @@ case class MethodProofGenerator(
             definitionLemmaFromName(vprProg.globalDataAccessor.fields.toString)
           )),
             "ctxt")
+        ),
+
+        MLUtil.defineVal(fieldRelSingleTac,
+          MLUtil.app("field_rel_single_inst_tac", Seq(fieldRelTac, fieldLookupTac))
         ),
 
         MLUtil.defineVal(expRelInfo, ViperBoogieMLUtil.createExpRelInfo(
@@ -323,11 +328,12 @@ case class MethodProofGenerator(
           ),
 
         MLUtil.defineVal(basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
-          isaToMLThm(bplCtxtWfLabel),
-          isaToMLThm(definitionLemmaFromName(translationRecordName)),
-          lookupVarRelTac,
-          "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
-          MLUtil.isaToMLThm(tyInterpEqBpl)
+          ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
+          trDefThm = isaToMLThm(definitionLemmaFromName(translationRecordName)),
+          varRelTac = lookupVarRelTac,
+          varContextVprTac = "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
+          fieldRelSingleTac = fieldRelSingleTac,
+          tyInterpEContextBplEq = MLUtil.isaToMLThm(tyInterpEqBpl)
           )
         ),
 
