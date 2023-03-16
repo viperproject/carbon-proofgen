@@ -36,7 +36,8 @@ object BoogieIsaTerm {
     MLUtil.mlTacticToIsa(MLUtil.app("unfold_bigblock_in_goal", Seq(MLUtil.contextAniquotation, "1")))
 
   val redAstReflTac : String = ProofUtil.ruleTac("red_ast_bpl_refl")
-  val redAstPropagateRelTac : String = ProofUtil.ruleTac("red_ast_bpl_propagate_rel")
+  val redAstPropagateRelThm : String = "red_ast_bpl_propagate_rel"
+  val redAstPropagateRelTac : String = ProofUtil.ruleTac(redAstPropagateRelThm)
   val redAstOneSimpleCmdTac : String = ProofUtil.ruleTac("red_ast_bpl_one_simple_cmd")
   val assignIntroAltTac : String = ProofUtil.ruleTac("assign_intro_alt")
 

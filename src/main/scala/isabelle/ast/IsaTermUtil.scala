@@ -14,4 +14,6 @@ object IsaTermUtil {
 
   def convertOpt(termOpt: Option[Term]) : Term = termOpt.fold[Term](none)(t => some(t))
 
+  val emptyMap : Term = TermIdent("Map.empty")
+
 }

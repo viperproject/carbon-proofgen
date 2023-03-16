@@ -3,6 +3,7 @@ package viper.carbon.proofgen
 import isabelle.ast.TermIdent
 import isabelle.{ast => isa}
 import viper.carbon.boogie.LocalVarDecl
+import viper.silver.ast.WildcardPerm
 import viper.silver.{ast => sil}
 
 object ViperToIsa {
@@ -151,16 +152,25 @@ object ViperToIsa {
     }
   }
 
-  def translatePureAssertion(e: sil.Exp)(implicit varTranslation: VarTranslation[sil.LocalVar]) : isa.Term = {
-      ViperIsaTerm.liftPureExpToAssertion(translateExp(e))
+  def translatePermission(e: sil.Exp)(implicit varTranslation: VarTranslation[sil.LocalVar]) : isa.Term = {
+    val t = translatePureExp(e)
+    ViperIsaTerm.liftExpressionToPermission(t, e.isInstanceOf[sil.WildcardPerm])
   }
 
-  //translates expression to assertion
-  def translateExp(e: sil.Exp)(implicit varTranslation: VarTranslation[sil.LocalVar]) : isa.Term = {
-    if(e.isPure) {
-      translatePureExp(e)
-    } else {
-      sys.error("Only support pure subset")
+  def translateAssertion(e: sil.Exp)(implicit varTranslation: VarTranslation[sil.LocalVar]) : isa.Term = {
+    e match {
+      case sil.FieldAccessPredicate(loc, perm) =>
+        ViperIsaTerm.fieldAccessPredicate(translatePureExp(loc.rcv), loc.field, translatePermission(perm))
+      case sil.PredicateAccessPredicate(_, _) => sys.error("predicates not supported")
+      /** There is a choice to be made here: For the [[sil.And]] and [[sil.Implies]] nodes, if both arguments are pure,
+        * then one could also directly represent the nodes using their pure forms. However, Carbon treats these pure forms
+        * the same way as it does the impure forms. This is the reason why we use the impure forms here irrespective
+        * of whether the arguments are pure. */
+      case a@sil.And(left, right) => ViperIsaTerm.binopImpure(a.funct, translateAssertion(left), translateAssertion(right))
+      case e@sil.Implies(cond, exp) => ViperIsaTerm.binopImpure(e.funct, translateAssertion(cond), translateAssertion(exp))
+      case sil.MagicWand(_, _) => sys.error("magic wands not supported")
+      case _  if e.isPure => ViperIsaTerm.liftPureExpToAssertion(translatePureExp(e))
+      case _ => sys.error(e.toString + " not supported")
     }
   }
 
@@ -168,19 +178,19 @@ object ViperToIsa {
     stmt match {
       case sil.LocalVarAssign(lhs, rhs) =>
         varTranslation.translateVariableId(lhs) match {
-          case Some(id) => ViperIsaTerm.localVarAssign(id, translateExp(rhs))
+          case Some(id) => ViperIsaTerm.localVarAssign(id, translatePureExp(rhs))
           case None => sys.error(s"could not translate variable $lhs")
         }
       case sil.FieldAssign(lhs, rhs) =>
-        val rcvTerm = translateExp(lhs.rcv)
-        val rhsTerm = translateExp(rhs)
+        val rcvTerm = translatePureExp(lhs.rcv)
+        val rhsTerm = translatePureExp(rhs)
 
         ViperIsaTerm.fieldAssign(rcvTerm, lhs.field, rhsTerm)
       case sil.Fold(e) => sys.error("do not support fold")
       case sil.Unfold(e) => sys.error("do not support unfold")
-      case sil.Inhale(e) => ViperIsaTerm.inhale(translatePureAssertion(e))
-      case sil.Exhale(e) => ViperIsaTerm.exhale(translatePureAssertion(e))
-      case sil.Assert(e) => ViperIsaTerm.assert(translatePureAssertion(e))
+      case sil.Inhale(e) => ViperIsaTerm.inhale(translateAssertion(e))
+      case sil.Exhale(e) => ViperIsaTerm.exhale(translateAssertion(e))
+      case sil.Assert(e) => ViperIsaTerm.assert(translateAssertion(e))
       case sil.Seqn(stmts, scopedDecls) =>
 
         if(stmts.length == 0) {
@@ -212,12 +222,12 @@ object ViperToIsa {
       case sil.MethodCall(methodName, args, targets) => sys.error("do not support method calls")
       case sil.While(cond, invs, body) =>
         ViperIsaTerm.whileLoop(
-          translateExp(cond),
-          invs map translateExp,
+          translatePureExp(cond),
+          invs map translateAssertion,
           translateStmt(body))
       case sil.If(cond, thn, els) =>
         ViperIsaTerm.ifStmt(
-          translateExp(cond),
+          translatePureExp(cond),
           translateStmt(thn),
           translateStmt(els)
         )

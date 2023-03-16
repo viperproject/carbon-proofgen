@@ -8,6 +8,8 @@ object ProofUtil {
   def OF(thm: String, instThm: String) : String = s"$thm[OF $instThm]"
   def OF(thm: String, instThms: Seq[String]) : String = s"$thm[OF ${instThms.mkString(" ")}]"
 
+  def where(thm: String, schematicVar: String, instantiation: String) : String = s"$thm[where ?$schematicVar=\"$instantiation\"]"
+
   def applyTac(tactic: String) : String = s"apply ($tactic)"
 
   def using(thm: String, tactic: String) : String = using(Seq(thm), tactic)
@@ -44,16 +46,18 @@ object ProofUtil {
   def unfoldTac(thm: String) : String = unfoldTac(Seq(thm))
   def unfoldTac(thms: Seq[String]) : String = s"(unfold ${thms.mkString(" ")})"
 
-  val fastforceTac : String = fastforceTac(Seq())
-  def fastforceTac(thms: Seq[String]) : String =
-    if(thms.isEmpty)  {
-      "fastforce"
-    } else {
-      s"(fastforce simp: ${thms.mkString(" ")})"
-    }
+  val fastforceTac : String = fastforceTacWithSimps(Seq())
+
+  private def modifierArgument(modifier: String, args: Seq[String]): String = {
+    if(args.isEmpty) { "" } else {s"$modifier: ${args.mkString(" ")}"}
+  }
+
+  def fastforceTac(intros: Seq[String], elims: Seq[String], simps: Seq[String]) : String = {
+    s"(fastforce ${modifierArgument("intro", intros)}  ${modifierArgument("elim", elims)} ${modifierArgument("simp", simps)} )"
+  }
+  def fastforceTacWithIntros(thms: Seq[String]) : String = fastforceTac(thms, Seq(), Seq())
+  def fastforceTacWithSimps(thms: Seq[String]) : String = fastforceTac(Seq(), Seq(), thms)
 
   val assumeTac : String = "assumption"
-
-
 
 }

@@ -26,8 +26,6 @@ case class MethodProofGenerator(
   val varContextBoogieName = "var_ctxt_bpl"
   val typeInterpBplName = "type_interp_bpl"
 
-  //val viperProgram = TermIdent("Pr_trivial")
-
   val varRelationListName = "var_relation_list_1"
   val translationRecordName = "tr_vpr_bpl_0"
   val stateRelInitialName = "state_rel_initial"
@@ -107,9 +105,8 @@ case class MethodProofGenerator(
             TermIdent("Pr"),
             TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A")),
             TermIdent(translationRecordDef.name),
+            IsaTermUtil.emptyMap,
             TermIdent("ctxt"),
-            TranslationRecord.maskVar(TermIdent(translationRecordDef.name)),
-            TermIdent("w"),
             TermIdent("w"),
             TermIdent("ns")
           )
@@ -339,16 +336,18 @@ case class MethodProofGenerator(
           atomicRelTac = "atomic_rel_inst_tac"
         )),
 
-        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
+        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
       )
 
     outerDecls += MLDecl(mlInitializationCode, MLNormal)
+
+    val outputStateRel = TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, vprProg.globalDataAccessor.vprProgram, exprContextBpl))
 
     val mainTheorem = LemmaDecl("method_rel_proof",
       ContextElem.empty(),
       ViperBoogieRelationIsa.stmtRel(
         stateRelEnter=ViperBoogieRelationIsa.stateRelEmpty(TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, vprProg.globalDataAccessor.vprProgram, exprContextBpl))),
-        stateRelExit=TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, vprProg.globalDataAccessor.vprProgram, exprContextBpl)),
+        stateRelExit=outputStateRel,
         totalContextVpr=totalContextVpr,
         stateConsistency=TermIdent("StateCons"),
         varContextVpr=TermIdent(varContextViperName),
@@ -358,7 +357,7 @@ case class MethodProofGenerator(
         configBplEnter=ViperIsaTerm.convertAstToProgramPoint(TermIdent(boogieProg.procBodyAstDef)),
         configBplExit=BoogieIsaTerm.finalProgramPoint),
       Proof(
-        initBoogieStateProof(bplCtxtWfLabel) ++
+        initBoogieStateProof(bplCtxtWfLabel, IsaPrettyPrinter.prettyPrint(outputStateRel)) ++
         mainProof(stmtRelInfo, stmtRelHints) ++
         Seq(doneTac)
       )
@@ -378,7 +377,7 @@ case class MethodProofGenerator(
     )
   }
 
-  private def initBoogieStateProof(ctxtBplWfThm: String): Seq[String] = {
+  private def initBoogieStateProof(ctxtBplWfThm: String, outputStateRel: String): Seq[String] = {
     Seq(
       applyTac(unfoldTac(Seq(IsaUtil.definitionLemmaFromName(ViperBoogieRelationIsa.stateRelEmptyName),
                              IsaUtil.definitionLemmaFromName(boogieProg.procBodyAstDef)))),
@@ -394,16 +393,15 @@ case class MethodProofGenerator(
       applyTac(ViperBoogieRelationIsa.zeroMaskLookupTactic(IsaUtil.definitionLemmaFromName(translationRecordName))),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName))),
     ) ++
-      initUpdatedStateInRelation() ++
-      initAssumeGoodState(ctxtBplWfThm)
+    initUpdatedStateInRelation() ++
+    initAssumeGoodState(ctxtBplWfThm, outputStateRel)
   }
 
   private def initUpdatedStateInRelation() : Seq[String] = {
     Seq(
       applyTac(ruleTac(ViperBoogieRelationIsa.stateRelMaskUpdateThm)),
       applyTac(fastforceTac),
-      applyTac(simpTac),
-      applyTac(ruleTac(ViperBoogieRelationIsa.zeroMaskRelThm)),
+      applyTac(fastforceTacWithIntros(Seq(ViperBoogieRelationIsa.zeroMaskRelThm))),
       applyTac(simpTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecordName))),
       applyTac(simpTac),
@@ -411,9 +409,9 @@ case class MethodProofGenerator(
     )
   }
 
-  private def initAssumeGoodState(ctxtBplWfThm: String) : Seq[String] = {
+  private def initAssumeGoodState(ctxtBplWfThm: String, outputStateRel: String) : Seq[String] = {
     Seq(
-      applyTac(BoogieIsaTerm.redAstPropagateRelTac),
+      applyTac(ProofUtil.ruleTac(ProofUtil.where(BoogieIsaTerm.redAstPropagateRelThm, "R2.0", outputStateRel))),
       applyTac(BoogieIsaTerm.redAstOneSimpleCmdTac),
       applyTac(ViperBoogieRelationIsa.redAssumeGoodStateTac(IsaUtil.definitionLemmaFromName(translationRecordName),
         MLUtil.isaToMLThm(ctxtBplWfThm)
@@ -422,7 +420,7 @@ case class MethodProofGenerator(
       applyTac(ruleTac("conjI")),
       applyTac(simpTac),
       applyTac(BoogieIsaTerm.redAstReflTac),
-      applyTac(assumeTac)
+      applyTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(translationRecordName)))
     )
   }
 

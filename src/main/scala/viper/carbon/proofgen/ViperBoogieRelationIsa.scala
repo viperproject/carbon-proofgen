@@ -16,12 +16,11 @@ object ViperBoogieRelationIsa {
   def stateRelation( program: Term,
                      typeRepresentation: Term,
                      translationRecord: Term,
+                     auxiliaryPredicates: Term,
                      viperTotalContext: Term,
-                     welldefMaskVar: Term,
-                     welldefViperState: Term,
                      normalViperState: Term,
                      boogieState: Term) : Term =
-    TermApp(TermIdent(stateRelName), Seq(program, typeRepresentation, translationRecord, viperTotalContext, welldefMaskVar, welldefViperState, normalViperState, boogieState))
+    TermApp(TermIdent(stateRelName), Seq(program, typeRepresentation, translationRecord, auxiliaryPredicates, viperTotalContext, normalViperState, boogieState))
 
   def stateRelationWellTypedThm = TermIdent("state_rel_state_well_typed")
 

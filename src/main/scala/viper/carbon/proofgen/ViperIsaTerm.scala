@@ -70,12 +70,35 @@ object ViperIsaTerm {
     TermApp(TermIdent("Binop"), Seq(left, bop, right))
   }
 
+  def binopImpure(bop: sil.BinOp, left: Term, right: Term): Term = {
+    val bopIsa =
+      bop match {
+        case sil.AndOp => TermIdent("Star")
+        case sil.ImpliesOp => TermIdent("Imp")
+        case _ => sys.error(s"impure bop ${bop.toString} not supported")
+      }
+
+    TermApp(bopIsa, Seq(left, right))
+  }
+
   def heapFieldAccess(rcv: Term, field: sil.Field) : Term = {
     TermApp(TermIdent("FieldAcc"), rcv, StringConst(field.name))
   }
 
+  def fieldAccessPredicate(rcv: Term, field: sil.Field, perm: Term) : Term = {
+    TermApp(TermIdent("Atomic"), TermApp(TermIdent("Acc"), Seq(rcv, StringConst(field.name), perm)))
+  }
+
   def liftPureExpToAssertion(pureExp: Term) : Term = {
     TermApp(TermIdent("Atomic"), TermApp(TermIdent("Pure"), pureExp))
+  }
+
+  def liftExpressionToPermission(exp: Term, isWildcard: Boolean) : Term = {
+    if(isWildcard) {
+      ViperIsaTerm.wildCardExpr
+    } else {
+      TermApp(TermIdent("PureExp"), exp)
+    }
   }
 
   def labelStmt(labelName: String) : Term = {
