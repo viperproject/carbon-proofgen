@@ -11,6 +11,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import viper.carbon.boogie.Implicits._
+import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, ImpInhaleHint, InhaleComponentProofHint, InhaleHint, NotSupportedInhaleHint, PureExpInhaleHint, StarInhaleHint}
 import viper.silver.verifier.PartialVerificationError
 
 /**
@@ -30,24 +31,25 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
     register(this)
   }
 
-  override def inhale(exps: Seq[(sil.Exp, PartialVerificationError)], addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): Stmt = {
+  override def inhale(exps: Seq[(sil.Exp, PartialVerificationError)], addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, Seq[InhaleHint]) = {
     val current_state = stateModule.state
     if(insidePackageStmt && !addDefinednessChecks) { // replace currentState with the correct state in which the inhale occurs during packaging the wand
       stateModule.replaceState(statesStackForPackageStmt(0).asInstanceOf[StateRep].state)
     }
 
 
-    val stmt =
-        (exps map (e => inhaleConnective(e._1.whenInhaling, e._2, addDefinednessChecks = addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt = insidePackageStmt))) ++
-          assumeGoodState
+    val (mainStmt, hints) =
+        (exps map (e => inhaleConnective(e._1.whenInhaling, e._2, addDefinednessChecks = addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt = insidePackageStmt))).unzip
+
+   val stmt = mainStmt ++ assumeGoodState
 
     if(insidePackageStmt && !addDefinednessChecks) {
          /* all the assumptions made during packaging a wand (except assumptions about the global state before the package statement)
           * should be replaced by updates to state booleans (see documentation for 'exchangeAssumesWithBoolean') */
       stateModule.replaceState(current_state)
-      wandModule.exchangeAssumesWithBoolean(stmt, statesStackForPackageStmt.head.asInstanceOf[StateRep].boolVar)
+      (wandModule.exchangeAssumesWithBoolean(stmt, statesStackForPackageStmt.head.asInstanceOf[StateRep].boolVar), hints)
     } else {
-      stmt
+      (stmt, hints)
     }
   }
 
@@ -63,7 +65,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
    * Inhales Viper expression connectives (such as logical and/or) and forwards the
    * translation of other expressions to the inhale components.
    */
-  private def inhaleConnective(e: sil.Exp, error: PartialVerificationError, addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): Stmt = {
+  private def inhaleConnective(e: sil.Exp, error: PartialVerificationError, addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, InhaleHint) = {
 
     def maybeDefCheck(eDef: sil.Exp) : Stmt = { if(addDefinednessChecks) checkDefinedness(eDef, error, insidePackageStmt = insidePackageStmt) else Statements.EmptyStmt }
 
@@ -81,37 +83,41 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
       }
     }
 
-    val res =
+    val (resStmt, hint) : (Stmt, InhaleHint) =
       e match {
         case sil.And(e1, e2) =>
-          inhaleConnective(e1, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt) ::
-            inhaleConnective(e2, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt) ::
-            Nil
+          val (stmt1, hint1) = inhaleConnective(e1, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)
+          val (stmt2, hint2) = inhaleConnective(e2, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)
+          (stmt1 :: stmt2 :: Nil, StarInhaleHint(hint1, hint2))
         case sil.Implies(e1, e2) =>
           val defCheck = maybeDefCheck(e1)
           val lhsTranslation = if(insidePackageStmt && addDefinednessChecks) { wandModule.getCurOpsBoolvar() ==> translateExpInWand(e1) } else { translateExp(e1) }
+          val (rhsTranslation, rhsHint) = inhaleConnective(e2, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)
 
-          defCheck ++
-          If(lhsTranslation, inhaleConnective(e2, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt), Statements.EmptyStmt)
+          (defCheck ++ If(lhsTranslation, rhsTranslation, Statements.EmptyStmt), ImpInhaleHint(e1, rhsHint))
         case sil.CondExp(c, e1, e2) =>
           val defCheck = maybeDefCheck(c)
           val condTranslation = if(insidePackageStmt && addDefinednessChecks) { wandModule.getCurOpsBoolvar() ==> translateExpInWand(c) } else { translateExp(c) }
 
-          defCheck ++
-          If(condTranslation, inhaleConnective(e1, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt),
-                              inhaleConnective(e2, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt))
+          val (thnTranslation, thnHint) = inhaleConnective(e1, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)
+          val (elsTranslation, elsHint) = inhaleConnective(e2, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)
+
+          (defCheck ++ If(condTranslation, thnTranslation, elsTranslation), CondInhaleHint(c, thnHint, elsHint))
         case sil.Let(declared,boundTo,body) if !body.isPure || addDefinednessChecks =>
         {
           val defCheck = maybeDefCheck(boundTo)
           val u = env.makeUniquelyNamed(declared) // choose a fresh binder
           env.define(u.localVar)
-          defCheck ::
-          Assign(translateLocalVar(u.localVar),translateExp(boundTo)) ::
-            inhaleConnective(body.replace(declared.localVar, u.localVar), error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt) ::
-            {
-              env.undefine(u.localVar)
-              Nil
-            }
+          val resStmt =
+            defCheck ::
+            Assign(translateLocalVar(u.localVar),translateExp(boundTo)) ::
+              inhaleConnective(body.replace(declared.localVar, u.localVar), error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)._1 ::
+              {
+                env.undefine(u.localVar)
+                Nil
+              }
+
+          (resStmt, NotSupportedInhaleHint)
         }
         case _ =>
           def transformStmtInsidePackage(s: Stmt): Stmt = {
@@ -123,7 +129,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
           }
           val definednessChecks = maybeDefCheck(e)
           val freeAssms = maybeFreeAssumptions(e)
-          val stmt = components map (_.inhaleExp(e, error))
+          val (stmt, componentHints) = (components map (_.inhaleExp(e, error))).unzip
           if (stmt.children.isEmpty)
             sys.error(s"missing translation for inhaling of $e")
 
@@ -136,20 +142,30 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
           //(if (containsFunc(e)) assumeGoodState else Seq[Stmt]()) ++ stmt ++ (if (e.isPure) Seq[Stmt]() else assumeGoodState)
 
           // if we are inside package statement, then all assumptions should be replaced with conjinctions with ops.boolVar
-            retStmt
+          (retStmt, constructAtomicHint(e, componentHints.flatten))
       }
     if(insidePackageStmt && addDefinednessChecks) {
-      If(wandModule.getCurOpsBoolvar(), res, Statements.EmptyStmt)
+      (If(wandModule.getCurOpsBoolvar(), resStmt, Statements.EmptyStmt), hint)
     } else {
-      res
+      (resStmt, hint)
     }
   }
 
-  override def inhaleExp(e: sil.Exp, error: PartialVerificationError): Stmt = {
-    if (e.isPure) {
-      Assume(translateExp(e))
-    } else {
-      Nil
+  private def constructAtomicHint(atomicExp: sil.Exp, componentHints: Seq[InhaleComponentProofHint]) : AtomicInhaleHint = {
+    atomicExp match {
+      case acc: sil.FieldAccessPredicate => FieldAccessPredicateInhaleHint(acc, componentHints)
+      case _ if atomicExp.isPure => PureExpInhaleHint(atomicExp, componentHints)
+      case _ => sys.error(s"Cannot construct atomic inhale hint for ${atomicExp.toString()}")
     }
+  }
+
+  override def inhaleExp(e: sil.Exp, error: PartialVerificationError): (Stmt, Seq[InhaleComponentProofHint]) = {
+    val resStmt : Stmt =
+      if (e.isPure) {
+        Assume(translateExp(e))
+      } else {
+        Nil
+      }
+    (resStmt, Seq())
   }
 }

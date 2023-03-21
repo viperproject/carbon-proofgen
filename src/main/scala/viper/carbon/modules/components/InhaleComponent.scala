@@ -10,6 +10,8 @@ import viper.carbon.boogie.Stmt
 import viper.silver.verifier.PartialVerificationError
 import viper.silver.{ast => sil}
 
+import viper.carbon.proofgen.hints.InhaleComponentProofHint
+
 /**
  * Takes care of inhaling one or several kinds of expressions.
 
@@ -19,5 +21,5 @@ trait InhaleComponent extends Component {
   /**
    * Inhale a single expression.
    */
-  def inhaleExp(exp: sil.Exp, error: PartialVerificationError): Stmt
+  def inhaleExp(exp: sil.Exp, error: PartialVerificationError): (Stmt, Seq[InhaleComponentProofHint])
 }

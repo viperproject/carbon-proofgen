@@ -13,7 +13,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
-import viper.carbon.proofgen.hints.{AtomicHint, ComponentProofHint, FieldAssignHint, IfComponentHint, IfHint, LocalVarAssignHint, SeqnProofHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{AtomicHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
 import viper.silver.ast.FieldAssign
 import viper.silver.verifier.{PartialVerificationError, errors, reasons}
 import viper.silver.ast.utility.Expressions
@@ -89,7 +89,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
     * These wand-related parameters are used when the method is called during packaging a wand.
     * For more details see the general node in 'wandModule'
     */
-  override def handleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint]) = {
+  override def handleStmt(s: sil.Stmt, statesStackForPackageStmt: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[StmtComponentProofHint]) => (Seqn, Seq[StmtComponentProofHint]) = {
     val ((bef, aft), sHints) =
       s match {
         case s: sil.Fold => (translateFold(s, statesStackForPackageStmt, insidePackageStmt), Seq()) //once fold produces hints need to also adjust hint ordering below
@@ -111,7 +111,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
     * These wand-related parameters are used when the method is called during packaging a wand.
     * For more details see the general node in 'wandModule'
     */
-  override def simpleHandleStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Stmt, Seq[ComponentProofHint]) = {
+  override def simpleHandleStmt(stmt: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false): (Stmt, Seq[StmtComponentProofHint]) = {
     if(loopModule.isLoopDummyStmt(stmt)) {
       //statement was just added for loop information purposes (only loopModule cares about it)
       return (Nil, Seq())
@@ -135,7 +135,8 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       case unfold@sil.Unfold(e) =>
         (translateUnfold(unfold, statesStack, insidePackageStmt), Seq())
       case inh@sil.Inhale(e) =>
-        (inhaleWithDefinednessCheck(whenInhaling(e), errors.InhaleFailed(inh), statesStack, insidePackageStmt), Seq())
+        val (stmt, inhaleHint) = inhaleWithDefinednessCheck(whenInhaling(e), errors.InhaleFailed(inh), statesStack, insidePackageStmt)
+        (stmt, InhaleStmtComponentHint(inhaleHint))
       case exh@sil.Exhale(e) =>
         val transformedExp = whenExhaling(e)
         ( checkDefinedness(transformedExp, errors.ExhaleFailed(exh), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true)++
@@ -202,7 +203,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
             exhale(pres map (e => (e, errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)) ++ {
           stateModule.replaceOldState(preCallState)
           val res = MaybeCommentBlock("Inhaling postcondition",
-            inhale(posts map (e => (e, errors.CallFailed(mc).withReasonNodeTransformed(renamingArguments))), addDefinednessChecks = false, statesStack, insidePackageStmt) ++
+            inhale(posts map (e => (e, errors.CallFailed(mc).withReasonNodeTransformed(renamingArguments))), addDefinednessChecks = false, statesStack, insidePackageStmt).map(_._1) ++
             executeUnfoldings(posts, (post => errors.Internal(post).withReasonNodeTransformed(renamingArguments))))
           stateModule.replaceOldState(oldState)
           toUndefine map mainModule.env.undefine
@@ -291,7 +292,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       case _ =>
     }
 
-    var (stmts, proofHints) : (Seqn, Seq[ComponentProofHint]) = (Seqn(Nil), Seq())
+    var (stmts, proofHints) : (Seqn, Seq[StmtComponentProofHint]) = (Seqn(Nil), Seq())
     for (c <- components) { // NOTE: this builds up the translation inside-out, so the *first* component defines the innermost code.
       //      val (before, after) = c.handleStmt(stmt, statesStack, allStateAssms, inWand)
       //      stmts = before ++ stmts ++ after
@@ -314,14 +315,14 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
     (CommentBlock(comment + s" -- ${stmt.pos}", translation), proofHint(stmt, proofHints))
   }
 
-  private def proofHint(s: sil.Stmt, proofHints: Seq[ComponentProofHint]) : StmtProofHint = {
+  private def proofHint(s: sil.Stmt, proofHints: Seq[StmtComponentProofHint]) : StmtProofHint = {
     s match {
       case sil.NewStmt(lhs, fields) => ???
       case assign@sil.LocalVarAssign(lhs, rhs) => AtomicHint(LocalVarAssignHint(assign, mainModule.env.get(lhs), proofHints))
       case fa@sil.FieldAssign(lhs, rhs) => AtomicHint(FieldAssignHint(fa, proofHints))
       case sil.MethodCall(methodName, args, targets) => ???
       case sil.Exhale(exp) => ???
-      case sil.Inhale(exp) => ???
+      case sil.Inhale(exp) => AtomicHint(InhaleStmtHint(proofHints))
       case sil.Assert(exp) => ???
       case sil.Assume(exp) => ???
       case sil.Fold(acc) => ???

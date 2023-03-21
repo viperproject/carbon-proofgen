@@ -12,7 +12,7 @@ import viper.carbon.verifier.Verifier
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
 import viper.carbon.modules.components.{DefinednessComponent, StmtComponent}
-import viper.carbon.proofgen.hints.ComponentProofHint
+import viper.carbon.proofgen.hints.StmtComponentProofHint
 import viper.silver.ast.utility.Expressions
 import viper.silver.ast.{MagicWand, MagicWandStructure}
 import viper.silver.verifier.{PartialVerificationError, reasons}
@@ -194,7 +194,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
     UNIONState = OPS
     nestingDepth += 1
     val inhaleLeft = MaybeComment("Inhaling left hand side of current wand into hypothetical state",
-      exchangeAssumesWithBoolean(inhaleModule.inhaleWithDefinednessCheck(wand.left, mainError, hypState::Nil, true), hypState.boolVar))
+      exchangeAssumesWithBoolean(inhaleModule.inhaleWithDefinednessCheck(wand.left, mainError, hypState::Nil, true)._1, hypState.boolVar))
 
     val defineLhsState = stmtModule.translateStmt(sil.Label("lhs"+lhsID, Nil)(wand.pos, wand.info), hypState::Nil, hypState.boolVar, true)._1
     activeWandsStack = activeWandsStack:+lhsID
@@ -217,7 +217,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
             val oldOps = OPS
 
             currentWand = w
-            val addWand = inhaleModule.inhale(Seq((w, error)), addDefinednessChecks = false, statesStack, inWand)
+            val addWand = inhaleModule.inhale(Seq((w, error)), addDefinednessChecks = false, statesStack, inWand)._1
 
             val currentState = stateModule.state
 
@@ -653,7 +653,7 @@ case class PackageSetup(hypState: StateRep, usedState: StateRep, initStmt: Stmt)
   /**
     * Wraps all statements inside package statement inside If condition depending on the state variables.
     */
-  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), inWand: Boolean = false): (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])= {
+  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), inWand: Boolean = false): (Seqn, Seq[StmtComponentProofHint]) => (Seqn, Seq[StmtComponentProofHint])= {
     if(wandModule.nestingDepth > 0) { // if 's' is inside a package statement
       //proofs for wands are not supported; just propagate proof hints without adding any hints
       case (stmt, proofHints) => (If(allStateAssms, modifyAssert(stmt, OPS.boolVar), Statements.EmptyStmt) :: Nil, proofHints)
@@ -696,7 +696,7 @@ case class PackageSetup(hypState: StateRep, usedState: StateRep, initStmt: Stmt)
       (if(inWand) exchangeAssumesWithBoolean(stateModule.assumeGoodState, OPS.boolVar) else stateModule.assumeGoodState) ++
       CommentBlock("check if LHS holds and remove permissions ", exhaleModule.exhale((w.left, error), false, insidePackageStmt = inWand, statesStackForPackageStmt = statesStack)) ++
       (if(inWand) exchangeAssumesWithBoolean(stateModule.assumeGoodState, OPS.boolVar) else stateModule.assumeGoodState) ++
-      CommentBlock("inhale the RHS of the wand",inhaleModule.inhale(Seq((w.right, error)), addDefinednessChecks = false, statesStackForPackageStmt = statesStack, insidePackageStmt = inWand)) ++
+      CommentBlock("inhale the RHS of the wand",inhaleModule.inhale(Seq((w.right, error)), addDefinednessChecks = false, statesStackForPackageStmt = statesStack, insidePackageStmt = inWand).map(_._1)) ++
       heapModule.beginExhale ++ heapModule.endExhale ++
       (if(inWand) exchangeAssumesWithBoolean(stateModule.assumeGoodState, OPS.boolVar) else stateModule.assumeGoodState)
     //GP: using beginExhale, endExhale works now, but isn't intuitive, maybe should duplicate code to avoid this breaking

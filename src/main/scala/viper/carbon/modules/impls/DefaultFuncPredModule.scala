@@ -16,6 +16,7 @@ import viper.carbon.verifier.{Environment, Verifier}
 import viper.carbon.boogie.Implicits._
 import viper.silver.ast.utility._
 import viper.carbon.modules.components.{DefinednessComponent, ExhaleComponent, InhaleComponent}
+import viper.carbon.proofgen.hints.InhaleComponentProofHint
 import viper.silver.verifier.{NullPartialVerificationError, PartialVerificationError, errors}
 
 import scala.collection.mutable.ListBuffer
@@ -623,7 +624,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
 
     val predicateBody = p.body.get
     val procedureBody =
-      MaybeCommentBlock("Check definedness of predicate body of " + p.name, init ++ inhaleWithDefinednessCheck(predicateBody, errors.PredicateNotWellformed(p)))
+      MaybeCommentBlock("Check definedness of predicate body of " + p.name, init ++ inhaleWithDefinednessCheck(predicateBody, errors.PredicateNotWellformed(p))._1)
     val predicateCheck = Procedure(Identifier(p.name  + "#definedness"), args, Seq(), procedureBody)
 
     Some(predicateCheck)
@@ -634,13 +635,13 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
       // Postcondition contains InhaleExhale expression.
       // Need to check inhale and exhale parts separately.
       val onlyInhalePosts: Seq[Stmt] = f.posts map (e => {
-        inhaleWithDefinednessCheck(whenInhaling(e), errors.ContractNotWellformed(e))
+        inhaleWithDefinednessCheck(whenInhaling(e), errors.ContractNotWellformed(e))._1
       })
       val onlyExhalePosts: Seq[Stmt] = if (f.isAbstract) {
         f.posts map (e => {
           inhaleWithDefinednessCheck( // inhale since we are not checking, but want short-circuiting
             whenExhaling(e),
-            errors.ContractNotWellformed(e))
+            errors.ContractNotWellformed(e))._1
         })
       }
       else {
@@ -671,7 +672,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
       // Postcondition does not contain InhaleExhale expression.
       if (f.isAbstract) {
         val posts: Seq[Stmt] = f.posts map (e => {
-          inhaleWithDefinednessCheck(e, errors.ContractNotWellformed(e)) // inhale since we are not checking, but want short-circuiting
+          inhaleWithDefinednessCheck(e, errors.ContractNotWellformed(e))._1 // inhale since we are not checking, but want short-circuiting
         })
         MaybeCommentBlock("Checking definedness of postcondition (no body)", posts)
       }
@@ -695,12 +696,12 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
         f.pres,
         (e) => {
           errors.ContractNotWellformed(e)
-        })
+        }).map(_._1)
       val onlyInhalePres: Seq[Stmt] = inhaleInhaleSpecWithDefinednessCheck(
         f.pres,
         (e) => {
           errors.ContractNotWellformed(e)
-        })
+        }).map(_._1)
       MaybeCommentBlock("Inhaling precondition (with checking)",
         MaybeCommentBlock("Do welldefinedness check of the exhale part.",
           NondetIf(onlyExhalePres ++ Assume(FalseLit()))) ++
@@ -713,7 +714,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
         f.pres,
         (e) => {
           errors.ContractNotWellformed(e)
-        })
+        }).map(_._1)
       MaybeCommentBlock("Inhaling precondition (with checking)", pres)
     }
   }
@@ -837,7 +838,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
     foldInfo = acc
     val stmt = exhale(Seq((Permissions.multiplyExpByPerm(acc.loc.predicateBody(verifier.program, env.allDefinedNames(program)).get,acc.perm), error)), havocHeap = false,
       statesStackForPackageStmt = statesStackForPackageStmt, insidePackageStmt = insidePackageStmt) ++
-      inhale(Seq((acc, error)), addDefinednessChecks = false, statesStackForPackageStmt, insidePackageStmt)
+      inhale(Seq((acc, error)), addDefinednessChecks = false, statesStackForPackageStmt, insidePackageStmt).map(_._1)
     val stmtLast =  Assume(predicateTrigger(heapModule.currentStateExps, acc.loc)) ++ {
       val location = acc.loc
       val predicate = verifier.program.findPredicate(location.predicateName)
@@ -882,7 +883,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
       } ++
       (if(exhaleUnfoldedPredicate)
           exhale(Seq((acc, error)), havocHeap = false, statesStackForPackageStmt = statesStackForPackageStmt, insidePackageStmt = insidePackageStmt)
-      else Nil) ++ inhale(Seq((Permissions.multiplyExpByPerm(acc.loc.predicateBody(verifier.program, env.allDefinedNames(program)).get,acc.perm), error)), addDefinednessChecks = false, statesStackForPackageStmt = statesStackForPackageStmt, insidePackageStmt = insidePackageStmt)
+      else Nil) ++ inhale(Seq((Permissions.multiplyExpByPerm(acc.loc.predicateBody(verifier.program, env.allDefinedNames(program)).get,acc.perm), error)), addDefinednessChecks = false, statesStackForPackageStmt = statesStackForPackageStmt, insidePackageStmt = insidePackageStmt).map(_._1)
     unfoldInfo = oldUnfoldInfo
     duringUnfold = oldDuringUnfold
     duringFold = oldDuringFold
@@ -945,38 +946,41 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
 
   var exhaleTmpStateId = -1
   var extraUnfolding = false
-  override def inhaleExp(e: sil.Exp, error: PartialVerificationError): Stmt = {
-    e match {
-      case sil.Unfolding(acc, _) => if (duringUnfoldingExtraUnfold) Nil else // execute the unfolding, since this may gain information
-      {
-        duringUnfoldingExtraUnfold = true
-        tmpStateId += 1
-        val tmpStateName = if (tmpStateId == 0) "Unfolding" else s"Unfolding$tmpStateId"
-        val (stmt, state) = stateModule.freshTempState(tmpStateName)
-        val stmts = stmt ++ unfoldPredicate(acc, NullPartialVerificationError, true)
-        tmpStateId -= 1
-        stateModule.replaceState(state)
-        duringUnfoldingExtraUnfold = false
+  override def inhaleExp(e: sil.Exp, error: PartialVerificationError): (Stmt, Seq[InhaleComponentProofHint]) = {
+    val res : Stmt =
+      e match {
+        case sil.Unfolding(acc, _) => if (duringUnfoldingExtraUnfold) Nil else // execute the unfolding, since this may gain information
+        {
+          duringUnfoldingExtraUnfold = true
+          tmpStateId += 1
+          val tmpStateName = if (tmpStateId == 0) "Unfolding" else s"Unfolding$tmpStateId"
+          val (stmt, state) = stateModule.freshTempState(tmpStateName)
+          val stmts = stmt ++ unfoldPredicate(acc, NullPartialVerificationError, true)
+          tmpStateId -= 1
+          stateModule.replaceState(state)
+          duringUnfoldingExtraUnfold = false
 
-        CommentBlock("Execute unfolding (for extra information)",stmts)
+          CommentBlock("Execute unfolding (for extra information)",stmts)
+        }
+
+        case pap@sil.PredicateAccessPredicate(loc@sil.PredicateAccess(_, _), perm) =>
+          val res: Stmt = if (extraUnfolding) {
+            exhaleTmpStateId += 1
+            extraUnfolding = false
+            val tmpStateName = if (exhaleTmpStateId == 0) "ExtraUnfolding" else s"ExtraUnfolding$exhaleTmpStateId"
+            val (stmt, state) = stateModule.freshTempState(tmpStateName)
+            val r = stmt ++ unfoldPredicate(pap, NullPartialVerificationError, true)
+            extraUnfolding = true
+            exhaleTmpStateId -= 1
+            stateModule.replaceState(state)
+            r
+          } else Nil
+          MaybeCommentBlock("Extra unfolding of predicate",
+            res ++ (if (duringUnfold) insidePredicate(unfoldInfo, pap) else Nil))
+        case _ => Nil
       }
 
-      case pap@sil.PredicateAccessPredicate(loc@sil.PredicateAccess(_, _), perm) =>
-        val res: Stmt = if (extraUnfolding) {
-          exhaleTmpStateId += 1
-          extraUnfolding = false
-          val tmpStateName = if (exhaleTmpStateId == 0) "ExtraUnfolding" else s"ExtraUnfolding$exhaleTmpStateId"
-          val (stmt, state) = stateModule.freshTempState(tmpStateName)
-          val r = stmt ++ unfoldPredicate(pap, NullPartialVerificationError, true)
-          extraUnfolding = true
-          exhaleTmpStateId -= 1
-          stateModule.replaceState(state)
-          r
-        } else Nil
-        MaybeCommentBlock("Extra unfolding of predicate",
-          res ++ (if (duringUnfold) insidePredicate(unfoldInfo, pap) else Nil))
-      case _ => Nil
-    }
+    (res, Seq())
   }
 
   def translateBackendFuncApp(fa: sil.BackendFuncApp): Exp = {

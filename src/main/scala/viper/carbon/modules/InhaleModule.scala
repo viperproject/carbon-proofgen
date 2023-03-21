@@ -9,6 +9,7 @@ package viper.carbon.modules
 import components.{ComponentRegistry, InhaleComponent}
 import viper.silver.{ast => sil}
 import viper.carbon.boogie.Stmt
+import viper.carbon.proofgen.hints.InhaleHint
 import viper.silver.ast.utility.Expressions.{whenExhaling, whenInhaling}
 import viper.silver.verifier.PartialVerificationError
 
@@ -35,16 +36,18 @@ trait InhaleModule extends Module with InhaleComponent with ComponentRegistry[In
     * @param insidePackageStmt indicates whether this method is being called during a package of a wand (true) or not (false)
     * @return
     */
-  def inhale(exps: Seq[(sil.Exp, PartialVerificationError)], addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): Stmt
+  def inhale(exps: Seq[(sil.Exp, PartialVerificationError)], addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, Seq[InhaleHint])
 
-  def inhaleWithDefinednessCheck(exp: sil.Exp, error: PartialVerificationError, statesStack: List[Any] = null, inWand: Boolean = false): Stmt =
-    inhale(Seq((exp, error)), addDefinednessChecks = true, statesStack, inWand)
+  def inhaleWithDefinednessCheck(exp: sil.Exp, error: PartialVerificationError, statesStack: List[Any] = null, inWand: Boolean = false): (Stmt, InhaleHint) = {
+    val (stmt, Seq(hint)) = inhale(Seq((exp, error)), addDefinednessChecks = true, statesStack, inWand)
+    (stmt, hint)
+  }
 
   /**
     * Convert all InhaleExhale expressions to their exhale part and inhale with definedness checks.
     */
   def inhaleExhaleSpecWithDefinednessCheck(expressions: Seq[sil.Exp],
-                                            errorConstructor: sil.Exp => PartialVerificationError): Seq[Stmt] = {
+                                            errorConstructor: sil.Exp => PartialVerificationError): Seq[(Stmt, InhaleHint)] = {
     expressions map (e => {
       inhaleWithDefinednessCheck(whenExhaling(e), errorConstructor(e))
     })
@@ -54,7 +57,7 @@ trait InhaleModule extends Module with InhaleComponent with ComponentRegistry[In
     * Convert all InhaleExhale expressions to their inhale part and inhale with definedness checks.
     */
   def inhaleInhaleSpecWithDefinednessCheck(expressions: Seq[sil.Exp],
-                                            errorConstructor: sil.Exp => PartialVerificationError): Seq[Stmt] = {
+                                            errorConstructor: sil.Exp => PartialVerificationError): Seq[(Stmt, InhaleHint)] = {
     expressions map (e => {
       inhaleWithDefinednessCheck(whenInhaling(e), errorConstructor(e))
     })

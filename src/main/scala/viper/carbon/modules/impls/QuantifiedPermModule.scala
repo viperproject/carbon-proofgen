@@ -36,7 +36,7 @@ import viper.carbon.boogie.Assign
 import viper.carbon.boogie.Func
 import viper.carbon.boogie.TypeAlias
 import viper.carbon.boogie.FuncApp
-import viper.carbon.proofgen.hints.ComponentProofHint
+import viper.carbon.proofgen.hints.{InhaleComponentProofHint, InhaleMainComponentHint, StmtComponentProofHint}
 import viper.carbon.utility.PolyMapDesugarHelper
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
@@ -799,7 +799,7 @@ class QuantifiedPermModule(val verifier: Verifier)
     Nil
   }
 
-  override def inhaleExp(e: sil.Exp, error: PartialVerificationError): Stmt = {
+  override def inhaleExp(e: sil.Exp, error: PartialVerificationError): (Stmt, Seq[InhaleComponentProofHint]) = {
     inhaleAux(e, Assume, error)
   }
 
@@ -820,7 +820,7 @@ class QuantifiedPermModule(val verifier: Verifier)
    * Boogie program
    * Note: right now (05.04.15) inhale AND transferAdd both use this function
    */
-  private def inhaleAux(e: sil.Exp, assmsToStmt: Exp => Stmt, error: PartialVerificationError):Stmt = {
+  private def inhaleAux(e: sil.Exp, assmsToStmt: Exp => Stmt, error: PartialVerificationError): (Stmt, Seq[InhaleComponentProofHint]) = {
     e match {
       case sil.AccessPredicate(loc: LocationAccess, prm) =>
         val perm = PermissionHelper.normalizePerm(prm)
@@ -846,30 +846,35 @@ class QuantifiedPermModule(val verifier: Verifier)
           } else {
             (translatePerm(perm), Nil)
           }
-        stmts ++
-         (permVar := permVal) ++
-          (if (perm.isInstanceOf[WildcardPerm])
-            assmsToStmt(checkNonNullReceiver(loc))
-          else
-            Assert(permissionPositiveInternal(permVar, Some(perm), true), error.dueTo(reasons.NegativePermission(perm))) ++
-            assmsToStmt(permissionPositiveInternal(permVar, Some(perm), false) ==> checkNonNullReceiver(loc))
-          ) ++
-          (if (!usingOldState) currentMaskAssignUpdate(loc, permAdd(curPerm, permVar)) else Nil)
+        val resultStmt =
+          stmts ++
+           (permVar := permVal) ++
+            (if (perm.isInstanceOf[WildcardPerm])
+              assmsToStmt(checkNonNullReceiver(loc))
+            else
+              Assert(permissionPositiveInternal(permVar, Some(perm), true), error.dueTo(reasons.NegativePermission(perm))) ++
+              assmsToStmt(permissionPositiveInternal(permVar, Some(perm), false) ==> checkNonNullReceiver(loc))
+            ) ++
+            (if (!usingOldState) currentMaskAssignUpdate(loc, permAdd(curPerm, permVar)) else Nil)
+
+        (resultStmt, Seq(InhaleMainComponentHint(permVar)))
       case w@sil.MagicWand(left,right) =>
         val wandRep = wandModule.getWandRepresentation(w)
         val curPerm = currentPermission(translateNull, wandRep)
-        if (!usingOldState) currentMaskAssignUpdate(translateNull, wandRep, permAdd(curPerm, fullPerm)) else Nil
-
+        val resultStmt : Stmt = if (!usingOldState) currentMaskAssignUpdate(translateNull, wandRep, permAdd(curPerm, fullPerm)) else Nil
+        (resultStmt, Seq())
       //Quantified Permission Expression
       case fa@sil.Forall(_, _, _) =>
-        if (fa.isPure) {
-          Nil
-        } else {
-          //Quantified Permission
-          val stmt:Stmt = translateInhale(fa, error)
-          stmt ++ Nil
-        }
-      case _ => Nil
+        val resultStmt =
+          if (fa.isPure) {
+            Nil
+          } else {
+            //Quantified Permission
+            val stmt:Stmt = translateInhale(fa, error)
+            stmt ++ Nil
+          }
+        (resultStmt, Seq())
+      case _ => (Nil, Seq())
 
     }
   }
@@ -1489,7 +1494,7 @@ class QuantifiedPermModule(val verifier: Verifier)
       (bvs map (v => Assume((v > noPerm) && (v < fullPerm))))
   }
 
-  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[ComponentProofHint]) => (Seqn, Seq[ComponentProofHint])= {
+  override def handleStmt(s: sil.Stmt, statesStack: List[Any] = null, allStateAssms: Exp = TrueLit(), insidePackageStmt: Boolean = false) : (Seqn, Seq[StmtComponentProofHint]) => (Seqn, Seq[StmtComponentProofHint])= {
     case (stmts, proofHints) =>
       val res : Seqn =
         s match {

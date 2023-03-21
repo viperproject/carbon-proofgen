@@ -196,7 +196,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
     val onlyExhalePosts: Seq[Stmt] = inhaleModule.inhaleExhaleSpecWithDefinednessCheck(
     posts, {
       errors.ContractNotWellformed(_)
-    })
+    }).map(_._1)
 
     val stmts = stmt ++ reset ++ (
     if (Expressions.contains[sil.InhaleExhaleExp](posts)) {
@@ -205,7 +205,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
       val onlyInhalePosts: Seq[Stmt] = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
       posts, {
         errors.ContractNotWellformed(_)
-      })
+      }).map(_._1)
 
           NondetIf(
           MaybeComment("Checked inhaling of postcondition to check definedness",
@@ -236,11 +236,11 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
       val onlyExhalePres: Seq[Stmt] = inhaleModule.inhaleExhaleSpecWithDefinednessCheck(
       pres, {
         errors.ContractNotWellformed(_)
-      })
+      }).map(_._1)
       val onlyInhalePres: Seq[Stmt] = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
       pres, {
         errors.ContractNotWellformed(_)
-      })
+      }).map(_._1)
       MaybeCommentBlock("Checked inhaling of precondition",
         MaybeCommentBlock("Do welldefinedness check of the exhale part.",
           NondetIf(onlyExhalePres ++ Assume(FalseLit()))) ++
@@ -252,7 +252,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
       val inhalePres: Seq[Stmt] = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
       pres, {
         errors.ContractNotWellformed(_)
-      })
+      }).map(_._1)
       MaybeCommentBlock("Checked inhaling of precondition", inhalePres)
     }
 
