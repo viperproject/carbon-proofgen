@@ -35,6 +35,7 @@ object ViperBoogieMLUtil {
                              varRelTac: String,
                              varContextVprTac: String,
                              fieldRelSingleTac: String,
+                             auxVarDisjTac: String,
                              tyInterpEContextBplEq: String) : String =
       MLUtil.createRecord(Seq(
         ("ctxt_wf_thm", ctxtWfThm),
@@ -42,12 +43,21 @@ object ViperBoogieMLUtil {
         ("var_rel_tac", varRelTac),
         ("var_context_vpr_tac", varContextVprTac),
         ("field_rel_single_tac", fieldRelSingleTac),
+        ("aux_var_disj_tac", auxVarDisjTac),
         ("type_interp_econtext", tyInterpEContextBplEq)
       ))
 
-  def createStmtRelInfo(basicStmtRelInfo: String, atomicRelTac: String) : String =
+  def createInhaleRelInfo(basicStmtRelInfo: String, atomicInhaleRelTac: String) : String =
+    MLUtil.createRecord(Seq(
+        ("basic_info", basicStmtRelInfo),
+        ("atomic_inhale_rel_tac", atomicInhaleRelTac)
+      )
+    )
+
+  def createStmtRelInfo(basicStmtRelInfo: String, atomicRelTac: String, inhaleRelInfo: String) : String =
     MLUtil.createRecord(Seq(
       ("basic_stmt_rel_info", basicStmtRelInfo),
-      ("atomic_rel_tac", atomicRelTac)
+      ("atomic_rel_tac", atomicRelTac),
+      ("inhale_rel_info", inhaleRelInfo)
     ))
 }

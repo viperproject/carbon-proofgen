@@ -7,5 +7,6 @@ object IsaTypeUtil {
 
   val natType = DataType("nat", Seq())
   val boolType = DataType("bool", Seq())
+  val stringType = DataType("string", Seq())
 
 }

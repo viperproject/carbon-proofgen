@@ -113,9 +113,15 @@ object DataType {
 
 case class TupleType(args: Seq[TypeIsa]) extends TypeIsa
 
+object TupleType {
+  def apply(arg1: TypeIsa, arg2: TypeIsa) : TupleType = TupleType(Seq(arg1, arg2))
+
+}
+
 //endregion
 
 //region PrimitiveType
+/**TODO drop these? **/
 sealed trait PrimitiveType extends TypeIsa
 
 case object BoolType extends PrimitiveType

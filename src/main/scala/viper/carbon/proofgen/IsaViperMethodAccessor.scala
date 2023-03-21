@@ -9,6 +9,7 @@ trait IsaViperGlobalDataAccessor {
   def vprProgram : TermIdent
   def fields : TermIdent
   def fieldRel : TermIdent
+  def fieldRelBoundedLemma : String
   def fieldIdent(f: sil.Field) : Term
   def fieldLookupLemma(fieldName: String) : String
 

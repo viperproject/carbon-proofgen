@@ -67,6 +67,8 @@ object IsaPrettyPrinter {
       prettyPrintContextElem(context, sb).newLine
       sb.append(statements.map(stmt => innerTerm(prettyPrint(stmt))).mkString(" and ")).newLine
       prettyPrintProof(proof, sb)
+    case LemmasDecl(name, thmNames) =>
+      sb.append(s"lemmas $name = ${thmNames.mkString(" ")}").newLine
     case LocaleDecl(name, context, body) =>
       sb.append(s"locale $name =").newLine
       prettyPrintContextElem(context, sb).newLine

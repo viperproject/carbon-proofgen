@@ -7,7 +7,10 @@ case class DefaultIsaViperGlobalDataAccessor( override val theoryName: String,
                                               vprProgramIdent: String,
                                               fieldsIdent: String,
                                               private val fieldToTerm : Map[sil.Field, Term],
-                                              fieldRelIdent: String) extends IsaViperGlobalDataAccessor {
+                                              fieldRelIdent: String,
+                                              override val fieldRelBoundedLemma: String
+                                            ) extends IsaViperGlobalDataAccessor {
+
   private def qualifyName(name: String) =  IsaUtil.qualifyName(theoryName, name)
 
   override val vprProgram: TermIdent = TermIdent(qualifyName(vprProgramIdent))
@@ -16,5 +19,5 @@ case class DefaultIsaViperGlobalDataAccessor( override val theoryName: String,
   override val fieldRel: TermIdent = TermIdent(qualifyName(fieldRelIdent))
   override def fieldIdent(f: Field): Term = fieldToTerm.get(f).get
   override def fieldLookupLemma(fieldName: String): String = ???
-
+  
 }

@@ -12,8 +12,13 @@ object IsaTermUtil {
 
   val none = TermIdent("None")
 
+  def fst(t: Term) = TermApp(TermIdent("fst"), t)
+  def snd(t: Term) = TermApp(TermIdent("snd"), t)
+
   def convertOpt(termOpt: Option[Term]) : Term = termOpt.fold[Term](none)(t => some(t))
 
   val emptyMap : Term = TermIdent("Map.empty")
+
+  def listAll(pred: Term, list: Term) : Term = TermApp(TermIdent("list_all"), pred, list)
 
 }

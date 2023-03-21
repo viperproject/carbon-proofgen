@@ -1,6 +1,6 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, NatConst, OuterDecl, StringConst, Term, TermIdent, TermList, TermTuple, Theory, TupleType}
+import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermIdent, TermList, TermTuple, Theory, TupleType}
 import viper.silver.{ast => sil}
 
 import scala.collection.mutable.ListBuffer
@@ -31,11 +31,22 @@ object IsaVprProgramGenerator {
 
       val fieldRelationListDef = DefDecl(
         "field_rel",
-        None,
+        Some(IsaTypeUtil.listType(TupleType(IsaTypeUtil.stringType, BoogieIsaType.varNameType))),
         (Seq(), fieldRelationList)
       )
 
       outerDecls += fieldRelationListDef
+
+      val fieldRelationBoundedBy = LemmaDecl(
+        "field_rel_bound",
+        ViperBoogieIsaUtil.allVarsInListBoundedBy(
+          TermIdent(fieldRelationListDef.name),
+          ViperBoogieIsaUtil.maxInRangeOfList(fieldRelationList)
+        ),
+        Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(fieldRelationListDef.name)))))
+      )
+
+      outerDecls += fieldRelationBoundedBy
 
       val programDef = DefDecl("vpr_prog",
         Some(ViperIsaType.vprProgramType),
@@ -57,7 +68,8 @@ object IsaVprProgramGenerator {
           vprProgramIdent = programDef.name,
           fieldsIdent = fieldsListDef.name,
           fieldToTerm = fieldToTerm,
-          fieldRelIdent = fieldRelationListDef.name)
+          fieldRelIdent = fieldRelationListDef.name,
+          fieldRelBoundedLemma = fieldRelationBoundedBy.name)
       )
     }
 

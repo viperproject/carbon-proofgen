@@ -27,6 +27,7 @@ case class MethodProofGenerator(
   val typeInterpBplName = "type_interp_bpl"
 
   val varRelationListName = "var_relation_list_1"
+  val varRelationBoundedByName = "var_relation_list_1_bound"
   val translationRecordName = "tr_vpr_bpl_0"
   val stateRelInitialName = "state_rel_initial"
 
@@ -60,11 +61,22 @@ case class MethodProofGenerator(
 
     val varRelationListDef = DefDecl(
       varRelationListName,
-      None,
+      Some(IsaTypeUtil.listType(TupleType(ViperIsaType.varNameType, BoogieIsaType.varNameType))),
       (Seq(), varRelationList)
     )
 
     outerDecls += varRelationListDef
+
+    val varRelationBoundedBy = LemmaDecl(
+      varRelationBoundedByName,
+      ViperBoogieIsaUtil.allVarsInListBoundedBy(
+        TermIdent(varRelationListName),
+        ViperBoogieIsaUtil.maxInRangeOfList(varRelationList)
+      ),
+      Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(varRelationListName)))))
+    )
+
+    outerDecls += varRelationBoundedBy
 
     val translationRecord = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
@@ -199,6 +211,17 @@ case class MethodProofGenerator(
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
     outerDecls += varContextWfBplLemma
 
+    val basicDisjointnessLemmas = LemmasDecl(
+      "basic_disjointness_lemmas",
+      Seq(
+        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", varRelationBoundedByName)),
+        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", vprProg.globalDataAccessor.fieldRelBoundedLemma)),
+        not_satisfies_prop_set("const_repr_basic_bound_2")
+      )
+    )
+
+    outerDecls += basicDisjointnessLemmas
+
     val lookupVarRelTac = "lookup_var_rel_tac"
     val simpWithTrDef = "simp_with_tr_def_tac"
     val simpWithTyReprDef = "simp_with_ty_repr_def_tac"
@@ -212,6 +235,10 @@ case class MethodProofGenerator(
     val basicStmtRelInfo = "basic_stmt_rel_info"
     val stmtRelInfo = "stmt_rel_info"
     val stmtRelHints = "stmt_rel_hints"
+
+    val inhaleRelInfo = "inhale_rel_info"
+
+    val auxVarDisjTac = "aux_var_disj_tac"
 
     val heapReadWfTac = "heap_read_wf_tac"
     val heapReadMatchTac = "heap_read_match_tac"
@@ -319,7 +346,11 @@ case class MethodProofGenerator(
 
         MLUtil.defineVal(expWfRelInfo,
           ViperBoogieMLUtil.createExpWfRelInfo(fieldAccessWfRelTacAuxInst)
-          ),
+        ),
+
+        MLUtil.defineVal(auxVarDisjTac,
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmas.name)))
+        ),
 
         MLUtil.defineVal(basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
           ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
@@ -327,13 +358,23 @@ case class MethodProofGenerator(
           varRelTac = lookupVarRelTac,
           varContextVprTac = "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
           fieldRelSingleTac = fieldRelSingleTac,
+          auxVarDisjTac = auxVarDisjTac,
           tyInterpEContextBplEq = MLUtil.isaToMLThm(tyInterpEqBpl)
+          )
+        ),
+
+        MLUtil.defineVal(
+          inhaleRelInfo,
+          ViperBoogieMLUtil.createInhaleRelInfo(
+            basicStmtRelInfo = basicStmtRelInfo,
+            atomicInhaleRelTac = "atomic_inhale_rel_inst_tac"
           )
         ),
 
         MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
           basicStmtRelInfo = basicStmtRelInfo,
-          atomicRelTac = "atomic_rel_inst_tac"
+          atomicRelTac = "atomic_rel_inst_tac",
+          inhaleRelInfo = inhaleRelInfo
         )),
 
         MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
@@ -424,4 +465,6 @@ case class MethodProofGenerator(
     )
   }
 
+  private def not_satisfies_prop_set(list_all_ran_lemma: String) : String =
+    ProofUtil.OF("not_satisfies_prop_in_set", list_all_ran_lemma)
 }

@@ -16,6 +16,9 @@ case object LemmaDecl {
   def apply(name: String, context: ContextElem, statement: Term, proof: Proof) : LemmaDecl =
     LemmaDecl(name, context, Seq(statement), proof)
 
+  def apply(name: String, statement: Term, proof: Proof) : LemmaDecl =
+    LemmaDecl(name, ContextElem.empty(), statement, proof)
+
 }
 
 case class LemmasDecl(name: String, thmNames: Seq[String]) extends OuterDecl

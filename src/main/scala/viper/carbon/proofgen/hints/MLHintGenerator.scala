@@ -7,8 +7,17 @@ object MLHintGenerator {
 
   def generateAtomicInhaleHintsInML(atomicInhaleHint: AtomicInhaleHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
     atomicInhaleHint match {
-      case FieldAccessPredicateInhaleHint(fieldAccessPred, hints) =>
-        MLUtil.app("FieldAccInhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo)))
+      case FieldAccessPredicateInhaleHint(fieldAccessPred, hints) => {
+          val mainComponentHintOpt = hints.find(hint => hint.isInstanceOf[InhaleMainComponentHint])
+          mainComponentHintOpt match {
+            case Some(mainComponentHint: InhaleMainComponentHint) =>
+              val lookupAuxVarTyThm =  boogieProcAccessor.getLookupThyThm(mainComponentHint.temporaryPermVar)
+              MLUtil.app("FieldAccInhHint",
+                MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, MLUtil.isaToMLThm(lookupAuxVarTyThm)))
+              )
+            case _ => sys.error("inhale field access predicate hint missing main component hint")
+          }
+        }
       case PureExpInhaleHint(e, hints) =>
         MLUtil.app("PureExpInhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo)))
     }
