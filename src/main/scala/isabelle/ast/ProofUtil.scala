@@ -53,7 +53,7 @@ object ProofUtil {
   }
 
   def fastforceTac(intros: Seq[String], elims: Seq[String], simps: Seq[String]) : String = {
-    s"(fastforce ${modifierArgument("intro", intros)}  ${modifierArgument("elim", elims)} ${modifierArgument("simp", simps)} )"
+    "(fastforce"+ s" ${modifierArgument("intro", intros)}"+ s" ${modifierArgument("elim", elims)}" + s" ${modifierArgument("simp", simps)})"
   }
   def fastforceTacWithIntros(thms: Seq[String]) : String = fastforceTac(thms, Seq(), Seq())
   def fastforceTacWithSimps(thms: Seq[String]) : String = fastforceTac(Seq(), Seq(), thms)

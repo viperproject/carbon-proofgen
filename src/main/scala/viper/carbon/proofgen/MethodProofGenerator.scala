@@ -113,7 +113,7 @@ case class MethodProofGenerator(
         stateRelInitialName,
         None,
         (Seq(TermIdent("A"), TermIdent("Pr"), TermIdent("ctxt"), TermIdent("w"), TermIdent("ns")),
-          ViperBoogieRelationIsa.stateRelation(
+          ViperBoogieRelationIsa.stateRelationDefSame(
             TermIdent("Pr"),
             TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A")),
             TermIdent(translationRecordDef.name),
@@ -442,6 +442,7 @@ case class MethodProofGenerator(
     Seq(
       applyTac(ruleTac(ViperBoogieRelationIsa.stateRelMaskUpdateThm)),
       applyTac(fastforceTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecordName))),
       applyTac(fastforceTacWithIntros(Seq(ViperBoogieRelationIsa.zeroMaskRelThm))),
       applyTac(simpTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecordName))),

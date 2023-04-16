@@ -6,21 +6,21 @@ import isabelle.ast.ProofUtil._
 object ViperBoogieRelationIsa {
   def expressionContextType(abstractType: TypeIsa) = DataType("econtext_bpl", abstractType)
 
-  val stateRelName = "state_rel"
+  val stateRelDefSameName = "state_rel_def_same"
   val stateRelEmptyName = "state_rel_empty"
 
   val viperBoogieAbstractTypeInterpId = TermIdent("vbpl_absval_ty")
 
   def viperBoogieAbstractTypeInterp(tyReprBpl: Term) : Term = TermApp(viperBoogieAbstractTypeInterpId, tyReprBpl)
 
-  def stateRelation( program: Term,
-                     typeRepresentation: Term,
-                     translationRecord: Term,
-                     auxiliaryPredicates: Term,
-                     viperTotalContext: Term,
-                     normalViperState: Term,
-                     boogieState: Term) : Term =
-    TermApp(TermIdent(stateRelName), Seq(program, typeRepresentation, translationRecord, auxiliaryPredicates, viperTotalContext, normalViperState, boogieState))
+  def stateRelationDefSame(program: Term,
+                           typeRepresentation: Term,
+                           translationRecord: Term,
+                           auxiliaryPredicates: Term,
+                           viperTotalContext: Term,
+                           normalViperState: Term,
+                           boogieState: Term) : Term =
+    TermApp(TermIdent(stateRelDefSameName), Seq(program, typeRepresentation, translationRecord, auxiliaryPredicates, viperTotalContext, normalViperState, boogieState))
 
   def stateRelationWellTypedThm = TermIdent("state_rel_state_well_typed")
 
@@ -86,6 +86,7 @@ case object TranslationRecord {
   val translationRecordTypeName = "tr_vpr_bpl"
   val translationRecordType = DataType(translationRecordTypeName, Seq())
 
+  //here a record is created for the case where the well-definedness and evaluation states are the same
   def makeTranslationRecord( heapVar: Term,
                              maskVar: Term,
                              maskRead: Term,
@@ -97,7 +98,9 @@ case object TranslationRecord {
                              varTranslation: Term,
                              constRepr: Term): Term =
     IsaTermUtil.makeRecord(translationRecordTypeName,
-      Seq(heapVar, maskVar, maskRead, maskUpdate, heapRead, heapUpdate, fieldTranslation, funTranslation, varTranslation, constRepr)
+      Seq(heapVar, maskVar,  //evaluation state
+          heapVar, maskVar,  //well-def state
+          maskRead, maskUpdate, heapRead, heapUpdate, fieldTranslation, funTranslation, varTranslation, constRepr)
     )
 
   def maskVar(translationRecord: Term) : Term = TermApp(TermIdent("mask_var"), translationRecord)
