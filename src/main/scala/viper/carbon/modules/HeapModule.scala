@@ -138,8 +138,10 @@ trait HeapModule extends Module with CarbonStateComponent {
 
   /**
    * End of exhale
+   * local variable used for end of exhale is provided for proof generation purposes
+    * TODO: hide abstract over the local variable via a more general proof hint
    */
-  def endExhale: Stmt
+  def endExhale: (Stmt, LocalVar)
 
   /**
    * Is the given field a predicate field?

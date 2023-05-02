@@ -40,6 +40,15 @@ object MLUtil {
 
   def seqPrimeTac(tac1: String, tac2: String) : String = s"$tac1 THEN' $tac2"
 
+  def lambda(args: Seq[String], body: String) : String = {
+    val argsLambdaPrefix =
+      args.foldLeft("")(
+        { case (prefix, arg) => s"$prefix fn $arg =>" }
+      )
+
+    argsLambdaPrefix + body
+  }
+
   def mlTacticToIsa(mlTactic: String) : String =
     s"tactic \\<open> $mlTactic \\<close>"
 

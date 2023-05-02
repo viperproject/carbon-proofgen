@@ -32,6 +32,7 @@ object ViperBoogieMLUtil {
 
   def createBasicStmtRelInfo(ctxtWfThm: String,
                              trDefThm: String,
+                             vprProgramContextEqThm: String,
                              varRelTac: String,
                              varContextVprTac: String,
                              fieldRelSingleTac: String,
@@ -40,6 +41,7 @@ object ViperBoogieMLUtil {
       MLUtil.createRecord(Seq(
         ("ctxt_wf_thm", ctxtWfThm),
         ("tr_def_thm", trDefThm),
+        ("vpr_program_ctxt_eq_thm", vprProgramContextEqThm),
         ("var_rel_tac", varRelTac),
         ("var_context_vpr_tac", varContextVprTac),
         ("field_rel_single_tac", fieldRelSingleTac),
@@ -54,10 +56,22 @@ object ViperBoogieMLUtil {
       )
     )
 
-  def createStmtRelInfo(basicStmtRelInfo: String, atomicRelTac: String, inhaleRelInfo: String) : String =
+  def createExhaleRelInfo(basicStmtRelInfo: String, atomicExhaleRelTac: String) : String =
+    MLUtil.createRecord(Seq(
+        ("basic_info", basicStmtRelInfo),
+        ("atomic_exhale_rel_tac", atomicExhaleRelTac)
+      )
+    )
+
+  def createStmtRelInfo(basicStmtRelInfo: String, atomicRelTac: String, inhaleRelInfo: String, exhaleRelInfo: String) : String =
     MLUtil.createRecord(Seq(
       ("basic_stmt_rel_info", basicStmtRelInfo),
       ("atomic_rel_tac", atomicRelTac),
-      ("inhale_rel_info", inhaleRelInfo)
+      ("inhale_rel_info", inhaleRelInfo),
+      ("exhale_rel_info", exhaleRelInfo)
     ))
+
+  def everyRedAstBplTransitiveTac(proofContext: String, tactics: Seq[String]) : String =
+    s"EVERY'_red_ast_bpl_transitive $proofContext ${MLUtil.createList(tactics)}"
+
 }

@@ -11,6 +11,7 @@ import viper.carbon.verifier.Verifier
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
 import viper.carbon.modules.components.CarbonStateComponent
+import viper.carbon.proofgen.hints.{StateProofHint, UpdateStateComponentHint}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -146,11 +147,17 @@ class DefaultStateModule(val verifier: Verifier) extends StateModule {
     (freshState, false, false)
   }
 
-  override def initToCurrentStmt(snapshot: StateSnapshot) : Stmt = {
-    for (e <- snapshot._1.entrySet().asScala.toSeq) yield {
-      val s: Stmt = (e.getValue zip e.getKey.currentStateExps) map (x => x._1 := x._2)
-      s
+  override def initToCurrentStmt(snapshot: StateSnapshot) : (Stmt, Seq[StateProofHint]) = {
+    val res : Seq[(Stmt, StateProofHint)] = {
+      for (e <- snapshot._1.entrySet().asScala.toSeq) yield {
+        val s: Stmt = (e.getValue zip e.getKey.currentStateExps) map (x => x._1 := x._2)
+        val proofHint: StateProofHint = UpdateStateComponentHint(e.getKey.identifier, e.getValue, e.getKey.currentStateExps)
+        (s, proofHint)
+      }
     }
+
+    val (resStmtSeq, resHint) = res.unzip[Stmt, StateProofHint]
+    (resStmtSeq.flatten, resHint)
   }
 
   def freshEmptyState(name: String, init: Boolean = false): (Stmt, StateSnapshot) =

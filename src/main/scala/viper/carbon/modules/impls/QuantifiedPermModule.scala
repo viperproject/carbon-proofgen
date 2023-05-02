@@ -36,7 +36,7 @@ import viper.carbon.boogie.Assign
 import viper.carbon.boogie.Func
 import viper.carbon.boogie.TypeAlias
 import viper.carbon.boogie.FuncApp
-import viper.carbon.proofgen.hints.{InhaleComponentProofHint, InhaleMainComponentHint, StmtComponentProofHint}
+import viper.carbon.proofgen.hints.{ExhaleComponentProofHint, ExhaleMainComponentHint, InhaleComponentProofHint, InhaleMainComponentHint, StmtComponentProofHint}
 import viper.carbon.utility.PolyMapDesugarHelper
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
@@ -45,6 +45,8 @@ import viper.silver.ast.Implies
 import scala.collection.mutable.ListBuffer
 import viper.silver.ast.utility.QuantifiedPermissions.SourceQuantifiedPermissionAssertion
 import viper.silver.verifier.errors.{ContractNotWellformed, PostconditionViolated}
+
+case object PermissionStateComponent extends CarbonStateComponentIdentifier
 
 /**
  * An implementation of [[viper.carbon.modules.PermModule]] supporting quantified permissions.
@@ -268,6 +270,8 @@ class QuantifiedPermModule(val verifier: Verifier)
 
   override def usingOldState = stateModuleIsUsingOldState
 
+  override val identifier: CarbonStateComponentIdentifier = PermissionStateComponent
+
   override def predicateMaskField(pred: Exp): Exp = {
     FuncApp(predicateMaskFieldName, Seq(pred), pmaskType)
   }
@@ -295,15 +299,39 @@ class QuantifiedPermModule(val verifier: Verifier)
    */
   private def hasDirectPerm(mask: Exp, obj: Exp, loc: Exp): Exp =
     FuncApp(hasDirectPermName, Seq(maskExp, obj, loc), Bool)
+
   private def hasDirectPerm(obj: Exp, loc: Exp): Exp = hasDirectPerm(maskExp, obj, loc)
+
   override def hasDirectPerm(la: sil.LocationAccess): Exp = {
+    hasDirectPerm(translateReceiver(la), translateLocation(la))
+  }
+
+  /**
+    * Returns Boolean expression checking whether there is nonzero permission to the input location in the provided permission state.
+    * The input location itself is translated in the original state (not in the provided permission state)
+    * @param la input location
+    * @param setToPermState permission state in which the permission is checked
+    * @return
+    */
+  private def hasDirectPerm(la: sil.LocationAccess, setToPermState: () => Unit): Exp = {
+    val translatedRcv = translateReceiver(la)
+    val translatedLoc = translateLocation(la)
+
+    val state = stateModule.state
+    setToPermState()
+    val res = hasDirectPerm(translatedRcv, translatedLoc)
+    stateModule.replaceState(state)
+
+    res
+  }
+
+  private def translateReceiver(la: sil.LocationAccess) : Exp  = {
     la match {
-      case sil.FieldAccess(rcv, field) =>
-        hasDirectPerm(translateExp(rcv), translateLocation(la))
-      case sil.PredicateAccess(_, _) =>
-        hasDirectPerm(translateNull, translateLocation(la))
+      case sil.FieldAccess(rcv, _) => translateExp(rcv)
+      case sil.PredicateAccess(_, _) => translateNull
     }
   }
+
 
   /**
    * Expression that expresses that 'permission' is positive. 'silPerm' is used to
@@ -336,7 +364,7 @@ class QuantifiedPermModule(val verifier: Verifier)
     }
   }
 
-  override def exhaleExp(e: sil.Exp, error: PartialVerificationError): Stmt = {
+  override def exhaleExp(e: sil.Exp, error: PartialVerificationError, definednessCheckOpt: Option[DefinednessState]): (Stmt, Seq[ExhaleComponentProofHint]) = {
     e match {
       case sil.AccessPredicate(loc: LocationAccess, prm) =>
         val curPerm = currentPermission(loc)
@@ -349,39 +377,47 @@ class QuantifiedPermModule(val verifier: Verifier)
         if (!p.isInstanceOf[sil.WildcardPerm]) {
           val prmTranslated = translatePerm(p)
 
-          Assert(permissionPositiveInternal(prmTranslated, Some(p), true), error.dueTo(reasons.NegativePermission(p))) ++
+          val resStmt =
             (permVar := prmTranslated) ++
+              Assert(permissionPositiveInternal(permVar, Some(p), true), error.dueTo(reasons.NegativePermission(p))) ++
             If(permVar !== noPerm,
               Assert(permLe(permVar, curPerm), error.dueTo(reasons.InsufficientPermission(loc))),
               Nil) ++
             subtractFromMask(permVar)
+
+          (resStmt, Seq(ExhaleMainComponentHint(permVar)))
         } else {
           val curPerm = currentPermission(loc)
           val wildcard = LocalVar(Identifier("wildcard"), Real)
 
-          Assert(curPerm > noPerm, error.dueTo(reasons.InsufficientPermission(loc))) ++
-            LocalVarWhereDecl(wildcard.name, wildcard > noPerm) ++
-            Havoc(wildcard) ++
-            Assume(wildcard < curPerm) ++
-            subtractFromMask(wildcard)
+          val res =
+            Assert(curPerm > noPerm, error.dueTo(reasons.InsufficientPermission(loc))) ++
+              LocalVarWhereDecl(wildcard.name, wildcard > noPerm) ++
+              Havoc(wildcard) ++
+              Assume(wildcard < curPerm) ++
+              subtractFromMask(wildcard)
+
+          (res, Seq())
         }
       case w@sil.MagicWand(_,_) =>
         val wandRep = wandModule.getWandRepresentation(w)
         val curPerm = currentPermission(translateNull, wandRep)
-        Comment("permLe")++
-          Assert(permLe(fullPerm, curPerm), error.dueTo(reasons.MagicWandChunkNotFound(w))) ++
-          (if (!usingOldState) currentMaskAssignUpdate(translateNull, wandRep, permSub(curPerm, fullPerm)) else Nil)
+        val res =
+          Comment("permLe")++
+            Assert(permLe(fullPerm, curPerm), error.dueTo(reasons.MagicWandChunkNotFound(w))) ++
+            (if (!usingOldState) currentMaskAssignUpdate(translateNull, wandRep, permSub(curPerm, fullPerm)) else Nil)
 
+        (res, Seq())
       case fa@sil.Forall(v, cond, expr) =>
 
         if (fa.isPure) {
-          Nil
+          (Nil, Seq())
         } else {
           //Quantified Permission
           val stmt = translateExhale(fa, error)
-          stmt
+          (stmt, Seq())
         }
-      case _ => Nil
+      case _ => (Nil, Seq())
     }
   }
 
@@ -1534,12 +1570,13 @@ class QuantifiedPermModule(val verifier: Verifier)
     permLe(b, a, forField)
   }
 
-  override def simplePartialCheckDefinednessAfter(e: sil.Exp, error: PartialVerificationError, makeChecks: Boolean): Stmt = {
+  override def simplePartialCheckDefinednessAfter(e: sil.Exp, error: PartialVerificationError, makeChecks: Boolean, definednessStateOpt: Option[DefinednessState]): Stmt = {
 
     val stmt: Stmt = if(makeChecks) (
       e match {
         case fa@sil.LocationAccess(_) =>
-          Assert(hasDirectPerm(fa), error.dueTo(reasons.InsufficientPermission(fa)))
+          val hasDirectPermExp = definednessStateOpt.fold(hasDirectPerm(fa))(defState => hasDirectPerm(fa, defState.setDefState))
+          Assert(hasDirectPermExp, error.dueTo(reasons.InsufficientPermission(fa)))
         case sil.PermDiv(a, b) =>
           Assert(translateExp(b) !== IntLit(0), error.dueTo(reasons.DivisionByZero(b)))
         case sil.PermPermDiv(a, b) =>

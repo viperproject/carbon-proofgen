@@ -81,6 +81,8 @@ case class MethodProofGenerator(
     val translationRecord = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
       maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
+      heapVarDef = NatConst(globalBplData.getVarId(HeapGlobalVar)),
+      maskVarDef = NatConst(globalBplData.getVarId(MaskGlobalVar)),
       maskRead = TermApp(TermIdent("read_mask_concrete"), TermIdent("fun_repr_concrete")),
       maskUpdate = TermApp(TermIdent("update_mask_concrete"), TermIdent("fun_repr_concrete")),
       heapRead = TermApp(TermIdent("read_heap_concrete"), TermIdent("fun_repr_concrete")),
@@ -163,6 +165,8 @@ case class MethodProofGenerator(
 
     val funInterpWfBpl = "WfFunBpl"
 
+    val vprProgramTotal = "VprProgramTotal"
+
     val absvalInterpVpr = ViperTotalContext.absvalInterpTotal(totalContextVpr)
 
     val contextElem = ContextElem(
@@ -237,6 +241,7 @@ case class MethodProofGenerator(
     val stmtRelHints = "stmt_rel_hints"
 
     val inhaleRelInfo = "inhale_rel_info"
+    val exhaleRelInfo = "exhale_rel_info"
 
     val auxVarDisjTac = "aux_var_disj_tac"
 
@@ -269,11 +274,11 @@ case class MethodProofGenerator(
             * expressions
             */
           Seq(
-            boogieProg.getLookupThyThm(HeapGlobalVar),
-            boogieProg.getLookupThyThm(MaskGlobalVar)
+            boogieProg.getGlobalLookupTyThm(HeapGlobalVar),
+            boogieProg.getGlobalLookupTyThm(MaskGlobalVar)
           ) ++
-          boogieProg.getAllLocalVariables().map(l => boogieProg.getLookupThyThm(l)).toSeq ++
-          vprProg.origProgram.fields.map(field => boogieProg.getLookupThyThm(FieldConst(field)))
+          boogieProg.getAllLocalVariables().map(l => boogieProg.getLocalLookupTyThm(l)).toSeq ++
+          vprProg.origProgram.fields.map(field => boogieProg.getGlobalLookupTyThm(FieldConst(field)))
         )),
 
         MLUtil.defineVal(lookupFunBplThms, isaToMLThms(
@@ -354,6 +359,7 @@ case class MethodProofGenerator(
 
         MLUtil.defineVal(basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
           ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
+          vprProgramContextEqThm = isaToMLThm(vprProgramTotal),
           trDefThm = isaToMLThm(definitionLemmaFromName(translationRecordName)),
           varRelTac = lookupVarRelTac,
           varContextVprTac = "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
@@ -371,10 +377,19 @@ case class MethodProofGenerator(
           )
         ),
 
+        MLUtil.defineVal(
+          exhaleRelInfo,
+          ViperBoogieMLUtil.createExhaleRelInfo(
+            basicStmtRelInfo = basicStmtRelInfo,
+            atomicExhaleRelTac = "atomic_exhale_rel_inst_tac"
+          )
+        ),
+
         MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
           basicStmtRelInfo = basicStmtRelInfo,
           atomicRelTac = "atomic_rel_inst_tac",
-          inhaleRelInfo = inhaleRelInfo
+          inhaleRelInfo = inhaleRelInfo,
+          exhaleRelInfo = exhaleRelInfo
         )),
 
         MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
@@ -429,7 +444,7 @@ case class MethodProofGenerator(
       applyTac(BoogieIsaTerm.redAstPropagateRelTac),
       applyTac(BoogieIsaTerm.redAstOneSimpleCmdTac),
       applyTac(BoogieIsaTerm.assignIntroAltTac),
-      applyTac(simpTac(boogieProg.getLookupThyThm(MaskGlobalVar))),
+      applyTac(simpTac(boogieProg.getGlobalLookupTyThm(MaskGlobalVar))),
       applyTac(ruleTac(BoogieIsaTerm.redVarThm)),
       applyTac(ViperBoogieRelationIsa.zeroMaskLookupTactic(IsaUtil.definitionLemmaFromName(translationRecordName))),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName))),

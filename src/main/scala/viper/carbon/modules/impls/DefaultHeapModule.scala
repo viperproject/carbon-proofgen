@@ -7,7 +7,7 @@
 package viper.carbon.modules.impls
 
 import viper.carbon.modules._
-import viper.carbon.modules.components.{DefinednessComponent, InhaleComponent, SimpleStmtComponent}
+import viper.carbon.modules.components.{CarbonStateComponentIdentifier, DefinednessComponent, InhaleComponent, SimpleStmtComponent}
 import viper.silver.ast.utility.Expressions
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
@@ -17,6 +17,8 @@ import viper.carbon.verifier.Verifier
 import viper.carbon.utility.{PolyMapDesugarHelper, PolyMapRep}
 import viper.silver.ast.utility.QuantifiedPermissions.QuantifiedPermissionAssertion
 import viper.silver.verifier.PartialVerificationError
+
+case object HeapStateComponent extends CarbonStateComponentIdentifier
 
 /**
  * The default implementation of a [[viper.carbon.modules.HeapModule]].
@@ -803,16 +805,20 @@ class DefaultHeapModule(val verifier: Verifier)
 
   override def usingOldState = stateModuleIsUsingOldState
 
+  override val identifier: CarbonStateComponentIdentifier = HeapStateComponent
+
 
   override def beginExhale: Stmt = {
 //    Havoc(exhaleHeap)
     Statements.EmptyStmt
   }
 
-  override def endExhale: Stmt = {
-    if (!usingOldState) Havoc(exhaleHeap) ++ Assume(FuncApp(identicalOnKnownLocsName, Seq(heapExp, exhaleHeap) ++ currentMask, Bool)) ++
-      (heapVar := exhaleHeap)
-    else Nil
+  override def endExhale: (Stmt, LocalVar) = {
+    val res =
+      if (!usingOldState) Havoc(exhaleHeap) ++ Assume(FuncApp(identicalOnKnownLocsName, Seq(heapExp, exhaleHeap) ++ currentMask, Bool)) ++
+        (heapVar := exhaleHeap)
+      else Nil
+    (res, exhaleHeap)
   }
 
   /**

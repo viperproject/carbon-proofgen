@@ -7,13 +7,13 @@
 package viper.carbon.modules.impls
 
 import viper.carbon.modules.{StatelessComponent, StmtModule}
-import viper.carbon.modules.components.{DefinednessComponent, SimpleStmtComponent}
+import viper.carbon.modules.components.{DefinednessComponent, DefinednessState, SimpleStmtComponent}
 import viper.silver.ast.utility.Expressions.{whenExhaling, whenInhaling}
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
-import viper.carbon.proofgen.hints.{AtomicHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{AssertStmtComponentHint, AssertStmtHint, AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
 import viper.silver.ast.FieldAssign
 import viper.silver.verifier.{PartialVerificationError, errors, reasons}
 import viper.silver.ast.utility.Expressions
@@ -117,6 +117,11 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       return (Nil, Seq())
     }
 
+    //In certain cases, definedness checks should not be included inside a package statement
+    def maybeDefError(error: PartialVerificationError) : Option[PartialVerificationError] = {
+      if(insidePackageStmt) { None } else { Some(error) }
+    }
+
     stmt match {
       case assign@sil.LocalVarAssign(lhs, rhs) =>
         (
@@ -136,26 +141,27 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         (translateUnfold(unfold, statesStack, insidePackageStmt), Seq())
       case inh@sil.Inhale(e) =>
         val (stmt, inhaleHint) = inhaleWithDefinednessCheck(whenInhaling(e), errors.InhaleFailed(inh), statesStack, insidePackageStmt)
-        (stmt, InhaleStmtComponentHint(inhaleHint))
+        (stmt, Seq(InhaleStmtComponentHint(inhaleHint)))
       case exh@sil.Exhale(e) =>
         val transformedExp = whenExhaling(e)
-        ( checkDefinedness(transformedExp, errors.ExhaleFailed(exh), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true)++
-        exhale((transformedExp, errors.ExhaleFailed(exh)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt), Seq())
+        val defErrorOpt = maybeDefError(errors.ExhaleFailed(exh))
+        val (stmt, exhaleHint) = exhale(Seq((transformedExp, errors.ExhaleFailed(exh), defErrorOpt)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
+        (stmt, Seq(ExhaleStmtComponentHint(exhaleHint)))
       case a@sil.Assert(e) =>
         val transformedExp = whenExhaling(e)
-        val stmtRes =
-          if (transformedExp.isPure) {
-            // if e is pure, then assert and exhale are the same
-            checkDefinedness(transformedExp, errors.AssertFailed(a), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true) ++
-              exhale((transformedExp, errors.AssertFailed(a)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
-          } else {
-            // we create a temporary state to ignore the side-effects
-            val (backup, snapshot) = freshTempState("Assert")
-            val exhaleStmt = exhale((transformedExp, errors.AssertFailed(a)), isAssert =  true, statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt, havocHeap = false)
-            replaceState(snapshot)
-              checkDefinedness(transformedExp, errors.AssertFailed(a), insidePackageStmt = insidePackageStmt, ignoreIfInWand = true) :: backup :: exhaleStmt :: Nil
-          }
-        (stmtRes, Seq())
+        val defErrorOpt = maybeDefError(errors.AssertFailed(a))
+
+        if (transformedExp.isPure) {
+          // if e is pure, then assert and exhale are the same
+          val (exhaleStmt, exhaleHint) = exhale(Seq((transformedExp, errors.AssertFailed(a), defErrorOpt)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
+          (exhaleStmt, AssertStmtComponentHint(exhaleHint))
+        } else {
+          // we create a temporary state to ignore the side-effects
+          val (backup, snapshot) = freshTempState("Assert")
+          val (exhaleStmt, exhaleHint) = exhale(Seq((transformedExp, errors.AssertFailed(a), defErrorOpt)), isAssert =  true, statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt, havocHeap = false)
+          replaceState(snapshot)
+          (backup :: exhaleStmt :: Nil, AssertStmtComponentHint(exhaleHint))
+        }
       case mc@sil.MethodCall(methodName, args, targets) =>
         val method = verifier.program.findMethod(methodName)
         // save pre-call state
@@ -200,7 +206,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
           (actualArgs map (_._2)) ++
           Havoc((targets map translateExp).asInstanceOf[Seq[Var]]) ++
           MaybeCommentBlock("Exhaling precondition", executeUnfoldings(pres, (pre => errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))) ++
-            exhale(pres map (e => (e, errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)) ++ {
+            exhaleWithoutDefinedness(pres map (e => (e, errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)._1) ++ {
           stateModule.replaceOldState(preCallState)
           val res = MaybeCommentBlock("Inhaling postcondition",
             inhale(posts map (e => (e, errors.CallFailed(mc).withReasonNodeTransformed(renamingArguments))), addDefinednessChecks = false, statesStack, insidePackageStmt).map(_._1) ++
@@ -232,7 +238,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         //first label, then init statement: otherwise gotos to this label will skip the initialization
         (
         Label(Lbl(Identifier(name)(lblNamespace))) ++
-          stateModule.initToCurrentStmt(labelState) ++
+          stateModule.initToCurrentStmt(labelState)._1 ++
           labelBooleanGuards.get(name).fold[Stmt](Nil)(labelGuardDecl => Seq(labelGuardDecl.l := TrueLit()))  //label is defined
         , Seq()
         )
@@ -321,9 +327,9 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       case assign@sil.LocalVarAssign(lhs, rhs) => AtomicHint(LocalVarAssignHint(assign, mainModule.env.get(lhs), proofHints))
       case fa@sil.FieldAssign(lhs, rhs) => AtomicHint(FieldAssignHint(fa, proofHints))
       case sil.MethodCall(methodName, args, targets) => ???
-      case sil.Exhale(exp) => ???
+      case sil.Exhale(exp) => AtomicHint(ExhaleStmtHint(proofHints))
       case sil.Inhale(exp) => AtomicHint(InhaleStmtHint(proofHints))
-      case sil.Assert(exp) => ???
+      case sil.Assert(exp) => AtomicHint(AssertStmtHint(proofHints))
       case sil.Assume(exp) => ???
       case sil.Fold(acc) => ???
       case sil.Unfold(acc) => ???
@@ -340,7 +346,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
   }
 
 
-  override def simplePartialCheckDefinednessBefore(e: sil.Exp, error: PartialVerificationError, makeChecks: Boolean): Stmt = {
+  override def simplePartialCheckDefinednessBefore(e: sil.Exp, error: PartialVerificationError, makeChecks: Boolean, definednessStateOpt: Option[DefinednessState]): Stmt = {
     if(makeChecks) {
       e match {
         case labelOld@sil.LabelledOld(_, labelName) =>

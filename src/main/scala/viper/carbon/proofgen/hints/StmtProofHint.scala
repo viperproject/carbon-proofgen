@@ -20,3 +20,5 @@ case class LocalVarAssignHint(assignVpr: sil.LocalVarAssign,
                              ) extends AtomicStmtProofHint
 case class FieldAssignHint(fieldAssignVpr: sil.FieldAssign, hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint
 case class InhaleStmtHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint
+case class ExhaleStmtHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint
+case class AssertStmtHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint

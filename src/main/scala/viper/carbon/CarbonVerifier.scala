@@ -13,7 +13,7 @@ import viper.silver.ast.{MagicWand, Program, Quasihavoc, Quasihavocall}
 import viper.silver.utility.Paths
 import viper.silver.verifier._
 import verifier.{BoogieDependency, BoogieInterface, Verifier}
-import viper.carbon.proofgen.{CarbonModules, ProofGenInterface}
+import viper.carbon.proofgen.{CarbonModules, DefaultProofGenInterface, ProofGenInterface}
 import viper.silver.ast.Program
 import viper.silver.ast.utility.QuantifiedPermissions.SourceQuantifiedPermissionAssertion
 import viper.silver.ast.utility.Visitor
@@ -317,7 +317,7 @@ case class CarbonVerifier(override val reporter: Reporter,
 
 
       val carbonModules = CarbonModules(heapModule = heapModule, permModule = permModule)
-      _proofGenInterface = new ProofGenInterface(proofGenDir, program, carbonModules)
+      _proofGenInterface = new DefaultProofGenInterface(proofGenDir, program, carbonModules)
     }
   }
 

@@ -43,10 +43,13 @@ class IsaBoogieProcAccessor(
     }
   }
 
-  def getLookupThyThm(g: BoogieConstGlobal) : String = lookupThyThmFromId(globalDataAccessor.getVarId(g))
-  def getLookupThyThm(x: LocalVar) : String = lookupThyThmFromId(getVarId(x))
+  def getGlobalLookupDeclThm(g: BoogieConstGlobal) : String = lookupTyThmFromId(globalDataAccessor.getVarId(g), true)
+  def getLocalLookupDeclThm(x: LocalVar) : String = lookupTyThmFromId(getVarId(x), true)
+  def getGlobalLookupTyThm(g: BoogieConstGlobal) : String = lookupTyThmFromId(globalDataAccessor.getVarId(g), false)
+  def getLocalLookupTyThm(x: LocalVar) : String = lookupTyThmFromId(getVarId(x), false)
 
-  private def lookupThyThmFromId(id: Int) : String = procDataDecl("lvar"+id)+"(2)"
+  private def lookupTyThmFromId(id: Int, withFullDecl: Boolean) : String =
+    procDataDecl("lvar"+id) + (if(withFullDecl) { "(1)" } else { "(2)" })
 
   private def procDataDecl(declName: String) = IsaUtil.qualifyName(theoryName, declName)
 

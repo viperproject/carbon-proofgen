@@ -9,6 +9,7 @@ package viper.carbon.modules
 import components.{CarbonStateComponent, ComponentRegistry}
 import viper.silver.components.StatefulComponent
 import viper.carbon.boogie.{Exp, LocalVar, LocalVarDecl, Stmt}
+import viper.carbon.proofgen.hints.StateProofHint
 
 /**
  * A module for dealing with the state of a program during execution.  Allows other modules
@@ -97,7 +98,7 @@ trait StateModule extends Module with ComponentRegistry[CarbonStateComponent] wi
     * Returns the statement that initializes the input state to the current state. This method has no side-effects on
     * the current state.
     */
-  def initToCurrentStmt(snapshot: StateSnapshot) : Stmt
+  def initToCurrentStmt(snapshot: StateSnapshot) : (Stmt, Seq[StateProofHint])
 
   /**
    * Create a state without any information and return a snapshot of the created state.

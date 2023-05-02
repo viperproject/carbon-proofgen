@@ -8,6 +8,9 @@ package viper.carbon.modules.components
 
 import viper.carbon.boogie._
 
+/** For proof generation purposes it is useful to have a unique identifier for every state component. */
+trait CarbonStateComponentIdentifier
+
 /**
  * The [[viper.carbon.modules.StateModule]] allows to register state components that
  * contribute to the state of the execution of the program.  In the rest of this class,
@@ -70,4 +73,7 @@ trait CarbonStateComponent extends Component {
    * Note in particular that variable passed in via "replaceState" above will typically need wrapping in old(.) if this is set to true
    */
   def usingOldState: Boolean
+
+  def identifier: CarbonStateComponentIdentifier
+
 }

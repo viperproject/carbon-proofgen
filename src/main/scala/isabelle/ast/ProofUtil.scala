@@ -9,6 +9,8 @@ object ProofUtil {
   def OF(thm: String, instThms: Seq[String]) : String = s"$thm[OF ${instThms.mkString(" ")}]"
 
   def where(thm: String, schematicVar: String, instantiation: String) : String = s"$thm[where ?$schematicVar=\"$instantiation\"]"
+  def where(thm: String, schematicVar: String, instantiation: Term) : String =
+    where(thm, schematicVar, IsaPrettyPrinter.prettyPrint(instantiation))
 
   def applyTac(tactic: String) : String = s"apply ($tactic)"
 

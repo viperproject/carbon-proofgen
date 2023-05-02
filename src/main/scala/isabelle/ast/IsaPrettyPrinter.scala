@@ -1,5 +1,7 @@
 package isabelle.ast
 
+import viper.carbon.proofgen.util.StringBuilderExtension._
+
 //TODO: minimize parentheses
 object IsaPrettyPrinter {
 
@@ -165,14 +167,6 @@ object IsaPrettyPrinter {
     "begin" + System.lineSeparator() +
       outerDeclsString +
     "end"
-  }
-
-  implicit class StringBuilderExtension(sb: StringBuilder) {
-    def newLine: StringBuilder = sb.append(System.lineSeparator())
-
-    def appendInner(s: String): StringBuilder = {
-      sb.append("\"").append(s).append("\"")
-    }
   }
 
 }
