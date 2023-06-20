@@ -1,6 +1,6 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{IsaUtil}
+import isabelle.ast.IsaUtil
 
 import java.nio.file.{Files, Path}
 import java.nio.charset.StandardCharsets
@@ -8,7 +8,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie.Procedure
 import viper.carbon.modules.{HeapModule, PermModule}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
-import viper.carbon.proofgen.hints.StmtProofHint
+import viper.carbon.proofgen.hints.{MethodProofHint, StmtProofHint}
 import viper.carbon.proofgen.util.FileUtil
 import viper.carbon.verifier.Environment
 
@@ -103,7 +103,7 @@ class DefaultProofGenInterface(val proofDir: Path,
 
   def methodProgTheory(m: sil.Method) : String = m.name+"_vpr_prog"
 
-  def generateProofForMethod(m: sil.Method, procBpl: Procedure, procBplEnv: Environment, bodyProofHint: StmtProofHint) : Unit = {
+  def generateProofForMethod(m: sil.Method, procBpl: Procedure, procBplEnv: Environment, methodProofHint: MethodProofHint) : Unit = {
     m.body match {
       case Some(_) =>
         val dir: Path = Files.createDirectory(methodProofPath(m))
@@ -131,7 +131,7 @@ class DefaultProofGenInterface(val proofDir: Path,
           mAccessor,
           varTranslation,
           bplProcAccessor,
-          bodyProofHint,
+          methodProofHint,
           funProofGenInterface)
 
         val relationalProofTheory = methodProofGenerator.generateProof()

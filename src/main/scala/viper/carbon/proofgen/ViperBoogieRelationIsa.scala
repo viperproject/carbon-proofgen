@@ -42,6 +42,21 @@ object ViperBoogieRelationIsa {
       Seq(stateRelEnter, stateRelExit, totalContextVpr, stateConsistency, varContextVpr, programVpr, expressionContextBpl, stmtVpr, configBplEnter, configBplExit)
     )
 
+  def methodRel( stateRelEnter: Term,
+               stateRelExit: Term,
+               totalContextVpr: Term,
+               stateConsistency: Term,
+               varContextVpr: Term,
+               programVpr: Term,
+               expressionContextBpl: Term,
+               methodDecl: Term,
+               configBplEnter: Term) : Term =
+    TermApp(TermIdent(methodRelName),
+      Seq(stateRelEnter, stateRelExit, totalContextVpr, stateConsistency, varContextVpr, programVpr, expressionContextBpl, methodDecl, configBplEnter)
+    )
+
+  val methodRelName : String = "method_rel"
+
   val stmtRelPropagatePreTac : String = ruleTac("stmt_rel_propagate")
   val stmtRelPropagatePreSameRelTac : String = ruleTac("stmt_rel_propagate_same_rel")
 
@@ -53,7 +68,7 @@ object ViperBoogieRelationIsa {
       MLUtil.app("zero_mask_lookup_tac", Seq(MLUtil.contextAniquotation, MLUtil.isaToMLThm(translationRecordDefThm), "1"))
     )
 
-  val stateRelMaskUpdateThm = "state_rel_mask_update_2"
+  val stateRelMaskUpdateThm = "state_rel_mask_update_3"
   val zeroMaskRelThm = "zero_mask_rel_2"
 
   def redAssumeGoodStateTac(translationRecordDefThm: String, ctxtBplWfThm: String) = {

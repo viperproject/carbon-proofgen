@@ -3,7 +3,7 @@ package viper.carbon.proofgen
 import isabelle.ast.TermIdent
 import isabelle.{ast => isa}
 import viper.carbon.boogie.LocalVarDecl
-import viper.silver.ast.WildcardPerm
+import viper.silver.ast.{NoInfo, NoPosition, TrueLit, WildcardPerm}
 import viper.silver.{ast => sil}
 
 object ViperToIsa {

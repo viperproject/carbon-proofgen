@@ -6,9 +6,9 @@ import isabelle.ast._
 import scala.collection.mutable.ListBuffer
 import isabelle.ast.ProofUtil._
 import isabelle.ast.IsaUtil._
-import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa}
+import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa, simpAsm}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
-import viper.carbon.proofgen.hints.{IfHint, LocalVarAssignHint, MLHintGenerator, SeqnProofHint, StmtProofHint, WhileHint}
+import viper.carbon.proofgen.hints.{AtomicHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, SeqnProofHint, StmtProofHint, WhileHint}
 
 
 case class MethodProofGenerator(
@@ -16,7 +16,7 @@ case class MethodProofGenerator(
                                  vprProg: IsaViperMethodAccessor,
                                  vprTranslation: VarTranslation[sil.LocalVar],
                                  boogieProg: IsaBoogieProcAccessor,
-                                 stmtProofHint: StmtProofHint,
+                                 methodProofHint: MethodProofHint,
                                  functionProofGenInterface: FunctionProofGenInterface)
 {
 
@@ -147,6 +147,7 @@ case class MethodProofGenerator(
         "TotalViper.ExprWfRelML",
         "TotalViper.CPGHelperML",
         "TotalViper.StmtRelML",
+        "TotalViper.ViperBoogieEndToEnd",
         "Boogie_Lang.TypingML",
         vprProg.theoryName,
         "../"+vprProg.globalDataAccessor.theoryName,
@@ -166,6 +167,8 @@ case class MethodProofGenerator(
     val funInterpWfBpl = "WfFunBpl"
 
     val vprProgramTotal = "VprProgramTotal"
+
+    val rtypeInterpEmpty = "RtypeInterpEmpty"
 
     val absvalInterpVpr = ViperTotalContext.absvalInterpTotal(totalContextVpr)
 
@@ -192,7 +195,8 @@ case class MethodProofGenerator(
           funDecls = globalBplData.funDecls,
           funInterp = BoogieExpressionContext.funInterp(exprContextBpl)
           )),
-        (Some ("VprProgramTotal [simp]"), TermBinary.eq(ViperTotalContext.programTotal(totalContextVpr), vprProg.globalDataAccessor.vprProgram))
+        (Some ("VprProgramTotal [simp]"), TermBinary.eq(ViperTotalContext.programTotal(totalContextVpr), vprProg.globalDataAccessor.vprProgram)),
+        (Some(rtypeInterpEmpty + "[simp]"), TermBinary.eq(ViperTotalContext.rtypeInterp(exprContextBpl), TermList(Seq())))
       )
     )
 
@@ -239,6 +243,14 @@ case class MethodProofGenerator(
     val basicStmtRelInfo = "basic_stmt_rel_info"
     val stmtRelInfo = "stmt_rel_info"
     val stmtRelHints = "stmt_rel_hints"
+    val stmtPreconditionHints = "stmt_precondition_hints"
+
+    val stmtPreconditionHintValue =
+      if(vprProg.origMethod.pres.isEmpty) {
+        None
+      } else {
+        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(IsaMethodSpecificationHelper.conjoinSpecInhaleHints(methodProofHint.preconditionInhaleHint))))))
+      }
 
     val inhaleRelInfo = "inhale_rel_info"
     val exhaleRelInfo = "exhale_rel_info"
@@ -327,6 +339,8 @@ case class MethodProofGenerator(
           simpWithTrDef,
           lookupVarThms = lookupVarBplThms,
           lookupFunBplThms = lookupFunBplThms,
+          simplifyRtypeInterpTac =
+            s"fn ctxt => ${MLUtil.tryPrimeTac("("+MLUtil.simpOnly(MLUtil.isaToMLThms(Seq(rtypeInterpEmpty)), "ctxt") +")")}",
           fieldAccessRelPreTac =
             ViperBoogieMLUtil.fieldAccessRelPreTac(
               heapReadWfTac = heapReadWfTac,
@@ -392,8 +406,11 @@ case class MethodProofGenerator(
           exhaleRelInfo = exhaleRelInfo
         )),
 
-        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(stmtProofHint, boogieProg, expWfRelInfo, expRelInfo))
-      )
+        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(methodProofHint.bodyHint, boogieProg, expWfRelInfo, expRelInfo)),
+      ) ++
+      stmtPreconditionHintValue.fold[Seq[String]](Seq())(h => Seq(
+          MLUtil.defineVal(stmtPreconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
+      ))
 
     outerDecls += MLDecl(mlInitializationCode, MLNormal)
 
@@ -401,7 +418,7 @@ case class MethodProofGenerator(
 
     val mainTheorem = LemmaDecl("method_rel_proof",
       ContextElem.empty(),
-      ViperBoogieRelationIsa.stmtRel(
+      ViperBoogieRelationIsa.methodRel(
         stateRelEnter=ViperBoogieRelationIsa.stateRelEmpty(TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, vprProg.globalDataAccessor.vprProgram, exprContextBpl))),
         stateRelExit=outputStateRel,
         totalContextVpr=totalContextVpr,
@@ -409,12 +426,19 @@ case class MethodProofGenerator(
         varContextVpr=TermIdent(varContextViperName),
         programVpr=TermIdent("P"),
         expressionContextBpl=exprContextBpl,
-        stmtVpr= vprProg.methodBody,
-        configBplEnter=ViperIsaTerm.convertAstToProgramPoint(TermIdent(boogieProg.procBodyAstDef)),
-        configBplExit=BoogieIsaTerm.finalProgramPoint),
+        methodDecl = vprProg.methodDecl,
+        configBplEnter=ViperIsaTerm.convertAstToProgramPoint(TermIdent(boogieProg.procBodyAstDef))
+      ),
       Proof(
+        Seq(
+          applyTac(unfoldTac(IsaUtil.definitionLemmaFromName(ViperBoogieRelationIsa.methodRelName))),
+          applyTac(ruleTac("exI")),
+          applyTac(introTac("conjI")),
+        ) ++
         initBoogieStateProof(bplCtxtWfLabel, IsaPrettyPrinter.prettyPrint(outputStateRel)) ++
-        mainProof(stmtRelInfo, stmtRelHints) ++
+        inhalePreconditionProof(stmtRelInfo, stmtPreconditionHints) ++
+        postconditionFramingProof() ++
+        methodBodyProof(stmtRelInfo, stmtRelHints) ++
         Seq(doneTac)
       )
     )
@@ -424,9 +448,34 @@ case class MethodProofGenerator(
     LocaleDecl("method_proof", contextElem, outerDecls.toSeq)
   }
 
-  private def mainProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
+  private def inhalePreconditionProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
+    applyTac(unfoldTac(vprProg.methodDeclProjectionLemmaName(IsaMethodPrecondition))) +:
+    (
+      if(vprProg.origMethod.pres.isEmpty) {
+        Seq(
+          applyTac(ruleTac("inhale_stmt_rel")),
+          applyTac(ruleTac("inhale_rel_true"))
+        )
+      } else {
+        Seq(
+          applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac),
+          applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
+          applyTac(ViperBoogieRelationIsa.progressBplTac(MLUtil.contextAniquotation)),
+        )
+      }
+    )
+  }
+
+  private def postconditionFramingProof() : Seq[String] = {
+    Seq("defer") //TODO
+  }
+
+  private def methodBodyProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
     Seq(
-      applyTac(unfoldTac(IsaUtil.definitionLemmaFromName(vprProg.methodBody.toString))),
+      //applyTac(unfoldTac(IsaUtil.definitionLemmaFromName(vprProg.methodBody.toString))),
+      applyTac("(rule exI)+"),
+      applyTac(introTac("conjI")),
+      applyTac(simpTac(vprProg.methodDeclProjectionLemmaName(IsaMethodBody))),
       applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac),
       applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
       applyTac(ViperBoogieRelationIsa.progressBplTac(MLUtil.contextAniquotation)),

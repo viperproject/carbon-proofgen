@@ -1,6 +1,6 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{Term, TermIdent}
+import isabelle.ast.{IsaTermUtil, Term, TermApp, TermIdent}
 import viper.silver.{ast => sil}
 
 trait IsaViperGlobalDataAccessor {
@@ -21,6 +21,57 @@ trait IsaViperMethodAccessor {
   def globalDataAccessor : IsaViperGlobalDataAccessor
   def methodBody : TermIdent
   def methodArgs : TermIdent
-  def origProgram: sil.Program
+  def methodDecl : TermIdent
+  def methodDeclProjectionLemmaName(methodDeclMember: MethodDeclMember) : String
+  def origProgram : sil.Program
+  def origMethod : sil.Method
+
+}
+
+sealed trait MethodDeclMember {
+  def name: String
+}
+case object IsaMethodArgTypes extends MethodDeclMember
+{
+  override def name: String = "margs"
+}
+case object IsaMethodRetTypes extends MethodDeclMember
+{
+  override def name: String = "mrets"
+}
+case object IsaMethodPrecondition extends MethodDeclMember
+{
+  override def name: String = "mpre"
+}
+case object IsaMethodPostcondition extends MethodDeclMember
+{
+  override def name: String = "mpost"
+}
+case object IsaMethodBody extends MethodDeclMember
+{
+  override def name: String = "mbody"
+}
+
+object IsaMethodDecl {
+
+  def allMethodDeclMembers : Seq[MethodDeclMember] =
+    Seq(IsaMethodArgTypes, IsaMethodRetTypes, IsaMethodPrecondition, IsaMethodPostcondition, IsaMethodBody)
+
+  def makeMethodDeclRecord(argTypes: Term, retTypes: Term, precondition: Term, postcondition: Term, methodBody: Term) : Term= {
+    IsaTermUtil.makeRecord("method_decl", Seq(argTypes, retTypes, precondition, postcondition, methodBody))
+  }
+
+  def methodDeclProjectionFunction(methodDeclMember: MethodDeclMember) : Term = {
+    methodDeclMember match {
+      case IsaMethodArgTypes => TermIdent("method_decl.args")
+      case IsaMethodRetTypes => TermIdent("method_decl.rets")
+      case IsaMethodPrecondition => TermIdent("method_decl.pre")
+      case IsaMethodPostcondition => TermIdent("method_decl.post")
+      case IsaMethodBody => TermIdent("method_decl.body")
+    }
+  }
+
+  def methodDeclProjection(methodDecl: Term, methodDeclMember: MethodDeclMember) : Term =
+    TermApp(methodDeclProjectionFunction(methodDeclMember), methodDecl)
 
 }

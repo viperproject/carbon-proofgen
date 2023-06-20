@@ -35,10 +35,15 @@ object MLUtil {
   def simpAsm(thms: String, ctxt: String = "") : String =
     s"simp_tac_with_thms $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt})
 
+  def simpOnly(thms: String, ctxt: String = "") : String =
+    s"simp_only_tac $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt})
+
   def resolveTac(ctxt: String, thms: String) : String=
     s"resolve_tac $ctxt $thms"
 
   def seqPrimeTac(tac1: String, tac2: String) : String = s"$tac1 THEN' $tac2"
+
+  def tryPrimeTac(tac :String) : String = s"TRY_TAC' $tac"
 
   def lambda(args: Seq[String], body: String) : String = {
     val argsLambdaPrefix =

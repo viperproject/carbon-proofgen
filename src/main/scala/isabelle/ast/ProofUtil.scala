@@ -45,6 +45,8 @@ object ProofUtil {
 
   def ruleTac(thm: String) : String = s"(rule $thm)"
 
+  def introTac(thm: String) : String = s"(intro $thm)"
+
   def unfoldTac(thm: String) : String = unfoldTac(Seq(thm))
   def unfoldTac(thms: Seq[String]) : String = s"(unfold ${thms.mkString(" ")})"
 

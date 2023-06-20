@@ -17,7 +17,7 @@ import java.util.Date
 import viper.carbon.boogie.CommentedDecl
 import viper.carbon.boogie.Procedure
 import viper.carbon.boogie.Program
-import viper.carbon.proofgen.hints.StmtProofHint
+import viper.carbon.proofgen.hints.{InhaleHint, MethodProofHint, NotSupportedInhaleHint, StmtProofHint}
 import viper.carbon.verifier.Environment
 import viper.silver.verifier.{TypecheckerWarning, errors}
 import viper.carbon.verifier.Verifier
@@ -147,7 +147,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val init = MaybeCommentBlock("Initializing the state", stateModule.initBoogieState ++ assumeAllFunctionDefinitions ++ stmtModule.initStmt(method.bodyOrAssumeFalse))
             val initOld = MaybeCommentBlock("Initializing the old state", stateModule.initOldState)
             val paramAssumptions = mWithLoopInfo.formalArgs map (a => allAssumptionsAboutValue(a.typ, translateLocalVarDecl(a), true))
-            val inhalePre = translateMethodDeclPre(pres)
+            val (inhalePre, inhalePreHints) = translateMethodDeclPre(pres)
             val checkPost: Stmt = if (posts.nonEmpty) {
               translateMethodDeclCheckPosts(posts)
             }
@@ -170,7 +170,8 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             )
 
             if(verifier.generateProofs) {
-              verifier.proofGenInterface.generateProofForMethod(m, proc, env, bodyProofHint)
+              val methodProofHint = MethodProofHint(inhalePreHints, bodyProofHint)
+              verifier.proofGenInterface.generateProofForMethod(m, proc, env, methodProofHint)
             }
 
         CommentedDecl(s"Translation of method $name", proc)
@@ -229,7 +230,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
     stmts
   }
 
-  private def translateMethodDeclPre(pres: Seq[sil.Exp]): Stmt = {
+  private def translateMethodDeclPre(pres: Seq[sil.Exp]): (Stmt, Seq[InhaleHint]) = {
     val res = if (Expressions.contains[sil.InhaleExhaleExp](pres)) {
       // Precondition contains InhaleExhale expression.
       // Need to check inhale and exhale parts separately.
@@ -241,19 +242,20 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
       pres, {
         errors.ContractNotWellformed(_)
       }).map(_._1)
-      MaybeCommentBlock("Checked inhaling of precondition",
+      (MaybeCommentBlock("Checked inhaling of precondition",
         MaybeCommentBlock("Do welldefinedness check of the exhale part.",
           NondetIf(onlyExhalePres ++ Assume(FalseLit()))) ++
           MaybeCommentBlock("Normally inhale the inhale part.",
             onlyInhalePres)
-      )
+      ), Seq())
     }
     else {
-      val inhalePres: Seq[Stmt] = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
+      val (inhalePres, inhalePresHint) = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
       pres, {
         errors.ContractNotWellformed(_)
-      }).map(_._1)
-      MaybeCommentBlock("Checked inhaling of precondition", inhalePres)
+      }).unzip
+
+      (MaybeCommentBlock("Checked inhaling of precondition", inhalePres), inhalePresHint)
     }
 
     res
