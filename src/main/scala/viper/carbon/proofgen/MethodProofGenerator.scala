@@ -368,7 +368,8 @@ case class MethodProofGenerator(
         ),
 
         MLUtil.defineVal(auxVarDisjTac,
-          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmas.name)))
+          //map_upd_set_dom for the method call case
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmas.name, "map_upd_set_dom")))
         ),
 
         MLUtil.defineVal(basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
