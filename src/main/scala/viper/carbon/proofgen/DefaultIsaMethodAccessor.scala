@@ -4,7 +4,6 @@ import isabelle.ast.{IsaUtil, TermIdent}
 import viper.silver.ast.{Method, Program}
 
 case class DefaultIsaMethodAccessor(override val theoryName: String,
-                                    override val globalDataAccessor: IsaViperGlobalDataAccessor,
                                     methodBodyIdent: String,
                                     methodArgsIdent: String,
                                     methodDeclIdent: String,
@@ -15,17 +14,17 @@ case class DefaultIsaMethodAccessor(override val theoryName: String,
 
   override val methodBody : TermIdent = TermIdent(qualifyName(methodBodyIdent))
 
-  override val methodArgs : TermIdent  = TermIdent(qualifyName(methodArgsIdent))
+  override val methodArgs : TermIdent = TermIdent(qualifyName(methodArgsIdent))
 
   override val methodDecl : TermIdent = TermIdent(qualifyName(methodDeclIdent))
 
   override def methodDeclProjectionLemmaName(methodDeclMember: MethodDeclMember): String =
-    DefaultIsaMethodAccessor.methodDeclProjectionLemmaName(methodDeclMember)
+    DefaultIsaMethodAccessor.methodDeclProjectionLemmaName(origMethod.name, methodDeclMember)
 
 }
 
 case object DefaultIsaMethodAccessor {
-  def methodDeclProjectionLemmaName(methodDeclMember: MethodDeclMember): String =
-    s"mdecl_proj_${methodDeclMember.name}"
+  def methodDeclProjectionLemmaName(methodName: String, methodDeclMember: MethodDeclMember): String =
+    s"${methodName}_decl_proj_${methodDeclMember.name}"
 
 }

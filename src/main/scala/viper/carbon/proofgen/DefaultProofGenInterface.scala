@@ -35,8 +35,10 @@ class DefaultProofGenInterface(val proofDir: Path,
     {
 
       //we assume that proofs accessing global data are always one level deeper (that's why the path "../")
-      val (theory, globalDataAccessor) = IsaVprProgramGenerator.globalData(vprProg, globalDataBpl, globalDataTheoryName, "../")
-      StoreTheory.storeTheory(theory, proofDir)
+      val (theory, globalDataAccessor, helperTheories) = IsaVprProgramGenerator.globalData(vprProg, globalDataBpl, globalDataTheoryName, "../")
+      for (thy <- theory +: helperTheories) {
+        StoreTheory.storeTheory(thy, proofDir)
+      }
       globalDataAccessor
     }
 
@@ -111,9 +113,6 @@ class DefaultProofGenInterface(val proofDir: Path,
         /* Viper program representation */
         val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
 
-        val (vprMethodTheory, mAccessor) = IsaVprProgramGenerator.isaProgramRepr(m, methodProgTheory(m), varTranslation, vprProgGlobalData, vprProg)
-        StoreTheory.storeTheory(vprMethodTheory, dir)
-
         /* Viper <-> Boogie proof */
         //here we are assuming how Boogie proof generation names proof folders
         //TODO: does not work if there are name clashes between namespaces --> pretty printer might not use given name
@@ -128,7 +127,8 @@ class DefaultProofGenInterface(val proofDir: Path,
 
         val methodProofGenerator = MethodProofGenerator(
           methodRelationalProof(m),
-          mAccessor,
+          vprProgGlobalData.methodAccessor(m.name),
+          vprProgGlobalData,
           varTranslation,
           bplProcAccessor,
           methodProofHint,
@@ -136,7 +136,7 @@ class DefaultProofGenInterface(val proofDir: Path,
 
         val relationalProofTheory = methodProofGenerator.generateProof()
 
-        Seq(vprMethodTheory, relationalProofTheory)
+        Seq(relationalProofTheory)
 
         StoreTheory.storeTheory(relationalProofTheory, dir)
       case None =>

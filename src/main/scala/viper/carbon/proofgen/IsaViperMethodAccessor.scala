@@ -3,22 +3,25 @@ package viper.carbon.proofgen
 import isabelle.ast.{IsaTermUtil, Term, TermApp, TermIdent}
 import viper.silver.{ast => sil}
 
-trait IsaViperGlobalDataAccessor {
+trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
 
   def theoryName : String
   def vprProgram : TermIdent
+  def methodAccessor(methodName: String) : IsaViperMethodAccessor
+
+}
+
+trait IsaViperFieldsAccessor {
   def fields : TermIdent
   def fieldRel : TermIdent
   def fieldRelBoundedLemma : String
   def fieldIdent(f: sil.Field) : Term
   def fieldLookupLemma(fieldName: String) : String
-
 }
 
 trait IsaViperMethodAccessor {
 
   def theoryName: String
-  def globalDataAccessor : IsaViperGlobalDataAccessor
   def methodBody : TermIdent
   def methodArgs : TermIdent
   def methodDecl : TermIdent
