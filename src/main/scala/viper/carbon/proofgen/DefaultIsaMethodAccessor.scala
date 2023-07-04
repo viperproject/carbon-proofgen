@@ -6,6 +6,7 @@ import viper.silver.ast.{Method, Program}
 case class DefaultIsaMethodAccessor(override val theoryName: String,
                                     methodBodyIdent: String,
                                     methodArgsIdent: String,
+                                    methodRetsIdent: String,
                                     methodDeclIdent: String,
                                     override val origProgram: Program,
                                     override val origMethod: Method) extends IsaViperMethodAccessor  {
@@ -15,6 +16,8 @@ case class DefaultIsaMethodAccessor(override val theoryName: String,
   override val methodBody : TermIdent = TermIdent(qualifyName(methodBodyIdent))
 
   override val methodArgs : TermIdent = TermIdent(qualifyName(methodArgsIdent))
+
+  override val methodRets : TermIdent = TermIdent(qualifyName(methodRetsIdent))
 
   override val methodDecl : TermIdent = TermIdent(qualifyName(methodDeclIdent))
 

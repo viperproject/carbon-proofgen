@@ -1,6 +1,6 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermTuple, Theory, TupleType}
+import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermTuple, Theory, TupleType, TypeIsa}
 import viper.silver.{ast => sil}
 
 import scala.collection.mutable
@@ -49,12 +49,12 @@ object IsaVprProgramGenerator {
 
       outerDecls += fieldRelationBoundedBy
 
-      val (methodTheory, methodAccessors) = methodsRepr("method_decls", p)
+      val (methodTheory, allMethodsAccessor) = methodsRepr("method_decls", p)
 
       val programDef = DefDecl("vpr_prog",
         Some(ViperIsaType.vprProgramType),
         (Seq(), IsaTermUtil.makeRecord(ViperIsaType.vprProgramTypeName, Seq(
-          TermIdent("f_None"),//TODO: methods
+          allMethodsAccessor.methodLookupFun,//TODO: methods
           TermIdent("f_None"),//TODO: predicates
           TermIdent("f_None"),//TODO: functions
           IsaTermUtil.mapOf(TermIdent(fieldsListDef.name)), //functions
@@ -65,7 +65,7 @@ object IsaVprProgramGenerator {
       outerDecls += programDef
 
       (
-        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalUtil"), outerDecls.toSeq),
+        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalUtil", methodTheory.theoryName), outerDecls.toSeq),
         DefaultIsaViperGlobalDataAccessor(
           theoryName = theoryName,
           vprProgramIdent = programDef.name,
@@ -73,13 +73,13 @@ object IsaVprProgramGenerator {
           fieldToTerm = fieldToTerm,
           fieldRelIdent = fieldRelationListDef.name,
           fieldRelBoundedLemma = fieldRelationBoundedBy.name,
-          methodAccessors = methodAccessors
+          allMethodsAccessor = allMethodsAccessor
         ),
         Seq(methodTheory)
       )
     }
 
-  private def methodsRepr(theoryName: String, p: sil.Program) : (Theory, Map[String, IsaViperMethodAccessor]) = {
+  private def methodsRepr(theoryName: String, p: sil.Program) : (Theory, IsaViperAllMethodsAccessor) = {
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
     val map: mutable.Map[String, IsaViperMethodAccessor] = mutable.Map.empty
 
@@ -92,8 +92,48 @@ object IsaVprProgramGenerator {
       map.put(m.name, mAccessor)
     }
 
+    val associationList = TermList(map.toList.map(
+        { case (methodName, methodAccessor) => TermTuple(StringConst(methodName), methodAccessor.methodDecl) }
+      )
+    )
+
+    val methodLookupDef = DefDecl("methodLookupFun", None, (Seq(), IsaTermUtil.mapOf(associationList)))
+    outerDecls += methodLookupDef
+
+    map.foreach(
+      {
+        case (methodName, methodsAccessor) =>
+          val lookupLemma = {
+            LemmaDecl(
+              DefaultIsaViperAllMethodsAccessor.lookupLemmaName(methodName),
+              TermBinary.eq(TermApp(TermIdent(methodLookupDef.name), StringConst(methodName)), IsaTermUtil.some(methodsAccessor.methodDecl)),
+              Proof(
+                Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(methodLookupDef.name))))
+              )
+            )
+          }
+
+          outerDecls += lookupLemma
+      }
+    )
+
+    val allMethodsAccessor = DefaultIsaViperAllMethodsAccessor(
+      theoryName = theoryName,
+      methodLookupFun = TermIdent(methodLookupDef.name),
+      methodAccessorMap = map.toMap
+    )
+
     val theory = Theory(theoryName, Seq("Viper.ViperLang"), outerDecls.toSeq)
-    (theory, map.toMap)
+    (theory, allMethodsAccessor)
+  }
+
+  private def translateVarDecl(varTranslation: VarTranslation[sil.LocalVar], varDecl: sil.LocalVarDecl) : (Term, Term) = {
+    varTranslation.translateVariableId(varDecl.localVar) match {
+      case Some(id) =>
+        println(s"${varDecl.localVar.name},${id.toString}")
+        (TermIdent(id.toString), ViperIsaType.translate(varDecl.typ))
+      case None => sys.error(s"could not translate local variable ${varDecl.localVar.toString()}")
+    }
   }
 
   //m must not be abstract
@@ -115,29 +155,31 @@ object IsaVprProgramGenerator {
 
     methodDeclMemberToResultAndDef.put(IsaMethodBody, (mBodyTerm, Some(IsaUtil.definitionLemmaFromName(mBodyDecl.name))))
 
-    //for now keep arguments and return variables in the same list
-    val mArgsAndReturns = (m.formalArgs ++ m.formalReturns).map(varDecl =>  {
-      varTranslation.translateVariableId(varDecl.localVar) match {
-        case Some(id) =>
-          println(s"${varDecl.localVar.name},${id.toString}")
-          (TermIdent(id.toString), ViperIsaType.translate(varDecl.typ))
-        case None => sys.error(s"could not translate local variable ${varDecl.localVar.toString()}")
-      }
-    })
-
-    val mArgsAndReturnsTypesTerm = TermList(mArgsAndReturns.map( { case (_, typ) => typ }))
-    val mArgsAndReturnsTerm = TermList(mArgsAndReturns.map( { case (id, typ) => TermTuple(id,typ)}))
+    val mArgs = m.formalArgs.map(varDecl => translateVarDecl(varTranslation, varDecl))
+    val mArgsTypesTerm = TermList(mArgs.map( { case (_, typ) => typ }))
+    val mArgsTerm = TermList(mArgs.map( { case (id, typ) => TermTuple(id,typ)}))
 
     val mArgsDecl = AbbrevDecl(
-      outerDeclName("args_and_returns"),
+      outerDeclName("args"),
       Some(IsaTypeUtil.listType( TupleType(Seq(ViperIsaType.varNameType, ViperIsaType.viperTyType)) )),
-      (Seq(), mArgsAndReturnsTerm)
+      (Seq(), mArgsTerm)
     )
 
     outerDecls += mArgsDecl
-    methodDeclMemberToResultAndDef.put(IsaMethodArgTypes, (mArgsAndReturnsTypesTerm,None))
+    methodDeclMemberToResultAndDef.put(IsaMethodArgTypes, (mArgsTypesTerm,None))
 
-    methodDeclMemberToResultAndDef.put(IsaMethodRetTypes, (TermList(Seq()), None)) //TODO: split arguments and returns
+    val mReturns = m.formalReturns.map(varDecl => translateVarDecl(varTranslation, varDecl))
+    val mReturnsTypesTerm = TermList(mReturns.map( { case (_, typ) => typ }))
+    val mReturnsTerm = TermList(mReturns.map( { case (id, typ) => TermTuple(id,typ)}))
+
+    val mReturnsDecl = AbbrevDecl(
+      outerDeclName("returns"),
+      Some(IsaTypeUtil.listType( TupleType(Seq(ViperIsaType.varNameType, ViperIsaType.viperTyType)) )),
+      (Seq(), mReturnsTerm)
+    )
+
+    outerDecls += mReturnsDecl
+    methodDeclMemberToResultAndDef.put(IsaMethodRetTypes, (mReturnsTypesTerm, None))
 
     val mPreTerm = ViperToIsa.translateAssertion(IsaMethodSpecificationHelper.conjoinSpecAssertions(m.pres))(varTranslation)
     val mPreDecl = DefDecl(outerDeclName("pre"), None, (Seq(), mPreTerm))
@@ -152,8 +194,8 @@ object IsaVprProgramGenerator {
     methodDeclMemberToResultAndDef.put(IsaMethodPostcondition, (mPostTerm, Some(IsaUtil.definitionLemmaFromName(mPostDecl.name))))
 
     val methodDeclTerm = IsaMethodDecl.makeMethodDeclRecord(
-      argTypes = mArgsAndReturnsTypesTerm,
-      retTypes = TermList(Seq()), //TODO: split args and returns
+      argTypes = mArgsTypesTerm,
+      retTypes = mReturnsTypesTerm,
       precondition = TermIdent(mPreDecl.name),
       postcondition = TermIdent(mPostDecl.name),
       methodBody = TermIdent(mBodyDecl.name)
@@ -179,6 +221,7 @@ object IsaVprProgramGenerator {
       theoryName = theoryName,
       methodBodyIdent = mBodyDecl.name,
       methodArgsIdent = mArgsDecl.name,
+      methodRetsIdent = mReturnsDecl.name,
       methodDeclIdent = methodDecl.name,
       origProgram = vprProg,
       origMethod = m

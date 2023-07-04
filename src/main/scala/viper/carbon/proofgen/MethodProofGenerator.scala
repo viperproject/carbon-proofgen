@@ -43,7 +43,7 @@ case class MethodProofGenerator(
     val viperVarContextDef = DefDecl(
       varContextViperName,
       Some(ArrowType(IsaTypeUtil.natType, IsaTypeUtil.optionType(ViperIsaType.viperTyType))),
-      (Seq(), IsaTermUtil.mapOf(methodAccessor.methodArgs))
+      (Seq(), IsaTermUtil.mapOf(IsaTermUtil.appendList(methodAccessor.methodArgs, methodAccessor.methodRets)))
     )
 
     outerDecls += viperVarContextDef

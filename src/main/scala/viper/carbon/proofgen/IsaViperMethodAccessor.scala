@@ -7,7 +7,7 @@ trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
 
   def theoryName : String
   def vprProgram : TermIdent
-  def methodAccessor(methodName: String) : IsaViperMethodAccessor
+  def allMethodsAccessor: IsaViperAllMethodsAccessor
 
 }
 
@@ -24,11 +24,18 @@ trait IsaViperMethodAccessor {
   def theoryName: String
   def methodBody : TermIdent
   def methodArgs : TermIdent
+  def methodRets : TermIdent
   def methodDecl : TermIdent
   def methodDeclProjectionLemmaName(methodDeclMember: MethodDeclMember) : String
   def origProgram : sil.Program
   def origMethod : sil.Method
 
+}
+
+trait IsaViperAllMethodsAccessor {
+  def methodLookupFun : TermIdent
+  def lookupLemmaName(methodName: String) : String
+  def methodAccessor(methodName: String) : IsaViperMethodAccessor
 }
 
 sealed trait MethodDeclMember {

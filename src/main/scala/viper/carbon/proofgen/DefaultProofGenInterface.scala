@@ -127,7 +127,7 @@ class DefaultProofGenInterface(val proofDir: Path,
 
         val methodProofGenerator = MethodProofGenerator(
           methodRelationalProof(m),
-          vprProgGlobalData.methodAccessor(m.name),
+          vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
           vprProgGlobalData,
           varTranslation,
           bplProcAccessor,
