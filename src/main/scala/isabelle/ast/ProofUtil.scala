@@ -64,4 +64,6 @@ object ProofUtil {
 
   val assumeTac : String = "assumption"
 
+  val reflTac : String = ruleTac("HOL.refl")
+
 }

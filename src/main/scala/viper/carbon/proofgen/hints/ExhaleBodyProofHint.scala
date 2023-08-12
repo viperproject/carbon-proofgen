@@ -3,9 +3,9 @@ package viper.carbon.proofgen.hints
 import viper.carbon.boogie.LocalVar
 import viper.silver.{ast => sil}
 
-trait ExhaleProofHint
+sealed trait ExhaleProofHint
 
-case class DefaultExhaleProofHint(bodyHint: Seq[ExhaleBodyProofHint], setupWellDefStateHint: Seq[StateProofHint], exhaleHeapOpt: Option[LocalVar]) extends ExhaleProofHint
+case class DefaultExhaleProofHint(bodyHint: Seq[ExhaleBodyProofHint], includeWellDefChecks: Boolean, setupWellDefStateHint: Seq[StateProofHint], exhaleHeapOpt: Option[LocalVar]) extends ExhaleProofHint
 
 sealed trait ExhaleBodyProofHint
 

@@ -9,7 +9,7 @@ import isabelle.ast.ProofUtil._
 import isabelle.ast.IsaUtil._
 import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa, simpAsm}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
-import viper.carbon.proofgen.hints.{AtomicHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, SeqnProofHint, StmtProofHint, WhileHint}
+import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, SeqnProofHint, StmtProofHint, WhileHint}
 
 
 case class MethodProofGenerator(
@@ -241,8 +241,10 @@ case class MethodProofGenerator(
 
     val basicStmtRelInfo = "basic_stmt_rel_info"
     val stmtRelInfo = "stmt_rel_info"
+    val stmtRelInfoWithoutDefChecks = "stmt_rel_info_opt"
     val stmtRelHints = "stmt_rel_hints"
     val stmtPreconditionHints = "stmt_precondition_hints"
+    val stmtPostconditionHints = "stmt_postcondition_hints"
 
     val stmtPreconditionHintValue =
       if(methodAccessor.origMethod.pres.isEmpty) {
@@ -251,8 +253,20 @@ case class MethodProofGenerator(
         Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(IsaMethodSpecificationHelper.conjoinSpecInhaleHints(methodProofHint.preconditionInhaleHint))))))
       }
 
+    val stmtPostconditionHintValue =
+      if(methodAccessor.origMethod.post.isEmpty) {
+        None
+      } else {
+        //TODO
+        todo
+        Some(AtomicHint(ExhaleStmtHint(Seq(Default(IsaMethodSpecificationHelper.conjoinSpecInhaleHints(methodProofHint.preconditionInhaleHint))))))
+      }
+
     val inhaleRelInfo = "inhale_rel_info"
+    val inhaleRelInfoWithoutDefChecks = "inhale_rel_info_opt"
+
     val exhaleRelInfo = "exhale_rel_info"
+    val exhaleRelInfoWithoutDefChecks = "exhale_rel_info_opt"
 
     val auxVarDisjTac = "aux_var_disj_tac"
 
@@ -396,7 +410,16 @@ case class MethodProofGenerator(
           ViperBoogieMLUtil.createExhaleRelInfo(
             basicStmtRelInfo = basicStmtRelInfo,
             atomicExhaleRelTac = "atomic_exhale_rel_inst_tac",
-            isExhRelInvThm = MLUtil.isaToMLThm(ExhaleRelUtil.isExhRelInvThm(false)) //TODO support optimizations with separate value
+            isExhRelInvThm = MLUtil.isaToMLThm(ExhaleRelUtil.isExhRelInvThm(true))
+          )
+        ),
+
+        MLUtil.defineVal(
+          exhaleRelInfoWithoutDefChecks,
+          ViperBoogieMLUtil.createExhaleRelInfo(
+            basicStmtRelInfo = basicStmtRelInfo,
+            atomicExhaleRelTac = "atomic_exhale_rel_inst_tac",
+            isExhRelInvThm = MLUtil.isaToMLThm(ExhaleRelUtil.isExhRelInvThm(false))
           )
         ),
 
@@ -407,11 +430,23 @@ case class MethodProofGenerator(
           exhaleRelInfo = exhaleRelInfo
         )),
 
+        MLUtil.defineVal(stmtRelInfoWithoutDefChecks, ViperBoogieMLUtil.createStmtRelInfo(
+          basicStmtRelInfo = basicStmtRelInfo,
+          atomicRelTac = "atomic_rel_inst_tac",
+          inhaleRelInfo = inhaleRelInfo, //TODO: support optimized inhale
+          exhaleRelInfo = exhaleRelInfoWithoutDefChecks
+        )),
+
         MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(methodProofHint.bodyHint, boogieProg, expWfRelInfo, expRelInfo)),
       ) ++
       stmtPreconditionHintValue.fold[Seq[String]](Seq())(h => Seq(
           MLUtil.defineVal(stmtPreconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
-      ))
+      )) ++
+
+      Seq (
+        MLUtil.defineVal(stmtPostconditionHints, MLHintGenerator.generateStmtHintsInML(Exhale))
+        MLUtil.app("ExhaleHint", MLHintGenerator.generateExhaleHintsInML(methodProofHint.postconditionExhaleHint, boogieProg, expWfRelInfo, expRelInfo))
+      )
 
     outerDecls += MLDecl(mlInitializationCode, MLNormal)
 
@@ -440,6 +475,7 @@ case class MethodProofGenerator(
         inhalePreconditionProof(stmtRelInfo, stmtPreconditionHints) ++
         postconditionFramingProof() ++
         methodBodyProof(stmtRelInfo, stmtRelHints) ++
+          exhalePostconditionProof(stmtRelInfoWithoutDefChecks, stmtPreconditionHints)
         Seq(doneTac)
       )
     )
@@ -454,7 +490,7 @@ case class MethodProofGenerator(
     (
       if(methodAccessor.origMethod.pres.isEmpty) {
         Seq(
-          applyTac(ruleTac("inhale_stmt_rel_no_inv")),
+          applyTac(ruleTac("inhale_stmt_rel_no_inv")), //TODO: do not hardcode theorem names
           applyTac(ruleTac("inhale_rel_true"))
         )
       } else {
@@ -465,6 +501,23 @@ case class MethodProofGenerator(
         )
       }
     )
+  }
+
+  private def exhalePostconditionProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
+    applyTac(unfoldTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodPostcondition))) +:
+      (
+        if(methodAccessor.origMethod.posts.isEmpty) {
+          Seq(
+            applyTac(ruleTac(ExhaleRelUtil.stmtRelExhaleTrueThm)),
+          )
+        } else {
+          Seq(
+            //applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac),
+            applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
+           // applyTac(ViperBoogieRelationIsa.progressBplRelTac(MLUtil.contextAniquotation)),
+          )
+        }
+      )
   }
 
   private def postconditionFramingProof() : Seq[String] = {
@@ -527,7 +580,7 @@ case class MethodProofGenerator(
       applyTac(BoogieIsaTerm.redAstBplRelOutputStatelRelInstantiationTac(IdentityStateRelInst)),
       applyTac(BoogieIsaTerm.redAstBplRelOneSimpleCmdTac),
       applyTac(ruleTac("exI")),
-      applyTac(ruleTac("conjI)")),
+      applyTac(ruleTac("conjI")),
       applyTac(ViperBoogieRelationIsa.redAssumeGoodStateTac(IsaUtil.definitionLemmaFromName(translationRecordName),
         MLUtil.isaToMLThm(ctxtBplWfThm)
         )),
