@@ -41,6 +41,15 @@ object BoogieIsaTerm {
   val redAstOneSimpleCmdTac : String = ProofUtil.ruleTac("red_ast_bpl_one_simple_cmd")
   val assignIntroAltTac : String = ProofUtil.ruleTac("assign_intro_alt")
 
+  val redAstBplRelTransitiveTac : String = ProofUtil.ruleTac("red_ast_bpl_rel_transitive")
+  val redAstBplRelOneSimpleCmdTac: String = ProofUtil.ruleTac("red_ast_bpl_rel_one_simple_cmd")
+  def redAstBplRelOutputStatelRelInstantiationTac(stateRelInstantiation: StateRelInstantiation) : String = {
+    stateRelInstantiation match {
+      case IdentityStateRelInst => ProofUtil.ruleTac("red_ast_bpl_rel_inst_state_rel_same")
+      case SecondConjunctStateRelInst => ProofUtil.ruleTac("red_ast_bpl_rel_inst_state_rel_conjunct2")
+    }
+  }
+
   val redVarThm : String = "Semantics.RedVar"
 
 

@@ -41,6 +41,7 @@ object ViperBoogieMLUtil {
                              tyInterpEContextBplEq: String) : String =
       MLUtil.createRecord(Seq(
         ("ctxt_wf_thm", ctxtWfThm),
+        ("consistency_wf_thm",  MLUtil.isaToMLThm(ViperBoogieRelationIsa.trivialConsistencyWfThm)),
         ("tr_def_thm", trDefThm),
         ("vpr_program_ctxt_eq_thm", vprProgramContextEqThm),
         ("var_rel_tac", varRelTac),
@@ -57,10 +58,11 @@ object ViperBoogieMLUtil {
       )
     )
 
-  def createExhaleRelInfo(basicStmtRelInfo: String, atomicExhaleRelTac: String) : String =
+  def createExhaleRelInfo(basicStmtRelInfo: String, atomicExhaleRelTac: String, isExhRelInvThm: String) : String =
     MLUtil.createRecord(Seq(
         ("basic_info", basicStmtRelInfo),
-        ("atomic_exhale_rel_tac", atomicExhaleRelTac)
+        ("atomic_exhale_rel_tac", atomicExhaleRelTac),
+        ("is_exh_rel_inv_thm", isExhRelInvThm)
       )
     )
 
@@ -72,7 +74,7 @@ object ViperBoogieMLUtil {
       ("exhale_rel_info", exhaleRelInfo)
     ))
 
-  def everyRedAstBplTransitiveTac(proofContext: String, tactics: Seq[String]) : String =
-    s"EVERY'_red_ast_bpl_transitive $proofContext ${MLUtil.createList(tactics)}"
+  def everyRedAstBplRelTransitiveReflTac(proofContext: String, tactics: Seq[String]) : String =
+    s"EVERY'_red_ast_bpl_rel_transitive_refl $proofContext ${MLUtil.createList(tactics)}"
 
 }

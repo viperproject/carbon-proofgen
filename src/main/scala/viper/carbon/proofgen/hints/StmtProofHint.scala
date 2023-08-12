@@ -22,3 +22,4 @@ case class FieldAssignHint(fieldAssignVpr: sil.FieldAssign, hints: Seq[StmtCompo
 case class InhaleStmtHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint
 case class ExhaleStmtHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint
 case class AssertStmtHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint
+case class MethodCallHint(hints: Seq[StmtComponentProofHint]) extends AtomicStmtProofHint

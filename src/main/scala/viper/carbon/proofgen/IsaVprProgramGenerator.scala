@@ -65,7 +65,7 @@ object IsaVprProgramGenerator {
       outerDecls += programDef
 
       (
-        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalUtil", methodTheory.theoryName), outerDecls.toSeq),
+        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalViperUtil", methodTheory.theoryName), outerDecls.toSeq),
         DefaultIsaViperGlobalDataAccessor(
           theoryName = theoryName,
           vprProgramIdent = programDef.name,

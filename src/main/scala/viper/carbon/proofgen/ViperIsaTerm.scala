@@ -130,6 +130,9 @@ object ViperIsaTerm {
   def whileLoop(cond: Term, invs: Seq[Term], body: Term) : Term =
     TermApp(TermIdent("While"), Seq(cond, TermList(invs), body))
 
+  def methodCall(methodName: String, args: Seq[Term], targets: Seq[Int]) : Term =
+    TermApp(TermIdent("MethodCall"), Seq(TermList(targets map (i => NatConst(i))), StringConst(methodName), TermList(args)))
+
   def ifStmt(cond: Term, thn: Term, els: Term) : Term =
     TermApp(TermIdent("If"), Seq(cond, thn, els))
 

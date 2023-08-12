@@ -3,7 +3,7 @@ package viper.carbon.proofgen.hints
 import isabelle.ast.{IsaTermUtil, IsaUtil, MLUtil, ProofUtil, StringConst}
 import viper.carbon.boogie.LocalVar
 import viper.carbon.modules.impls.{HeapStateComponent, PermissionStateComponent}
-import viper.carbon.proofgen.{IsaBoogieProcAccessor, ViperBoogieIsaUtil, ViperBoogieMLUtil}
+import viper.carbon.proofgen.{ExhaleRelUtil, IsaBoogieProcAccessor, ViperBoogieIsaUtil, ViperBoogieMLUtil, ViperBoogieRelationIsa}
 
 object MLHintGenerator {
 
@@ -75,21 +75,23 @@ object MLHintGenerator {
         val setupWellDefStateTactics =
           setupWellDefStateHint.map(stateHint => convertStateHintToTactic(stateHint, boogieProcAccessor, basicInfo))
 
-        val setupWellDefTacticFull = MLUtil.lambda(Seq(basicInfo, proofCtxt), ViperBoogieMLUtil.everyRedAstBplTransitiveTac(proofCtxt, setupWellDefStateTactics))
+        val setupWellDefTacticFull = MLUtil.lambda(Seq(basicInfo, proofCtxt), ViperBoogieMLUtil.everyRedAstBplRelTransitiveReflTac(proofCtxt, setupWellDefStateTactics))
 
         createExhaleRelCompleteHint(
           setupWellDefStateTac = setupWellDefTacticFull,
           lookupDeclExhaleHeapThm = MLUtil.isaToMLThm(boogieProcAccessor.getLocalLookupDeclThm(exhaleHeapVar)),
+          exhaleStmtRelThm = MLUtil.isaToMLThm(ExhaleRelUtil.exhStmtRelThm(false)), //TODO: permit optimizations
           exhaleBodyRelHint = exhaleBodyHint
         )
       case _ => sys.error("exhale proof hint has unexpected form")
     }
   }
 
-  def createExhaleRelCompleteHint(setupWellDefStateTac: String, lookupDeclExhaleHeapThm: String, exhaleBodyRelHint: String) : String = {
+  def createExhaleRelCompleteHint(setupWellDefStateTac: String, exhaleStmtRelThm: String, lookupDeclExhaleHeapThm: String, exhaleBodyRelHint: String) : String = {
     MLUtil.createRecord(
       Seq(
         ("setup_well_def_state_tac", setupWellDefStateTac),
+        ("exhale_stmt_rel_thm", exhaleStmtRelThm),
         ("lookup_decl_exhale_heap", lookupDeclExhaleHeapThm),
         ("exhale_rel_hint", exhaleBodyRelHint)
       )
@@ -143,6 +145,9 @@ object MLHintGenerator {
             MLUtil.app("ExhaleHint", generateExhaleHintsInML(exhaleHint, boogieProcAccessor, expWfRelInfo, expRelInfo))
           case _ => sys.error("exhale hint has unexpected form")
         }
+      case MethodCallHint(componentHints) =>
+        "(MethodCallHint)" //TODO
+
     }
   }
 

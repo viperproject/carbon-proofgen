@@ -219,7 +219,17 @@ object ViperToIsa {
 
           stmtWithScopes
         }
-      case sil.MethodCall(methodName, args, targets) => sys.error("do not support method calls")
+      case sil.MethodCall(methodName, args, targets) =>
+        val targetsTranslated = {
+          for (tgt <- targets) yield {
+            varTranslation.translateVariableId(tgt) match {
+              case Some(tgtId) => tgtId
+              case _ => sys.error(s"Cannot translate target variable ${tgt.name} in method call $methodName")
+            }
+          }
+        }
+
+        ViperIsaTerm.methodCall(methodName, args map translatePureExp, targetsTranslated)
       case sil.While(cond, invs, body) =>
         ViperIsaTerm.whileLoop(
           translatePureExp(cond),

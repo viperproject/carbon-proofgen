@@ -3,6 +3,10 @@ package viper.carbon.proofgen
 import isabelle.ast._
 import isabelle.ast.ProofUtil._
 
+sealed trait StateRelInstantiation
+case object SecondConjunctStateRelInst extends StateRelInstantiation
+case object IdentityStateRelInst extends StateRelInstantiation
+
 object ViperBoogieRelationIsa {
   def expressionContextType(abstractType: TypeIsa) = DataType("econtext_bpl", abstractType)
 
@@ -15,14 +19,17 @@ object ViperBoogieRelationIsa {
 
   def viperBoogieAbstractTypeInterp(tyReprBpl: Term) : Term = TermApp(viperBoogieAbstractTypeInterpId, tyReprBpl)
 
+  def trivialStateConsistency : Term = TermQuantifier(Lambda, Seq(Wildcard), BoolConst(true))
+
   def stateRelationDefSame( program: Term,
+                     stateConsistency: Term,
                      typeRepresentation: Term,
                      translationRecord: Term,
                      auxiliaryPredicates: Term,
                      viperTotalContext: Term,
                      normalViperState: Term,
                      boogieState: Term) : Term =
-    TermApp(TermIdent(stateRelDefinednessSameName), Seq(program, typeRepresentation, translationRecord, auxiliaryPredicates, viperTotalContext, normalViperState, boogieState))
+    TermApp(TermIdent(stateRelDefinednessSameName), Seq(program, stateConsistency, typeRepresentation, translationRecord, auxiliaryPredicates, viperTotalContext, normalViperState, boogieState))
 
   def stateRelationWellTypedThm = TermIdent("state_rel_state_well_typed")
 
@@ -63,6 +70,8 @@ object ViperBoogieRelationIsa {
   val stmtRelPropagatePostTac : String = ruleTac("stmt_rel_propagate_2")
   val stmtRelPropagatePostSameRelTac : String = ruleTac("stmt_rel_propagate_2_same_rel")
 
+  val trivialConsistencyWfThm : String = "wf_total_consistency_trivial"
+
   def zeroMaskLookupTactic(translationRecordDefThm: String) : String =
     MLUtil.mlTacticToIsa(
       MLUtil.app("zero_mask_lookup_tac", Seq(MLUtil.contextAniquotation, MLUtil.isaToMLThm(translationRecordDefThm), "1"))
@@ -70,6 +79,7 @@ object ViperBoogieRelationIsa {
 
   val stateRelMaskUpdateThm = "state_rel_mask_update_3"
   val zeroMaskRelThm = "zero_mask_rel_2"
+  val boogieConstValSimpsThm = "boogie_const_val.simps"
 
   def redAssumeGoodStateTac(translationRecordDefThm: String, ctxtBplWfThm: String) = {
     MLUtil.mlTacticToIsa(
@@ -79,8 +89,8 @@ object ViperBoogieRelationIsa {
     )
   }
 
-  def progressBplTac(isaContext: String) : String =
-    MLUtil.mlTacticToIsa(MLUtil.app("progress_tac", Seq(isaContext, "1")))
+  def progressBplRelTac(isaContext: String) : String =
+    MLUtil.mlTacticToIsa(MLUtil.app("progress_rel_tac", Seq(isaContext, "1")))
 
   def stmtRelTac(isaContext: String, stmtRelInfo: String, stmtRelTacHints: String) =
     MLUtil.mlTacticToIsa(
@@ -109,16 +119,13 @@ case object TranslationRecord {
                              maskVar: Term,
                              heapVarDef: Term,
                              maskVarDef: Term,
-                             maskRead: Term,
-                             maskUpdate: Term,
-                             heapRead: Term,
-                             heapUpdate: Term,
                              fieldTranslation: Term,
                              funTranslation: Term,
                              varTranslation: Term,
-                             constRepr: Term): Term =
+                             constRepr: Term,
+                             stateRelOptions: Term): Term =
     IsaTermUtil.makeRecord(translationRecordTypeName,
-      Seq(heapVar, maskVar, heapVarDef, maskVarDef, maskRead, maskUpdate, heapRead, heapUpdate, fieldTranslation, funTranslation, varTranslation, constRepr)
+      Seq(heapVar, maskVar, heapVarDef, maskVarDef, fieldTranslation, funTranslation, varTranslation, constRepr, stateRelOptions)
     )
 
   def maskVar(translationRecord: Term) : Term = TermApp(TermIdent("mask_var"), translationRecord)
