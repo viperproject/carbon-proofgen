@@ -42,6 +42,7 @@ object ViperBoogieMLUtil {
       MLUtil.createRecord(Seq(
         ("ctxt_wf_thm", ctxtWfThm),
         ("consistency_wf_thm",  MLUtil.isaToMLThm(ViperBoogieRelationIsa.trivialConsistencyWfThm)),
+        ("consistency_down_mono_thm", MLUtil.isaToMLThm(ViperBoogieRelationIsa.trivialConsistencyDownMonoThm)),
         ("tr_def_thm", trDefThm),
         ("vpr_program_ctxt_eq_thm", vprProgramContextEqThm),
         ("var_rel_tac", varRelTac),
@@ -58,11 +59,12 @@ object ViperBoogieMLUtil {
       )
     )
 
-  def createExhaleRelInfo(basicStmtRelInfo: String, atomicExhaleRelTac: String, isExhRelInvThm: String) : String =
+  def createExhaleRelInfo(basicStmtRelInfo: String, atomicExhaleRelTac: String, isExhRelInvThm: String, noDefChecksTacOpt: String) : String =
     MLUtil.createRecord(Seq(
         ("basic_info", basicStmtRelInfo),
         ("atomic_exhale_rel_tac", atomicExhaleRelTac),
-        ("is_exh_rel_inv_thm", isExhRelInvThm)
+        ("is_exh_rel_inv_thm", isExhRelInvThm),
+        ("no_def_checks_tac_opt", noDefChecksTacOpt)
       )
     )
 

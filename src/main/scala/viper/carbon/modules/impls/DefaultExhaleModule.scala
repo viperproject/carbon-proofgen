@@ -67,7 +67,8 @@ class DefaultExhaleModule(val verifier: Verifier) extends ExhaleModule {
                   Some(DefinednessState(() => stateModule.replaceState(wellDefState)))
                 )
 
-          exhaleConnective(e._1.whenExhaling, e._2, defCheckData, havocHeap, statesStackForPackageStmt, insidePackageStmt, isAssert = isAssert, currentStateForPackage = tempState)
+          val (stmt, hint) = exhaleConnective(e._1.whenExhaling, e._2, defCheckData, havocHeap, statesStackForPackageStmt, insidePackageStmt, isAssert = isAssert, currentStateForPackage = tempState)
+          (stmt, (hint, e._3.isDefined))
         }
       )).unzip
 

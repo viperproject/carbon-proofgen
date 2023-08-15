@@ -71,6 +71,7 @@ object ViperBoogieRelationIsa {
   val stmtRelPropagatePostSameRelTac : String = ruleTac("stmt_rel_propagate_2_same_rel")
 
   val trivialConsistencyWfThm : String = "wf_total_consistency_trivial"
+  val trivialConsistencyDownMonoThm : String = "true_mono_prop_downward_ord"
 
   def zeroMaskLookupTactic(translationRecordDefThm: String) : String =
     MLUtil.mlTacticToIsa(

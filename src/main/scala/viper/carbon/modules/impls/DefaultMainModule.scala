@@ -153,7 +153,8 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             }
             else Nil
             val postsWithErrors = posts map (p => (p, errors.PostconditionViolated(p, mWithLoopInfo)))
-            val exhalePost = MaybeCommentBlock("Exhaling postcondition", exhaleWithoutDefinedness(postsWithErrors)._1)
+            val (exhalePost, exhalePostHint ) = exhaleWithoutDefinedness(postsWithErrors)
+            val exhalePostWithComment = MaybeCommentBlock("Exhaling postcondition", exhalePost)
             val (body, bodyProofHint) : (Stmt, StmtProofHint) = translateStmt(method.bodyOrAssumeFalse)
               /* TODO: Might be worth special-casing on methods with empty bodies */
             val proc = Procedure(Identifier(name), ins, outs,
@@ -166,11 +167,11 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
                   //TODO proof_gen: currently do not handle old expressions in proofs
                   Nil
                 }) ++
-                Seq(checkPost, body, exhalePost)
+                Seq(checkPost, body, exhalePostWithComment)
             )
 
             if(verifier.generateProofs) {
-              val methodProofHint = MethodProofHint(inhalePreHints, bodyProofHint)
+              val methodProofHint = MethodProofHint(inhalePreHints, bodyProofHint, exhalePostHint)
               verifier.proofGenInterface.generateProofForMethod(m, proc, env, methodProofHint)
             }
 

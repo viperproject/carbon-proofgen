@@ -5,7 +5,16 @@ import viper.silver.{ast => sil}
 
 sealed trait ExhaleProofHint
 
-case class DefaultExhaleProofHint(bodyHint: Seq[ExhaleBodyProofHint], includeWellDefChecks: Boolean, setupWellDefStateHint: Seq[StateProofHint], exhaleHeapOpt: Option[LocalVar]) extends ExhaleProofHint
+/**
+  *
+  * @param bodyHint If the exhale method was invoked with a sequence of assertions (representing a separating conjunction),
+  *                 then there is an element for each assertion, which consists of a hint [[ExhaleBodyProofHint]] and
+  *                 a flag that is true iff well-definedness checks were performed in the exhale encoding.
+  * @param setupWellDefStateHint hints to establish the well-definedness state for an exhale
+  * @param exhaleHeapOpt if the heap is exhaled, then this parameter contains the local variable used in the Boogie encoding
+  *                      for the temporary heap that is havoced and later used to update the current heap
+  */
+case class DefaultExhaleProofHint(bodyHint: Seq[(ExhaleBodyProofHint, Boolean)], setupWellDefStateHint: Seq[StateProofHint], exhaleHeapOpt: Option[LocalVar]) extends ExhaleProofHint
 
 sealed trait ExhaleBodyProofHint
 

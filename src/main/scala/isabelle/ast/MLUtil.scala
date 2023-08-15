@@ -17,6 +17,9 @@ object MLUtil {
 
   def createList(elems: Seq[String]) : String = s"[${elems.mkString(", ")}]"
 
+  val none : String = "NONE"
+  def some(x: String) = s"(SOME $x)"
+
   def isaToMLThm(isaThm: String) : String = s"@{thm $isaThm}"
 
   def isaToMLThms(isaThms: Seq[String]) : String = {
