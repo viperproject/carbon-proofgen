@@ -257,7 +257,7 @@ case class MethodProofGenerator(
       if(methodAccessor.origMethod.posts.isEmpty) {
         None
       } else {
-        Some(AtomicHint(ExhaleStmtHint(Seq(ExhaleStmtComponentHint(methodProofHint.postconditionExhaleHint)))))
+        Some(AtomicHint(ExhaleStmtHint(Seq(ExhaleStmtComponentHint(methodProofHint.postconditionExhaleHint.conjoinBodyHints)))))
       }
 
     val inhaleRelInfo = "inhale_rel_info"

@@ -12,7 +12,7 @@ import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
 import viper.carbon.modules.components.DefinednessState
-import viper.carbon.proofgen.hints.{CondExhaleHint, DefaultExhaleProofHint, ExhaleBodyProofHint, ExhaleComponentProofHint, ExhaleProofHint, FieldAccessPredicateExhaleHint, ForallExhaleHint, ImpExhaleHint, NotSupportedExhaleHint, PureExpExhaleHint, StarExhaleHint, UnfoldingExhaleHint}
+import viper.carbon.proofgen.hints.{CondExhaleHint, DefaultExhaleProofHint, ExhaleBodyProofHint, ExhaleComponentProofHint, ExhaleProofHint, FieldAccessPredicateExhaleHint, ForallExhaleHint, ImpExhaleHint, NotSupportedAtomicExhaleHint, PureExpExhaleHint, StarExhaleHint, UnfoldingExhaleHint}
 import viper.silver.ast.utility.Expressions
 import viper.silver.verifier.PartialVerificationError
 import viper.silver.verifier.reasons._
@@ -178,7 +178,7 @@ class DefaultExhaleModule(val verifier: Verifier) extends ExhaleModule {
               env.undefine(u.localVar)
               Nil
             }
-        (resStmt, NotSupportedExhaleHint)
+        (resStmt, NotSupportedAtomicExhaleHint)
       }
       case fa@sil.Forall(vars, _, body) if fa.isPure =>
         /* We use a special case for pure quantifiers, because the standard approach of just asserting the pure quantifier
@@ -269,9 +269,9 @@ class DefaultExhaleModule(val verifier: Verifier) extends ExhaleModule {
             else
               Nil
           if (!havocHeap)
-            (defCheck ++ exhaleExtStmt ++ addAssumptions ++ equateHps ++ assertTransfer, NotSupportedExhaleHint)
+            (defCheck ++ exhaleExtStmt ++ addAssumptions ++ equateHps ++ assertTransfer, NotSupportedAtomicExhaleHint)
           else
-            (defCheck ++ exhaleExtStmt ++ addAssumptions ++ assertTransfer, NotSupportedExhaleHint)
+            (defCheck ++ exhaleExtStmt ++ addAssumptions ++ assertTransfer, NotSupportedAtomicExhaleHint)
         } else {
           /* We propagate the definedness state to the components only if no definedness check was performed to avoid
             exhale components doing the same work as the definedness components do */
@@ -288,7 +288,7 @@ class DefaultExhaleModule(val verifier: Verifier) extends ExhaleModule {
             e match {
               case _ if e.isPure => PureExpExhaleHint(e, hintsBefore.flatten, hintsAfter.flatten)
               case  acc : sil.FieldAccessPredicate => FieldAccessPredicateExhaleHint(acc, hintsBefore.flatten, hintsAfter.flatten)
-              case _ => NotSupportedExhaleHint
+              case _ => NotSupportedAtomicExhaleHint
             }
 
           (defCheck ++ exhaleStmt, exhaleHint)
