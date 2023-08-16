@@ -2,7 +2,7 @@ package viper.carbon.proofgen
 
 import viper.silver.{ast => sil}
 import isabelle.{ast => isa}
-import viper.carbon.proofgen.hints.{ExhaleBodyProofHint, ExhaleStmtHint, InhaleHint, NotSupportedExhaleHint, NotSupportedInhaleHint, StarExhaleHint, StarInhaleHint}
+import viper.carbon.proofgen.hints.{ExhaleBodyProofHint, ExhaleStmtHint, InhaleBodyProofHint, NotSupportedExhaleHint, NotSupportedInhaleHint, StarExhaleHint, StarInhaleHint}
 
 object IsaMethodSpecificationHelper {
 
@@ -17,11 +17,11 @@ object IsaMethodSpecificationHelper {
     conjoinSpec(sil.TrueLit()(), { case (a1, a2) => sil.And(a1, a2)() : sil.Exp } : (sil.Exp, sil.Exp) => sil.Exp, spec)
   }
 
-  def conjoinSpecInhaleHints(specHints: Seq[InhaleHint]) : InhaleHint = {
+  def conjoinSpecInhaleHints(specHints: Seq[InhaleBodyProofHint]) : InhaleBodyProofHint = {
     if(specHints.isEmpty) {
       sys.error("conjoinSpecInhaleHints: Do not support empty spec inhale hints")
     }
-    conjoinSpec(NotSupportedInhaleHint, { case (a1, a2) => StarInhaleHint(a1, a2) } : (InhaleHint, InhaleHint) => InhaleHint, specHints)
+    conjoinSpec(NotSupportedInhaleHint, { case (a1, a2) => StarInhaleHint(a1, a2) } : (InhaleBodyProofHint, InhaleBodyProofHint) => InhaleBodyProofHint, specHints)
   }
 
   def conjoinSpecExhaleHints(specHints: Seq[ExhaleBodyProofHint]) : ExhaleBodyProofHint = {

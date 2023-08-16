@@ -11,7 +11,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import viper.carbon.boogie.Implicits._
-import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, ImpInhaleHint, InhaleComponentProofHint, InhaleHint, NotSupportedInhaleHint, PureExpInhaleHint, StarInhaleHint}
+import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, ImpInhaleHint, InhaleBodyProofHint, InhaleComponentProofHint, InhaleProofHint, NotSupportedInhaleHint, PureExpInhaleHint, StarInhaleHint}
 import viper.silver.verifier.PartialVerificationError
 
 /**
@@ -31,7 +31,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
     register(this)
   }
 
-  override def inhale(exps: Seq[(sil.Exp, PartialVerificationError)], addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, Seq[InhaleHint]) = {
+  override def inhale(exps: Seq[(sil.Exp, PartialVerificationError)], addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, InhaleProofHint) = {
     val current_state = stateModule.state
     if(insidePackageStmt && !addDefinednessChecks) { // replace currentState with the correct state in which the inhale occurs during packaging the wand
       stateModule.replaceState(statesStackForPackageStmt(0).asInstanceOf[StateRep].state)
@@ -41,15 +41,17 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
     val (mainStmt, hints) =
         (exps map (e => inhaleConnective(e._1.whenInhaling, e._2, addDefinednessChecks = addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt = insidePackageStmt))).unzip
 
+    val resultHint = InhaleProofHint(hints, addDefinednessChecks)
+
    val stmt = mainStmt ++ assumeGoodState
 
     if(insidePackageStmt && !addDefinednessChecks) {
          /* all the assumptions made during packaging a wand (except assumptions about the global state before the package statement)
           * should be replaced by updates to state booleans (see documentation for 'exchangeAssumesWithBoolean') */
       stateModule.replaceState(current_state)
-      (wandModule.exchangeAssumesWithBoolean(stmt, statesStackForPackageStmt.head.asInstanceOf[StateRep].boolVar), hints)
+      (wandModule.exchangeAssumesWithBoolean(stmt, statesStackForPackageStmt.head.asInstanceOf[StateRep].boolVar), resultHint)
     } else {
-      (stmt, hints)
+      (stmt, resultHint)
     }
   }
 
@@ -65,7 +67,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
    * Inhales Viper expression connectives (such as logical and/or) and forwards the
    * translation of other expressions to the inhale components.
    */
-  private def inhaleConnective(e: sil.Exp, error: PartialVerificationError, addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, InhaleHint) = {
+  private def inhaleConnective(e: sil.Exp, error: PartialVerificationError, addDefinednessChecks: Boolean, statesStackForPackageStmt: List[Any] = null, insidePackageStmt: Boolean = false): (Stmt, InhaleBodyProofHint) = {
 
     def maybeDefCheck(eDef: sil.Exp) : Stmt = { if(addDefinednessChecks) checkDefinedness(eDef, error, insidePackageStmt = insidePackageStmt) else Statements.EmptyStmt }
 
@@ -83,7 +85,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
       }
     }
 
-    val (resStmt, hint) : (Stmt, InhaleHint) =
+    val (resStmt, hint) : (Stmt, InhaleBodyProofHint) =
       e match {
         case sil.And(e1, e2) =>
           val (stmt1, hint1) = inhaleConnective(e1, error, addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt)

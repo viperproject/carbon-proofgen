@@ -52,10 +52,12 @@ object ViperBoogieMLUtil {
         ("type_interp_econtext", tyInterpEContextBplEq)
       ))
 
-  def createInhaleRelInfo(basicStmtRelInfo: String, atomicInhaleRelTac: String) : String =
+  def createInhaleRelInfo(basicStmtRelInfo: String, atomicInhaleRelTac: String, isInhRelInvThm: String, noDefChecksTacOpt: String) : String =
     MLUtil.createRecord(Seq(
         ("basic_info", basicStmtRelInfo),
-        ("atomic_inhale_rel_tac", atomicInhaleRelTac)
+        ("atomic_inhale_rel_tac", atomicInhaleRelTac),
+        ("is_inh_rel_inv_thm", isInhRelInvThm),
+        ("no_def_checks_tac_opt", noDefChecksTacOpt)
       )
     )
 

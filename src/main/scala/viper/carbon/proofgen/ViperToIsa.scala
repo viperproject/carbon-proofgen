@@ -167,7 +167,7 @@ object ViperToIsa {
         * the same way as it does the impure forms. This is the reason why we use the impure forms here irrespective
         * of whether the arguments are pure. */
       case a@sil.And(left, right) => ViperIsaTerm.binopImpure(a.funct, translateAssertion(left), translateAssertion(right))
-      case e@sil.Implies(cond, exp) => ViperIsaTerm.binopImpure(e.funct, translateAssertion(cond), translateAssertion(exp))
+      case e@sil.Implies(cond, exp) => ViperIsaTerm.binopImpure(e.funct, translatePureExp(cond), translateAssertion(exp))
       case sil.MagicWand(_, _) => sys.error("magic wands not supported")
       case _  if e.isPure => ViperIsaTerm.liftPureExpToAssertion(translatePureExp(e))
       case _ => sys.error(e.toString + " not supported")

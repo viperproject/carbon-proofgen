@@ -1,14 +1,34 @@
 package viper.carbon.proofgen.hints
 
+import viper.carbon.proofgen.IsaMethodSpecificationHelper
 import viper.silver.{ast => sil}
 
-/** Inhale */
-sealed trait InhaleHint
-case class StarInhaleHint(left: InhaleHint, right: InhaleHint) extends InhaleHint
-case class ImpInhaleHint(cond: sil.Exp, right: InhaleHint) extends InhaleHint
-case class CondInhaleHint(cond: sil.Exp, thn: InhaleHint, els: InhaleHint) extends InhaleHint
+case class InhaleProofHint(bodyHints: Seq[InhaleBodyProofHint], addWelldefinednessChecks: Boolean)
+{
 
-sealed trait AtomicInhaleHint extends InhaleHint
+  def conjoinBodyHints : InhaleProofHint = {
+    InhaleProofHint(Seq(IsaMethodSpecificationHelper.conjoinSpecInhaleHints(bodyHints)), addWelldefinednessChecks)
+  }
+
+}
+
+object InhaleProofHint {
+
+  def combineHints(hints: Seq[InhaleProofHint], addWelldefinednessChecks : Boolean) : InhaleProofHint = {
+    InhaleProofHint(hints.flatMap(h => h.bodyHints), addWelldefinednessChecks)
+  }
+
+  val empty = InhaleProofHint(Seq(), true)
+
+}
+
+/** Inhale */
+sealed trait InhaleBodyProofHint
+case class StarInhaleHint(left: InhaleBodyProofHint, right: InhaleBodyProofHint) extends InhaleBodyProofHint
+case class ImpInhaleHint(cond: sil.Exp, right: InhaleBodyProofHint) extends InhaleBodyProofHint
+case class CondInhaleHint(cond: sil.Exp, thn: InhaleBodyProofHint, els: InhaleBodyProofHint) extends InhaleBodyProofHint
+
+sealed trait AtomicInhaleHint extends InhaleBodyProofHint
 case class FieldAccessPredicateInhaleHint(fieldAccessPred: sil.FieldAccessPredicate, hints: Seq[InhaleComponentProofHint]) extends AtomicInhaleHint
 case class PureExpInhaleHint(e: sil.Exp, hints: Seq[InhaleComponentProofHint]) extends AtomicInhaleHint
 case object NotSupportedInhaleHint extends AtomicInhaleHint

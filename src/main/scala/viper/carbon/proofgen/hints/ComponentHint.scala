@@ -6,7 +6,7 @@ sealed trait StmtComponentProofHint
 
 case class IfComponentHint(thn: StmtProofHint, els: StmtProofHint) extends StmtComponentProofHint
 
-case class InhaleStmtComponentHint(inhaleHint: InhaleHint) extends StmtComponentProofHint
+case class InhaleStmtComponentHint(inhaleHint: InhaleProofHint) extends StmtComponentProofHint
 case class ExhaleStmtComponentHint(exhaleHint: ExhaleProofHint) extends StmtComponentProofHint
 case class AssertStmtComponentHint(exhaleHint: ExhaleProofHint) extends StmtComponentProofHint
 

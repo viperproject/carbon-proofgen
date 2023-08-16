@@ -250,7 +250,7 @@ case class MethodProofGenerator(
       if(methodAccessor.origMethod.pres.isEmpty) {
         None
       } else {
-        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(IsaMethodSpecificationHelper.conjoinSpecInhaleHints(methodProofHint.preconditionInhaleHint))))))
+        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.preconditionInhaleHint.conjoinBodyHints)))))
       }
 
     val stmtPostconditionHintValue =
@@ -399,7 +399,19 @@ case class MethodProofGenerator(
           inhaleRelInfo,
           ViperBoogieMLUtil.createInhaleRelInfo(
             basicStmtRelInfo = basicStmtRelInfo,
-            atomicInhaleRelTac = "atomic_inhale_rel_inst_tac"
+            atomicInhaleRelTac = "atomic_inhale_rel_inst_tac",
+            isInhRelInvThm = MLUtil.isaToMLThm(InhaleRelUtil.isInhRelInvThm(true)),
+            noDefChecksTacOpt = InhaleRelUtil.inhNoDefChecksTacOpt(true),
+          )
+        ),
+
+        MLUtil.defineVal(
+          inhaleRelInfoWithoutDefChecks,
+          ViperBoogieMLUtil.createInhaleRelInfo(
+            basicStmtRelInfo = basicStmtRelInfo,
+            atomicInhaleRelTac = "atomic_inhale_rel_inst_tac",
+            isInhRelInvThm = MLUtil.isaToMLThm(InhaleRelUtil.isInhRelInvThm(false)),
+            noDefChecksTacOpt = InhaleRelUtil.inhNoDefChecksTacOpt(false),
           )
         ),
 

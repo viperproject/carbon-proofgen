@@ -3,7 +3,7 @@ package viper.carbon.proofgen.hints
 import isabelle.ast.{IsaTermUtil, IsaUtil, MLUtil, ProofUtil, StringConst}
 import viper.carbon.boogie.LocalVar
 import viper.carbon.modules.impls.{HeapStateComponent, PermissionStateComponent}
-import viper.carbon.proofgen.{ExhaleRelUtil, IsaBoogieProcAccessor, ViperBoogieIsaUtil, ViperBoogieMLUtil, ViperBoogieRelationIsa}
+import viper.carbon.proofgen.{ExhaleRelUtil, InhaleRelUtil, IsaBoogieProcAccessor, ViperBoogieIsaUtil, ViperBoogieMLUtil, ViperBoogieRelationIsa}
 
 object MLHintGenerator {
 
@@ -14,8 +14,12 @@ object MLHintGenerator {
           mainComponentHintOpt match {
             case Some(mainComponentHint: InhaleMainComponentHint) =>
               val lookupAuxVarTyThm =  boogieProcAccessor.getLocalLookupTyThm(mainComponentHint.temporaryPermVar)
+
+              val auxVarId = boogieProcAccessor.getVarId(mainComponentHint.temporaryPermVar)
+              val stateRelAuxVarInstThm = MLUtil.isaToMLThm(ProofUtil.where(ViperBoogieIsaUtil.stateRelAuxVarLookupThm, "aux_var", auxVarId.toString))
+
               MLUtil.app("FieldAccInhHint",
-                MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, MLUtil.isaToMLThm(lookupAuxVarTyThm)))
+                MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, MLUtil.isaToMLThm(lookupAuxVarTyThm), stateRelAuxVarInstThm))
               )
             case _ => sys.error("inhale field access predicate hint missing main component hint")
           }
@@ -25,18 +29,35 @@ object MLHintGenerator {
     }
   }
 
-  def generateInhaleHintsInML(inhaleHint: InhaleHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
+  def generateInhaleBodyHintsInML(inhaleHint: InhaleBodyProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
     inhaleHint match {
       case StarInhaleHint(left, right) =>
-        val leftHintString = generateInhaleHintsInML(left, boogieProcAccessor, expWfRelInfo, expRelInfo)
-        val rightHintString = generateInhaleHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        val leftHintString = generateInhaleBodyHintsInML(left, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        val rightHintString = generateInhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
         MLUtil.app("StarInhHint", MLUtil.createTuple(Seq(leftHintString, rightHintString)))
       case ImpInhaleHint(cond, right) =>
-        val rightHintString = generateInhaleHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
-        MLUtil.app("ImpInhHint", Seq(expWfRelInfo, expRelInfo, rightHintString))
+        val rightHintString = generateInhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        MLUtil.app("ImpInhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, rightHintString)))
       case CondInhaleHint(cond, thn, els) => ???
       case a: AtomicInhaleHint => MLUtil.app("AtomicInhHint", generateAtomicInhaleHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
     }
+  }
+
+  def generateInhaleHintsInML(inhaleHint: InhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
+    inhaleHint match {
+      case InhaleProofHint(Seq(bodyHint), addWelldefinednessChecks) =>
+        val inhaleBodyHint = generateInhaleBodyHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        createInhaleRelCompleteHint(MLUtil.isaToMLThm(InhaleRelUtil.inhStmtRelThm(addWelldefinednessChecks)), inhaleBodyHint)
+    }
+  }
+
+  def createInhaleRelCompleteHint(inhaleStmtRelThm: String, inhaleBodyRelHint: String) : String = {
+    MLUtil.createRecord(
+      Seq(
+        ("inhale_stmt_rel_thm", inhaleStmtRelThm),
+        ("inhale_rel_hint", inhaleBodyRelHint)
+      )
+    )
   }
 
   def generateAtomicExhaleHintsInML(atomicExhaleHint: AtomicExhaleHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
@@ -60,6 +81,20 @@ object MLHintGenerator {
       }
       case PureExpExhaleHint(e, hintsBefore, hintsAfter) =>
         MLUtil.app("PureExpExhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo)))
+    }
+  }
+
+  def generateExhaleBodyHintsInML(exhaleBodyHint: ExhaleBodyProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
+    exhaleBodyHint match {
+      case StarExhaleHint(left, right) =>
+        val leftHintString = generateExhaleBodyHintsInML(left, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        val rightHintString = generateExhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        MLUtil.app("StarExhHint", MLUtil.createTuple(Seq(leftHintString, rightHintString)))
+      case ImpExhaleHint(cond, right) =>
+        val rightHintString = generateExhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        MLUtil.app("ImpExhHint", Seq(expWfRelInfo, expRelInfo, rightHintString))
+      case CondExhaleHint(cond, thn, els) => ???
+      case a: AtomicExhaleHint => MLUtil.app("AtomicExhHint", generateAtomicExhaleHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
     }
   }
 
@@ -98,20 +133,6 @@ object MLHintGenerator {
     )
   }
 
-  def generateExhaleBodyHintsInML(exhaleBodyHint: ExhaleBodyProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
-    exhaleBodyHint match {
-      case StarExhaleHint(left, right) =>
-        val leftHintString = generateExhaleBodyHintsInML(left, boogieProcAccessor, expWfRelInfo, expRelInfo)
-        val rightHintString = generateExhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
-        MLUtil.app("StarExhHint", MLUtil.createTuple(Seq(leftHintString, rightHintString)))
-      case ImpExhaleHint(cond, right) =>
-        val rightHintString = generateExhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
-        MLUtil.app("ImpExhHint", Seq(expWfRelInfo, expRelInfo, rightHintString))
-      case CondExhaleHint(cond, thn, els) => ???
-      case a: AtomicExhaleHint => MLUtil.app("AtomicExhHint", generateAtomicExhaleHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
-    }
-  }
-
   // converts a state hint to a tactic that takes a proof context as input
   def convertStateHintToTactic(stateHint: StateProofHint, boogieProcAccessor: IsaBoogieProcAccessor, basicInfo: String) : String = {
     stateHint match {
@@ -147,7 +168,6 @@ object MLHintGenerator {
         }
       case MethodCallHint(componentHints) =>
         "(MethodCallHint)" //TODO
-
     }
   }
 
