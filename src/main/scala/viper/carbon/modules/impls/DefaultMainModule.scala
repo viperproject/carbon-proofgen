@@ -151,7 +151,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val (checkPost: Stmt, postFramingHint) = if (posts.nonEmpty) {
               translateMethodDeclCheckPosts(posts)
             }
-            else (Nil, (Seq(), InhaleProofHint.empty))
+            else (Nil : Stmt, (Seq(), InhaleProofHint.empty))
             val postsWithErrors = posts map (p => (p, errors.PostconditionViolated(p, mWithLoopInfo)))
             val (exhalePost, exhalePostHint ) = exhaleWithoutDefinedness(postsWithErrors)
             val exhalePostWithComment = MaybeCommentBlock("Exhaling postcondition", exhalePost)

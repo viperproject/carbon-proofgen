@@ -106,6 +106,8 @@ object ViperBoogieRelationIsa {
       MLUtil.app("post_framing_rel_init_tac", Seq(isaContext, basicInfo, heapLookupDeclThm, maskLookupThyThm, "1"))
     )
 
+  val postFramingRelAuxTrivialThm = "post_framing_rel_framing_trivial"
+
 }
 
 case object TypeRepresentation {

@@ -547,7 +547,10 @@ case class MethodProofGenerator(
 
   private def postconditionFramingProof(setupStateHint: Seq[StateProofHint], basicInfo: String, stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
     if(methodAccessor.origMethod.posts.isEmpty) {
-      Nil
+      Seq(
+        applyTac(ruleTac(ViperBoogieRelationIsa.postFramingRelAuxTrivialThm)),
+        applyTac(simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodPostcondition)))
+      )
     } else {
       setupStateHint match {
         case Seq(ResetStateComponentHint(HeapStateComponent, Seq(heapVar : LocalVar)), ResetStateComponentHint(PermissionStateComponent, Seq(maskVar : LocalVar))) =>{
