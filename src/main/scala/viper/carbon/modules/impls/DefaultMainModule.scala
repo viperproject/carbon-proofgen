@@ -17,7 +17,7 @@ import java.util.Date
 import viper.carbon.boogie.CommentedDecl
 import viper.carbon.boogie.Procedure
 import viper.carbon.boogie.Program
-import viper.carbon.proofgen.hints.{InhaleHint, MethodProofHint, NotSupportedInhaleHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{InhaleBodyProofHint, InhaleProofHint, MethodProofHint, NotSupportedAtomicInhaleHint, NotSupportedInhaleHint, StateProofHint, StmtProofHint}
 import viper.carbon.verifier.Environment
 import viper.silver.verifier.{TypecheckerWarning, errors}
 import viper.carbon.verifier.Verifier
@@ -148,10 +148,10 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val initOld = MaybeCommentBlock("Initializing the old state", stateModule.initOldState)
             val paramAssumptions = mWithLoopInfo.formalArgs map (a => allAssumptionsAboutValue(a.typ, translateLocalVarDecl(a), true))
             val (inhalePre, inhalePreHints) = translateMethodDeclPre(pres)
-            val checkPost: Stmt = if (posts.nonEmpty) {
+            val (checkPost: Stmt, postFramingHint) = if (posts.nonEmpty) {
               translateMethodDeclCheckPosts(posts)
             }
-            else Nil
+            else (Nil, (Seq(), InhaleProofHint.empty))
             val postsWithErrors = posts map (p => (p, errors.PostconditionViolated(p, mWithLoopInfo)))
             val (exhalePost, exhalePostHint ) = exhaleWithoutDefinedness(postsWithErrors)
             val exhalePostWithComment = MaybeCommentBlock("Exhaling postcondition", exhalePost)
@@ -171,7 +171,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             )
 
             if(verifier.generateProofs) {
-              val methodProofHint = MethodProofHint(inhalePreHints, bodyProofHint, exhalePostHint)
+              val methodProofHint = MethodProofHint(inhalePreHints, postFramingHint, bodyProofHint, exhalePostHint)
               verifier.proofGenInterface.generateProofForMethod(m, proc, env, methodProofHint)
             }
 
@@ -189,18 +189,17 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
     res
   }
 
-  private def translateMethodDeclCheckPosts(posts: Seq[sil.Exp]): Stmt = {
-    val (stmt, state) = stateModule.freshTempState("Post")
-
-    val reset = stateModule.resetBoogieState
+  private def translateMethodDeclCheckPosts(posts: Seq[sil.Exp]): (Stmt, (Seq[StateProofHint], InhaleProofHint)) = {
+    val ((freshStateStmtAux, state), freshStateHint) = stateModule.freshTempState("Post", discardCurrent = true, initialise = true)
+    val freshStateStmt = freshStateStmtAux ++ stateModule.assumeGoodState
 
     // note that the order here matters - onlyExhalePosts should be computed with respect to the reset state
-    val onlyExhalePosts: Seq[Stmt] = inhaleModule.inhaleExhaleSpecWithDefinednessCheck(
+    val (onlyExhalePosts: Seq[Stmt], inhaleProofHint) = inhaleModule.inhaleExhaleSpecWithDefinednessCheck(
     posts, {
       errors.ContractNotWellformed(_)
-    }).map(_._1)
+    })
 
-    val stmts = stmt ++ reset ++ (
+    val (stmts, resultInhaleProofHint) = (
     if (Expressions.contains[sil.InhaleExhaleExp](posts)) {
       // Postcondition contains InhaleExhale expression.
       // Need to check inhale and exhale parts separately.
@@ -209,7 +208,12 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
         errors.ContractNotWellformed(_)
       }).map(_._1)
 
+      val resStmt =
           NondetIf(
+            /*CARBON_CHANGE: the following statement is put before the if-statement in the Carbon repo, which is less
+                             natural since only the part inside the then-branch is relevant
+             */
+            freshStateStmt ++
           MaybeComment("Checked inhaling of postcondition to check definedness",
             MaybeCommentBlock("Do welldefinedness check of the inhale part.",
               NondetIf(onlyInhalePosts ++ Assume(FalseLit()))) ++
@@ -218,20 +222,24 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
           ) ++
             MaybeComment("Stop execution", Assume(FalseLit()))
       )
+      (resStmt, NotSupportedInhaleHint) //do not support inhale-exhale assertions for proof generation
     }
     else {
-      NondetIf(
-        MaybeComment("Checked inhaling of postcondition to check definedness", onlyExhalePosts) ++
-          MaybeComment("Stop execution", Assume(FalseLit()))
-      )
+      val resStmt =
+        NondetIf(
+          freshStateStmt ++
+          MaybeComment("Checked inhaling of postcondition to check definedness", onlyExhalePosts) ++
+            MaybeComment("Stop execution", Assume(FalseLit()))
+        )
+      (resStmt, inhaleProofHint)
     })
 
     stateModule.replaceState(state)
 
-    stmts
+    (stmts, (freshStateHint, resultInhaleProofHint))
   }
 
-  private def translateMethodDeclPre(pres: Seq[sil.Exp]): (Stmt, Seq[InhaleHint]) = {
+  private def translateMethodDeclPre(pres: Seq[sil.Exp]): (Stmt, InhaleProofHint) = {
     val res = if (Expressions.contains[sil.InhaleExhaleExp](pres)) {
       // Precondition contains InhaleExhale expression.
       // Need to check inhale and exhale parts separately.
@@ -248,13 +256,13 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
           NondetIf(onlyExhalePres ++ Assume(FalseLit()))) ++
           MaybeCommentBlock("Normally inhale the inhale part.",
             onlyInhalePres)
-      ), Seq())
+      ), InhaleProofHint.empty)
     }
     else {
       val (inhalePres, inhalePresHint) = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
       pres, {
         errors.ContractNotWellformed(_)
-      }).unzip
+      })
 
       (MaybeCommentBlock("Checked inhaling of precondition", inhalePres), inhalePresHint)
     }

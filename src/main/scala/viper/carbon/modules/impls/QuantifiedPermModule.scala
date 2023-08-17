@@ -36,7 +36,7 @@ import viper.carbon.boogie.Assign
 import viper.carbon.boogie.Func
 import viper.carbon.boogie.TypeAlias
 import viper.carbon.boogie.FuncApp
-import viper.carbon.proofgen.hints.{ExhaleComponentProofHint, ExhaleMainComponentHint, InhaleComponentProofHint, InhaleMainComponentHint, StmtComponentProofHint}
+import viper.carbon.proofgen.hints.{ExhaleComponentProofHint, ExhaleMainComponentHint, InhaleComponentProofHint, InhaleMainComponentHint, ResetStateComponentHint, StmtComponentProofHint}
 import viper.carbon.utility.PolyMapDesugarHelper
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
@@ -250,10 +250,10 @@ class QuantifiedPermModule(val verifier: Verifier)
 
   def initBoogieState: Stmt = {
     mask = originalMask
-    resetBoogieState
+    resetBoogieState._1
   }
   def resetBoogieState = {
-    (maskVar := zeroMask)
+    (maskVar := zeroMask, ResetStateComponentHint(identifier, Seq(maskVar)))
   }
   def initOldState: Stmt = {
     val mVar = maskVar

@@ -12,7 +12,7 @@ import viper.silver.ast.utility.Expressions
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
-import viper.carbon.proofgen.hints.StmtComponentProofHint
+import viper.carbon.proofgen.hints.{ResetStateComponentHint, StateProofHint, StmtComponentProofHint}
 import viper.carbon.verifier.Verifier
 import viper.carbon.utility.{PolyMapDesugarHelper, PolyMapRep}
 import viper.silver.ast.utility.QuantifiedPermissions.QuantifiedPermissionAssertion
@@ -777,8 +777,8 @@ class DefaultHeapModule(val verifier: Verifier)
     heap = originalHeap
     Nil
   }
-  def resetBoogieState: Stmt = {
-    Havoc(heapVar)
+  def resetBoogieState: (Stmt, StateProofHint) = {
+    (Havoc(heapVar), ResetStateComponentHint(identifier, Seq(heapVar)))
   }
   def initOldState: Stmt = {
     val hVar = heapVar

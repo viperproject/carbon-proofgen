@@ -165,7 +165,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       case mc@sil.MethodCall(methodName, args, targets) =>
         val method = verifier.program.findMethod(methodName)
         // save pre-call state
-        val (preCallStateStmt, state) = stateModule.freshTempState("PreCall")
+        val (preCallStateStmt, state) = stateModule.freshTempState("PreCall")._1
         val preCallState = stateModule.state
         val oldState = stateModule.oldState
         stateModule.replaceState(state)

@@ -87,7 +87,7 @@ trait StateModule extends Module with ComponentRegistry[CarbonStateComponent] wi
     *
     *
    */
-  def freshTempState(name: String, discardCurrent: Boolean = false, initialise: Boolean = false): (Stmt, StateSnapshot)
+  def freshTempState(name: String, discardCurrent: Boolean = false, initialise: Boolean = false): ((Stmt, StateSnapshot), Seq[StateProofHint])
 
   /**
     * Returns a fresh state that is not an old state. This method has no side-effects on the current state.

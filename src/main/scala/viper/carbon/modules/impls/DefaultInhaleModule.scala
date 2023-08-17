@@ -11,7 +11,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import viper.carbon.boogie.Implicits._
-import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, ImpInhaleHint, InhaleBodyProofHint, InhaleComponentProofHint, InhaleProofHint, NotSupportedInhaleHint, PureExpInhaleHint, StarInhaleHint}
+import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, ImpInhaleHint, InhaleBodyProofHint, InhaleComponentProofHint, InhaleProofHint, NotSupportedAtomicInhaleHint, PureExpInhaleHint, StarInhaleHint}
 import viper.silver.verifier.PartialVerificationError
 
 /**
@@ -119,7 +119,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
                 Nil
               }
 
-          (resStmt, NotSupportedInhaleHint)
+          (resStmt, NotSupportedAtomicInhaleHint)
         }
         case _ =>
           def transformStmtInsidePackage(s: Stmt): Stmt = {

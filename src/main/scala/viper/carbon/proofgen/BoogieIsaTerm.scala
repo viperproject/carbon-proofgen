@@ -43,6 +43,7 @@ object BoogieIsaTerm {
 
   val redAstBplRelTransitiveTac : String = ProofUtil.ruleTac("red_ast_bpl_rel_transitive")
   val redAstBplRelOneSimpleCmdTac: String = ProofUtil.ruleTac("red_ast_bpl_rel_one_simple_cmd")
+  val redAstBplRelIfNondetToElseBranchTac: String = ProofUtil.ruleTac("red_ast_bpl_rel_if_nondet_else")
   def redAstBplRelOutputStatelRelInstantiationTac(stateRelInstantiation: StateRelInstantiation) : String = {
     stateRelInstantiation match {
       case IdentityStateRelInst => ProofUtil.ruleTac("red_ast_bpl_rel_inst_state_rel_same")

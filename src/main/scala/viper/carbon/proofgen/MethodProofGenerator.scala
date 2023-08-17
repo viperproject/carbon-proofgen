@@ -7,9 +7,11 @@ import isabelle.ast._
 import scala.collection.mutable.ListBuffer
 import isabelle.ast.ProofUtil._
 import isabelle.ast.IsaUtil._
-import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa, simpAsm}
+import isabelle.ast.MLUtil.{isaToMLThm, isaToMLThms, mlTacticToIsa, simpAsm, simpOnly}
+import viper.carbon.boogie.LocalVar
+import viper.carbon.modules.impls.{HeapStateComponent, PermissionStateComponent}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
-import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, SeqnProofHint, StmtProofHint, WhileHint}
+import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, IfHint, InhaleProofHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, ResetStateComponentHint, SeqnProofHint, StateProofHint, StmtProofHint, WhileHint}
 
 
 case class MethodProofGenerator(
@@ -147,7 +149,7 @@ case class MethodProofGenerator(
         "TotalViper.ExprWfRelML",
         "TotalViper.CPGHelperML",
         "TotalViper.StmtRelML",
-        "TotalViper.ViperBoogieEndToEnd",
+        "TotalViper.ViperBoogieEndToEndML",
         "Boogie_Lang.TypingML",
         "../"+progAccessor.theoryName,
         boogieProg.procTheoryPath
@@ -243,14 +245,22 @@ case class MethodProofGenerator(
     val stmtRelInfo = "stmt_rel_info"
     val stmtRelInfoWithoutDefChecks = "stmt_rel_info_opt"
     val stmtRelHints = "stmt_rel_hints"
-    val stmtPreconditionHints = "stmt_precondition_hints"
-    val stmtPostconditionHints = "stmt_postcondition_hints"
+    val stmtInhalePreconditionHints = "stmt_precondition_hints"
+    val stmtPostconditionFramingHints = "stmt_postcondition_framing_hints"
+    val stmtExhalePostconditionHints = "stmt_postcondition_hints"
 
     val stmtPreconditionHintValue =
       if(methodAccessor.origMethod.pres.isEmpty) {
         None
       } else {
         Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.preconditionInhaleHint.conjoinBodyHints)))))
+      }
+
+    val stmtPostconditionFramingValue =
+      if(methodAccessor.origMethod.posts.isEmpty) {
+        None
+      } else {
+        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.postconditionFramingHint._2.conjoinBodyHints)))))
       }
 
     val stmtPostconditionHintValue =
@@ -452,11 +462,14 @@ case class MethodProofGenerator(
         MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(methodProofHint.bodyHint, boogieProg, expWfRelInfo, expRelInfo)),
       ) ++
       stmtPreconditionHintValue.fold[Seq[String]](Seq())(h => Seq(
-          MLUtil.defineVal(stmtPreconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
+          MLUtil.defineVal(stmtInhalePreconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
+      )) ++
+      stmtPostconditionFramingValue.fold[Seq[String]](Seq())(h => Seq(
+        MLUtil.defineVal(stmtPostconditionFramingHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
       )) ++
       stmtPostconditionHintValue.fold[Seq[String]](Seq())(h =>
         Seq (
-          MLUtil.defineVal(stmtPostconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo)),
+          MLUtil.defineVal(stmtExhalePostconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo)),
         )
       )
 
@@ -484,10 +497,10 @@ case class MethodProofGenerator(
           applyTac(introTac("conjI")),
         ) ++
         initBoogieStateProof(bplCtxtWfLabel, IsaPrettyPrinter.prettyPrint(outputStateRel)) ++
-        inhalePreconditionProof(stmtRelInfo, stmtPreconditionHints) ++
-        postconditionFramingProof() ++
+        inhalePreconditionProof(stmtRelInfo, stmtInhalePreconditionHints) ++
+        postconditionFramingProof(methodProofHint.postconditionFramingHint._1, basicStmtRelInfo, stmtRelInfo, stmtPostconditionFramingHints) ++
         methodBodyProof(stmtRelInfo, stmtRelHints) ++
-        exhalePostconditionProof(stmtRelInfoWithoutDefChecks, stmtPostconditionHints) ++
+        exhalePostconditionProof(stmtRelInfoWithoutDefChecks, stmtExhalePostconditionHints) ++
         Seq(doneTac)
       )
     )
@@ -532,18 +545,51 @@ case class MethodProofGenerator(
       )
   }
 
-  private def postconditionFramingProof() : Seq[String] = {
-    Seq("defer") //TODO
+  private def postconditionFramingProof(setupStateHint: Seq[StateProofHint], basicInfo: String, stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
+    if(methodAccessor.origMethod.posts.isEmpty) {
+      Nil
+    } else {
+      setupStateHint match {
+        case Seq(ResetStateComponentHint(HeapStateComponent, Seq(heapVar : LocalVar)), ResetStateComponentHint(PermissionStateComponent, Seq(maskVar : LocalVar))) =>{
+          val initTac =
+            ViperBoogieRelationIsa.postframingRelInitTac(
+              MLUtil.contextAniquotation,
+              basicInfo,
+              MLUtil.isaToMLThm(boogieProg.getLocalLookupDeclThm(heapVar)),
+              MLUtil.isaToMLThm(boogieProg.getLocalLookupTyThm(maskVar))
+            )
+
+          Seq(
+            applyTac(initTac),
+            applyTac(ProofUtil.simpTacOnly(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodPostcondition)))),
+            applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints))
+          )
+        }
+
+        case _ => sys.error("The initial state setup for postcondition framing is not supported by proof generation.")
+      }
+    }
   }
 
   private def methodBodyProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
     Seq(
-      //applyTac(unfoldTac(IsaUtil.definitionLemmaFromName(vprProg.methodBody.toString))),
       applyTac(ruleTac("impI")),
       applyTac("(rule exI)+"),
       applyTac(introTac("conjI")),
       applyTac(simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))),
-      applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac),
+      applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac)
+    ) ++ (if(!methodAccessor.origMethod.posts.isEmpty) {
+      //need to first progress the non-deterministic if-statement that contains the framedness encoding of the postcondition
+      Seq(
+        applyTac(ViperBoogieRelationIsa.stmtRelPropagatePreSameRelTac),
+        applyTac(BoogieIsaTerm.redAstBplRelTransitiveTac),
+        applyTac(BoogieIsaTerm.redAstBplRelIfNondetToElseBranchTac),
+        applyTac(ViperBoogieRelationIsa.simplifyContinuationTac(MLUtil.contextAniquotation)),
+        applyTac(ViperBoogieRelationIsa.progressBplRelTac(MLUtil.contextAniquotation)) //will progress the empty block
+      )
+    } else {
+      Nil
+    }) ++ Seq(
       applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
       applyTac(ViperBoogieRelationIsa.progressBplRelTac(MLUtil.contextAniquotation)),
     )

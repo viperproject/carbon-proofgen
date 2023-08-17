@@ -7,6 +7,7 @@
 package viper.carbon.modules.components
 
 import viper.carbon.boogie._
+import viper.carbon.proofgen.hints.StateProofHint
 
 /** For proof generation purposes it is useful to have a unique identifier for every state component. */
 trait CarbonStateComponentIdentifier
@@ -27,7 +28,7 @@ trait CarbonStateComponent extends Component {
   /**
    * The statements necessary to reset the part of the state belonging to this module.
    */
-  def resetBoogieState: Stmt
+  def resetBoogieState: (Stmt, StateProofHint)
 
   /**
    * The name and type of the static contribution of this component to the state. The returned value should remain the

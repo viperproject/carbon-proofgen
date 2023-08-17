@@ -9,7 +9,7 @@ package viper.carbon.verifier
 import viper.silver.{ast => sil}
 import viper.carbon.modules._
 import viper.carbon.boogie.Namespace
-import viper.carbon.proofgen.{DefaultProofGenInterface, ProofGenInterface}
+import viper.carbon.proofgen.{ProofGenInterface}
 
 /**
  * A verifier for Viper in Carbon (defines what modules need to be available).

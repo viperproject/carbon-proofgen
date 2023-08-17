@@ -438,7 +438,7 @@ class DefaultLoopModule(val verifier: Verifier) extends LoopModule with StmtComp
             Assume(FalseLit())
         )) ++
         MaybeCommentBlock("Check the loop body", NondetIf({
-          val (freshStateStmt, prevState) = stateModule.freshTempState("loop")
+          val (freshStateStmt, prevState) = stateModule.freshTempState("loop")._1
           val stmts = MaybeComment("Reset state", freshStateStmt ++ stateModule.initBoogieState) ++
             MaybeComment("Inhale invariant", inhale(invs map (x => (x, errors.WhileFailed(x))), addDefinednessChecks = false).map(_._1) ++ executeUnfoldings(invs, (inv => errors.Internal(inv)))) ++
             Comment("Check and assume guard") ++

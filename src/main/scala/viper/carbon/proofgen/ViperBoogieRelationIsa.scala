@@ -93,10 +93,19 @@ object ViperBoogieRelationIsa {
   def progressBplRelTac(isaContext: String) : String =
     MLUtil.mlTacticToIsa(MLUtil.app("progress_rel_tac", Seq(isaContext, "1")))
 
+  def simplifyContinuationTac(isaContext: String) : String =
+    MLUtil.mlTacticToIsa(MLUtil.app("simplify_continuation", Seq(isaContext, "1")))
+
   def stmtRelTac(isaContext: String, stmtRelInfo: String, stmtRelTacHints: String) =
     MLUtil.mlTacticToIsa(
       MLUtil.app("stmt_rel_tac", Seq(isaContext, stmtRelInfo, stmtRelTacHints, "1")),
     )
+
+  def postframingRelInitTac(isaContext: String, basicInfo: String, heapLookupDeclThm: String, maskLookupThyThm: String) =
+    MLUtil.mlTacticToIsa(
+      MLUtil.app("post_framing_rel_init_tac", Seq(isaContext, basicInfo, heapLookupDeclThm, maskLookupThyThm, "1"))
+    )
+
 }
 
 case object TypeRepresentation {

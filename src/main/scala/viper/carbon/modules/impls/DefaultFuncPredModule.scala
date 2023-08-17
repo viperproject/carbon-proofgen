@@ -450,7 +450,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
     (info.get(name) match {
       case Some(frameInfo) => frameInfo
       case None => {
-        val (_, state) = stateModule.freshTempState("Frame") // we ignore the initialisation statements, since these variables are just placeholders
+        val (_, state) = stateModule.freshTempState("Frame")._1 // we ignore the initialisation statements, since these variables are just placeholders
         val frameState = stateModule.state
         val freshParamDeclarations = formalArgs map (env.makeUniquelyNamed(_))
         val freshParams = freshParamDeclarations map (_.localVar)
@@ -547,7 +547,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
           def renaming(origExpr: sil.Exp) = Expressions.instantiateVariables(origExpr, lvds, vsFresh.map(_.localVar), env.allDefinedNames(program))
 
 
-          val (_, curState) = stateModule.freshTempState("Heap2")
+          val (_, curState) = stateModule.freshTempState("Heap2")._1
           val heap1 = heapModule.currentStateContributions
           val mask1 = permModule.currentStateContributions
 
@@ -750,7 +750,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
     setDefStateBeforeUnfolding()
 
     //create def state after the unfolding operation and set current state to this state
-    val (initStmt, _) = stateModule.freshTempState(tmpUnfoldStateName)
+    val (initStmt, _) = stateModule.freshTempState(tmpUnfoldStateName)._1
     val defStateAfterUnfolding = stateModule.state
 
     //unfold into this new state
@@ -791,7 +791,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
               //Note: the following statement has a side-effect on the definedness state, which is then reverted via @{code restoreState}
               unfoldingIntoDefinednessState(acc, error, defState, tmpStateName)
             case None =>
-              val (initStmt, prevState) = stateModule.freshTempState(tmpStateName)
+              val (initStmt, prevState) = stateModule.freshTempState(tmpStateName)._1
               val unfoldStmt = unfoldPredicate(acc, error, true)
               ((initStmt ++ unfoldStmt) : Stmt, () => stateModule.replaceState(prevState))
           }
@@ -1075,7 +1075,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
           duringUnfoldingExtraUnfold = true
           tmpStateId += 1
           val tmpStateName = if (tmpStateId == 0) "Unfolding" else s"Unfolding$tmpStateId"
-          val (stmt, state) = stateModule.freshTempState(tmpStateName)
+          val (stmt, state) = stateModule.freshTempState(tmpStateName)._1
           val stmts = stmt ++ unfoldPredicate(acc, NullPartialVerificationError, true)
           tmpStateId -= 1
           stateModule.replaceState(state)
@@ -1089,7 +1089,7 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
             exhaleTmpStateId += 1
             extraUnfolding = false
             val tmpStateName = if (exhaleTmpStateId == 0) "ExtraUnfolding" else s"ExtraUnfolding$exhaleTmpStateId"
-            val (stmt, state) = stateModule.freshTempState(tmpStateName)
+            val (stmt, state) = stateModule.freshTempState(tmpStateName)._1
             val r = stmt ++ unfoldPredicate(pap, NullPartialVerificationError, true)
             extraUnfolding = true
             exhaleTmpStateId -= 1

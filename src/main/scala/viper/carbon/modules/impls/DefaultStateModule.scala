@@ -11,7 +11,7 @@ import viper.carbon.verifier.Verifier
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
 import viper.carbon.modules.components.CarbonStateComponent
-import viper.carbon.proofgen.hints.{StateProofHint, UpdateStateComponentHint}
+import viper.carbon.proofgen.hints.{IdentityStateComponentHint, StateProofHint, UpdateStateComponentHint}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -64,7 +64,7 @@ class DefaultStateModule(val verifier: Verifier) extends StateModule {
 
     // initialize the state of all components and assume that afterwards the
     // whole state is good
-    val firstStmt = components map (_.resetBoogieState)
+    val firstStmt = components map (_.resetBoogieState._1)
     // note: this code should come afterwards, to allow the components to reset their state variables
     for (c <- components) {
       curState.put(c, c.currentStateVars)
@@ -117,23 +117,26 @@ class DefaultStateModule(val verifier: Verifier) extends StateModule {
 
   override def stateRepositoryGet(name:String) : Option[StateSnapshot] = stateRepository.get(name)
 
-  override def freshTempState(name: String, discardCurrent: Boolean = false, initialise: Boolean = false): (Stmt, StateSnapshot) = {
+  override def freshTempState(name: String, discardCurrent: Boolean = false, initialise: Boolean = false): ((Stmt, StateSnapshot), Seq[StateProofHint]) = {
     val previousState = new StateSnapshot(new StateComponentMapping(), usingOldState, false)
 
     curState = new StateComponentMapping() // essentially, the code below "clones" what curState should represent anyway. But, if we omit this line, we inadvertently alias the previous hash map.
 
-    val s = for (c <- components) yield {
+    val res = for (c <- components) yield {
       val tmpExps = c.freshTempState(name)
       val curExps = c.currentStateExps // note: this will wrap them in "Old" as necessary for correct initialisation
       val stmt: Stmt = if (discardCurrent) Nil else (tmpExps zip curExps) map (x => (x._1 := x._2))
+      val proofHint : StateProofHint =  if (discardCurrent) IdentityStateComponentHint(c.identifier) else UpdateStateComponentHint(c.identifier, tmpExps, curExps)
       previousState._1.put(c, c.currentStateVars) // reconstruct information from previous state (this is logically similar to a clone of what curState used to represent)
       curState.put(c, tmpExps) // repopulate current state
       c.restoreState(tmpExps)
 
-      (if (initialise) c.resetBoogieState else stmt)
+      (if (initialise) c.resetBoogieState else (stmt, proofHint))
     }
     usingOldState = false // we have now set up a temporary state in terms of "old" - this could happen when an unfolding expression is inside an "old"
-    (s, previousState)
+
+    val (resStmtSeq, resHint) = res.unzip[Stmt, StateProofHint]
+    ((resStmtSeq, previousState), resHint)
   }
 
   override def freshTempStateKeepCurrent(name: String) : StateSnapshot = {
@@ -162,7 +165,7 @@ class DefaultStateModule(val verifier: Verifier) extends StateModule {
 
   def freshEmptyState(name: String, init: Boolean = false): (Stmt, StateSnapshot) =
   {
-    freshTempState(name, true, init)
+    freshTempState(name, true, init)._1
   }
 
   override def replaceState(snapshot: StateSnapshot): Unit = {

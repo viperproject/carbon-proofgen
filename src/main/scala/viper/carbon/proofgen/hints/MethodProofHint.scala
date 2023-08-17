@@ -1,3 +1,6 @@
 package viper.carbon.proofgen.hints
 
-case class MethodProofHint(preconditionInhaleHint: InhaleProofHint, bodyHint: StmtProofHint, postconditionExhaleHint: ExhaleProofHint)
+case class MethodProofHint(preconditionInhaleHint: InhaleProofHint,
+                           postconditionFramingHint: (Seq[StateProofHint], InhaleProofHint),
+                           bodyHint: StmtProofHint,
+                           postconditionExhaleHint: ExhaleProofHint)

@@ -12,6 +12,8 @@ case class InhaleProofHint(bodyHints: Seq[InhaleBodyProofHint], addWelldefinedne
 
 }
 
+object NotSupportedInhaleHint extends InhaleProofHint(bodyHints = Seq(), addWelldefinednessChecks = true)
+
 object InhaleProofHint {
 
   def combineHints(hints: Seq[InhaleProofHint], addWelldefinednessChecks : Boolean) : InhaleProofHint = {
@@ -31,4 +33,4 @@ case class CondInhaleHint(cond: sil.Exp, thn: InhaleBodyProofHint, els: InhaleBo
 sealed trait AtomicInhaleHint extends InhaleBodyProofHint
 case class FieldAccessPredicateInhaleHint(fieldAccessPred: sil.FieldAccessPredicate, hints: Seq[InhaleComponentProofHint]) extends AtomicInhaleHint
 case class PureExpInhaleHint(e: sil.Exp, hints: Seq[InhaleComponentProofHint]) extends AtomicInhaleHint
-case object NotSupportedInhaleHint extends AtomicInhaleHint
+case object NotSupportedAtomicInhaleHint extends AtomicInhaleHint

@@ -739,7 +739,7 @@ case class PackageSetup(hypState: StateRep, usedState: StateRep, initStmt: Stmt)
       case a@sil.Applying(wand, exp) =>
         tmpStateId += 1
         val tmpStateName = if (tmpStateId == 0) "Applying" else s"Applying$tmpStateId"
-        val (stmt, state) = stateModule.freshTempState(tmpStateName)
+        val (stmt, state) = stateModule.freshTempState(tmpStateName)._1
         def before() = {
           stmt ++ applyWand(wand, error, inWand = false)
         }
