@@ -92,7 +92,7 @@ object MLHintGenerator {
         MLUtil.app("StarExhHint", MLUtil.createTuple(Seq(leftHintString, rightHintString)))
       case ImpExhaleHint(cond, right) =>
         val rightHintString = generateExhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
-        MLUtil.app("ImpExhHint", Seq(expWfRelInfo, expRelInfo, rightHintString))
+        MLUtil.app("ImpExhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, rightHintString)))
       case CondExhaleHint(cond, thn, els) => ???
       case a: AtomicExhaleHint => MLUtil.app("AtomicExhHint", generateAtomicExhaleHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
     }

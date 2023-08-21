@@ -522,7 +522,7 @@ case class MethodProofGenerator(
         Seq(
           applyTac(ViperBoogieRelationIsa.stmtRelPropagatePostSameRelTac),
           applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
-          applyTac(ViperBoogieRelationIsa.progressBplRelTac(MLUtil.contextAniquotation)),
+          applyTac(ViperBoogieRelationIsa.progressRedBplRelTac(MLUtil.contextAniquotation)),
         )
       }
     )
@@ -588,13 +588,13 @@ case class MethodProofGenerator(
         applyTac(BoogieIsaTerm.redAstBplRelTransitiveTac),
         applyTac(BoogieIsaTerm.redAstBplRelIfNondetToElseBranchTac),
         applyTac(ViperBoogieRelationIsa.simplifyContinuationTac(MLUtil.contextAniquotation)),
-        applyTac(ViperBoogieRelationIsa.progressBplRelTac(MLUtil.contextAniquotation)) //will progress the empty block
+        applyTac(ViperBoogieRelationIsa.progressRedBplRelTac(MLUtil.contextAniquotation)) //will progress the empty block
       )
     } else {
       Nil
     }) ++ Seq(
       applyTac(ViperBoogieRelationIsa.stmtRelTac(MLUtil.contextAniquotation, stmtRelInfo, stmtRelTacHints)),
-      applyTac(ViperBoogieRelationIsa.progressBplRelTac(MLUtil.contextAniquotation)),
+      applyTac(ViperBoogieRelationIsa.progressRedBplRelTac(MLUtil.contextAniquotation)),
     )
   }
 

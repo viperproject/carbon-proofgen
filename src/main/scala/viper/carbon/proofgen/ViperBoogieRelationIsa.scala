@@ -90,8 +90,8 @@ object ViperBoogieRelationIsa {
     )
   }
 
-  def progressBplRelTac(isaContext: String) : String =
-    MLUtil.mlTacticToIsa(MLUtil.app("progress_rel_tac", Seq(isaContext, "1")))
+  def progressRedBplRelTac(isaContext: String) : String =
+    MLUtil.mlTacticToIsa(MLUtil.app("progress_red_bpl_rel_tac", Seq(isaContext, "1")))
 
   def simplifyContinuationTac(isaContext: String) : String =
     MLUtil.mlTacticToIsa(MLUtil.app("simplify_continuation", Seq(isaContext, "1")))
