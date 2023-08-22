@@ -145,6 +145,8 @@ object ViperIsaTerm {
   def convertAstToProgramPoint(procBody: Term) =
     TermApp(TermIdent("convert_ast_to_program_point"), procBody)
 
+  def methodsOfProgramProjection(prog: Term) = TermApp(TermIdent("program.methods"), prog)
+
 }
 
 object ViperTotalContext {

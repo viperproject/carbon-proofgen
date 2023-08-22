@@ -9,7 +9,8 @@ case class DefaultIsaViperGlobalDataAccessor(override val theoryName: String,
                                              private val fieldToTerm : Map[sil.Field, Term],
                                              fieldRelIdent: String,
                                              override val fieldRelBoundedLemma: String,
-                                             allMethodsAccessor: IsaViperAllMethodsAccessor
+                                             allMethodsAccessor: IsaViperAllMethodsAccessor,
+                                             methodDataTableML: String
                                             ) extends IsaViperGlobalDataAccessor {
 
   private def qualifyName(name: String) =  IsaUtil.qualifyName(theoryName, name)

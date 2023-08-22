@@ -3,7 +3,7 @@ package viper.carbon.proofgen.hints
 import isabelle.ast.{IsaTermUtil, IsaUtil, MLUtil, ProofUtil, StringConst}
 import viper.carbon.boogie.LocalVar
 import viper.carbon.modules.impls.{HeapStateComponent, PermissionStateComponent}
-import viper.carbon.proofgen.{ExhaleRelUtil, InhaleRelUtil, IsaBoogieProcAccessor, ViperBoogieIsaUtil, ViperBoogieMLUtil, ViperBoogieRelationIsa}
+import viper.carbon.proofgen.{ExhaleRelUtil, InhaleRelUtil, IsaBoogieProcAccessor, ProofGenMLConstants, ViperBoogieIsaUtil, ViperBoogieMLUtil, ViperBoogieRelationIsa}
 
 object MLHintGenerator {
 
@@ -167,7 +167,21 @@ object MLHintGenerator {
           case _ => sys.error("exhale hint has unexpected form")
         }
       case MethodCallHint(componentHints) =>
-        "(MethodCallHint)" //TODO
+        componentHints match {
+          case Seq(MethodCallStmtComponentHint(calleeName, targetVarsBpl, exhalePreHint, inhalePostHint)) =>
+            val targetVarThms = MLUtil.isaToMLThms(targetVarsBpl.map(v => boogieProcAccessor.getLocalLookupDeclThm(v.asInstanceOf[LocalVar])))
+            val exhalePreHintML = generateExhaleHintsInML(exhalePreHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+            val inhalePostHintML = generateInhaleHintsInML(inhalePostHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+            MLUtil.app("MethodCallHint", MLUtil.createTuple(
+              Seq(MLUtil.createString(calleeName),
+                targetVarThms,
+                ProofGenMLConstants.inhaleRelInfoWithoutDefChecks,
+                ProofGenMLConstants.exhaleRelInfoWithoutDefChecks,
+                exhalePreHintML,
+                inhalePostHintML))
+            )
+          case _ => sys.error("method call hint has unexpected form")
+        }
     }
   }
 

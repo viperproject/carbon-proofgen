@@ -9,6 +9,12 @@ trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
   def vprProgram : TermIdent
   def allMethodsAccessor: IsaViperAllMethodsAccessor
 
+  /**
+    * Stores the data from [[allMethodsAccessor]] in an ML symbol table
+    * @return
+    */
+  def methodDataTableML : String
+
 }
 
 trait IsaViperFieldsAccessor {

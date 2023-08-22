@@ -1,7 +1,8 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermTuple, Theory, TupleType, TypeIsa}
+import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, MLDecl, MLNormal, MLUtil, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermTuple, Theory, TupleType, TypeIsa}
 import viper.silver.{ast => sil}
+import viper.carbon.proofgen.util.StringBuilderExtension._
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -54,7 +55,7 @@ object IsaVprProgramGenerator {
       val programDef = DefDecl("vpr_prog",
         Some(ViperIsaType.vprProgramType),
         (Seq(), IsaTermUtil.makeRecord(ViperIsaType.vprProgramTypeName, Seq(
-          allMethodsAccessor.methodLookupFun,//TODO: methods
+          allMethodsAccessor.methodLookupFun,
           TermIdent("f_None"),//TODO: predicates
           TermIdent("f_None"),//TODO: functions
           IsaTermUtil.mapOf(TermIdent(fieldsListDef.name)), //functions
@@ -64,8 +65,21 @@ object IsaVprProgramGenerator {
 
       outerDecls += programDef
 
+      val methodProjThm = LemmaDecl(
+        "methods_vpr_prog",
+        TermBinary.eq(ViperIsaTerm.methodsOfProgramProjection(TermIdent(programDef.name)), allMethodsAccessor.methodLookupFun),
+        Proof(
+          Seq(ProofUtil.byTac(ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(programDef.name), "ViperLang.program.defs(1)"))))
+        ))
+
+      outerDecls += methodProjThm
+
+      val methodDataName = "method_decl_data"
+
+      outerDecls += methodDataML(methodDataName, p.methods, allMethodsAccessor, methodProjThm.name)
+
       (
-        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalViperUtil", methodTheory.theoryName), outerDecls.toSeq),
+        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", methodTheory.theoryName), outerDecls.toSeq),
         DefaultIsaViperGlobalDataAccessor(
           theoryName = theoryName,
           vprProgramIdent = programDef.name,
@@ -73,11 +87,49 @@ object IsaVprProgramGenerator {
           fieldToTerm = fieldToTerm,
           fieldRelIdent = fieldRelationListDef.name,
           fieldRelBoundedLemma = fieldRelationBoundedBy.name,
-          allMethodsAccessor = allMethodsAccessor
+          allMethodsAccessor = allMethodsAccessor,
+          methodDataTableML = methodDataName
         ),
         Seq(methodTheory)
       )
     }
+
+  private def methodDataML(methodDataName: String, methods: Seq[sil.Method], allMethodsAccessor: IsaViperAllMethodsAccessor, vprProgMethodsProjThm: String) : OuterDecl =
+  {
+    def variableName(methodName: String) =  s"${methodName}_data"
+
+    val sb = new StringBuilder
+    for (m <- methods) {
+      sb.append(s"val ${variableName(m.name)} = ").append(
+        methodDataRecord(allMethodsAccessor.methodAccessor(m.name), allMethodsAccessor.lookupLemmaName(m.name), vprProgMethodsProjThm)
+      ).newLine
+    }
+
+
+    sb.append(s"val $methodDataName : method_data Symtab.table = ").newLine
+
+    sb.append("(")
+
+    val tableUpdates = methods.map(m => MLUtil.app("Symtab.update", MLUtil.createTuple(Seq(MLUtil.createString(m.name), variableName(m.name)))))
+
+    sb.append(("Symtab.empty" +: tableUpdates).mkString("|>"))
+    sb.append(")")
+
+    MLDecl(Seq(sb.toString()), MLNormal)
+  }
+
+  private def methodDataRecord(methodAccessor: IsaViperMethodAccessor, methodLookupThm: String, vprProgMethodsProjThm: String) : String =
+  {
+    MLUtil.createRecord(
+      Seq(
+        ("method_arg_thm", MLUtil.isaToMLThm(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes))),
+        ("method_rets_thm", MLUtil.isaToMLThm(methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes))),
+        ("method_pre_thm", MLUtil.isaToMLThm(methodAccessor.methodDeclProjectionLemmaName(IsaMethodPrecondition))),
+        ("method_post_thm", MLUtil.isaToMLThm(methodAccessor.methodDeclProjectionLemmaName(IsaMethodPostcondition))),
+        ("method_lookup_thm", MLUtil.isaToMLThm(ProofUtil.simplified(methodLookupThm, ProofUtil.OF("HOL.sym", vprProgMethodsProjThm))))
+      )
+    )
+  }
 
   private def methodsRepr(theoryName: String, p: sil.Program) : (Theory, IsaViperAllMethodsAccessor) = {
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty

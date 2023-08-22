@@ -13,7 +13,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
-import viper.carbon.proofgen.hints.{AssertStmtComponentHint, AssertStmtHint, AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{AssertStmtComponentHint, AssertStmtHint, AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MethodCallHint, MethodCallStmtComponentHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
 import viper.silver.ast.FieldAssign
 import viper.silver.verifier.{PartialVerificationError, errors, reasons}
 import viper.silver.ast.utility.Expressions
@@ -157,7 +157,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
           (exhaleStmt, AssertStmtComponentHint(exhaleHint))
         } else {
           // we create a temporary state to ignore the side-effects
-          val (backup, snapshot) = freshTempState("Assert")
+          val (backup, snapshot) = freshTempState("Assert")._1
           val (exhaleStmt, exhaleHint) = exhale(Seq((transformedExp, errors.AssertFailed(a), defErrorOpt)), isAssert =  true, statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt, havocHeap = false)
           replaceState(snapshot)
           (backup :: exhaleStmt :: Nil, AssertStmtComponentHint(exhaleHint))
@@ -200,22 +200,27 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
 
         val pres = method.pres map (e => Expressions.instantiateVariables(e, method.formalArgs ++ method.formalReturns, (actualArgs map (_._1)) ++ targets, mainModule.env.allDefinedNames(program)))
         val posts = method.posts map (e => Expressions.instantiateVariables(e, method.formalArgs ++ method.formalReturns, (actualArgs map (_._1)) ++ targets, mainModule.env.allDefinedNames(program)))
-        val res = preCallStateStmt ++
+        val (exhalePreStmt, exhalePreHint) = exhaleWithoutDefinedness(pres map (e => (e, errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
+        val translatedTargets = (targets map translateExp).asInstanceOf[Seq[Var]]
+        val (inhalePostStmt, inhalePostHint) = inhale(posts map (e => (e, errors.CallFailed(mc).withReasonNodeTransformed(renamingArguments))), addDefinednessChecks = false, statesStack, insidePackageStmt)
+
+        val res =
+          (if(!verifier.generateProofs) preCallStateStmt else Statements.EmptyStmt) ++ //TODO: support old state in proofgen
           (targets map (e => checkDefinedness(e, errors.CallFailed(mc), insidePackageStmt = insidePackageStmt))) ++
           (args map (e => checkDefinedness(e, errors.CallFailed(mc), insidePackageStmt = insidePackageStmt))) ++
           (actualArgs map (_._2)) ++
-          Havoc((targets map translateExp).asInstanceOf[Seq[Var]]) ++
-          MaybeCommentBlock("Exhaling precondition", executeUnfoldings(pres, (pre => errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))) ++
-            exhaleWithoutDefinedness(pres map (e => (e, errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)._1) ++ {
-          stateModule.replaceOldState(preCallState)
-          val res = MaybeCommentBlock("Inhaling postcondition",
-            inhale(posts map (e => (e, errors.CallFailed(mc).withReasonNodeTransformed(renamingArguments))), addDefinednessChecks = false, statesStack, insidePackageStmt).map(_._1) ++
-            executeUnfoldings(posts, (post => errors.Internal(post).withReasonNodeTransformed(renamingArguments))))
-          stateModule.replaceOldState(oldState)
-          toUndefine map mainModule.env.undefine
-          res
-        }
-        (res, Seq())
+          MaybeCommentBlock("Exhaling precondition", executeUnfoldings(pres, (pre => errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))) ++ exhalePreStmt) ++
+          MaybeCommentBlock("Havocing target variables", Havoc(translatedTargets)) ++ //CARBON_CHANGE: havoc between exhale and inhale instead of before exhale, since it is the more natural translation
+          {
+            stateModule.replaceOldState(preCallState)
+            val res = MaybeCommentBlock("Inhaling postcondition",
+              inhalePostStmt ++
+              executeUnfoldings(posts, (post => errors.Internal(post).withReasonNodeTransformed(renamingArguments))))
+            stateModule.replaceOldState(oldState)
+            toUndefine map mainModule.env.undefine
+            res
+          }
+        (res, Seq(MethodCallStmtComponentHint(methodName, translatedTargets, exhalePreHint, inhalePostHint)))
       case sil.While(_, _, _) =>
         //handled by LoopModule
         (Nil, Seq())
@@ -326,7 +331,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
       case sil.NewStmt(lhs, fields) => ???
       case assign@sil.LocalVarAssign(lhs, rhs) => AtomicHint(LocalVarAssignHint(assign, mainModule.env.get(lhs), proofHints))
       case fa@sil.FieldAssign(lhs, rhs) => AtomicHint(FieldAssignHint(fa, proofHints))
-      case sil.MethodCall(methodName, args, targets) => ???
+      case sil.MethodCall(methodName, args, targets) => AtomicHint(MethodCallHint(proofHints))
       case sil.Exhale(exp) => AtomicHint(ExhaleStmtHint(proofHints))
       case sil.Inhale(exp) => AtomicHint(InhaleStmtHint(proofHints))
       case sil.Assert(exp) => AtomicHint(AssertStmtHint(proofHints))

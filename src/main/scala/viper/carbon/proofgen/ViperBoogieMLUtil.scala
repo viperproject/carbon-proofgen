@@ -33,6 +33,7 @@ object ViperBoogieMLUtil {
 
   def createBasicStmtRelInfo(ctxtWfThm: String,
                              trDefThm: String,
+                             methodDataTableMLIdent: String,
                              vprProgramContextEqThm: String,
                              varRelTac: String,
                              varContextVprTac: String,
@@ -44,6 +45,7 @@ object ViperBoogieMLUtil {
         ("consistency_wf_thm",  MLUtil.isaToMLThm(ViperBoogieRelationIsa.trivialConsistencyWfThm)),
         ("consistency_down_mono_thm", MLUtil.isaToMLThm(ViperBoogieRelationIsa.trivialConsistencyDownMonoThm)),
         ("tr_def_thm", trDefThm),
+        ("method_data_table", methodDataTableMLIdent),
         ("vpr_program_ctxt_eq_thm", vprProgramContextEqThm),
         ("var_rel_tac", varRelTac),
         ("var_context_vpr_tac", varContextVprTac),

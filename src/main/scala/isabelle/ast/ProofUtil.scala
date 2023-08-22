@@ -5,8 +5,14 @@ case class Proof(methods: Seq[String])
 
 object ProofUtil {
 
-  def OF(thm: String, instThm: String) : String = s"$thm[OF $instThm]"
-  def OF(thm: String, instThms: Seq[String]) : String = s"$thm[OF ${instThms.mkString(" ")}]"
+  def thmWithAttributeSingleValue(thm: String, attributeName: String, attributeValue: String) = s"$thm[$attributeName $attributeValue]"
+  def thmWithAttributeMultipleValues(thm: String, attributeName: String, attributeValues: Seq[String]) = s"$thm[$attributeName ${attributeValues.mkString(" ")}]"
+
+  def OF(thm: String, instThm: String) : String = thmWithAttributeSingleValue(thm, "OF", instThm)
+  def OF(thm: String, instThms: Seq[String]) : String = thmWithAttributeMultipleValues(thm, "OF", instThms)
+
+  def simplified(thm: String, simpThm: String) : String = thmWithAttributeSingleValue(thm, "simplified", simpThm)
+  def simplified(thm: String, simpThms: Seq[String]) : String = thmWithAttributeMultipleValues(thm, "simplified", simpThms)
 
   def where(thm: String, schematicVar: String, instantiation: String) : String = s"$thm[where ?$schematicVar=\"$instantiation\"]"
   def where(thm: String, schematicVar: String, instantiation: Term) : String =

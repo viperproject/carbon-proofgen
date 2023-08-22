@@ -11,6 +11,8 @@ object MLUtil {
   def app(fun: String, args: Seq[String]) : String = s"($fun ${args.mkString(" ")})"
   def app(fun: String, arg: String) : String = app(fun, Seq(arg))
 
+  def createString(s: String) : String = s"\"$s\""
+
   def createTuple(elems: Seq[String]) : String = s"(${elems.mkString(", ")})"
   def createRecord(elems: Seq[(String, String)]) : String =
     s"{${elems.map({ case (name,value) => s"$name = $value" }).mkString(", ")}}"

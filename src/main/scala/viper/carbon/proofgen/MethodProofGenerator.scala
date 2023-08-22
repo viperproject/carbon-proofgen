@@ -238,12 +238,6 @@ case class MethodProofGenerator(
     val lookupVarBplThms = "lookup_var_bpl_thms"
     val lookupFunBplThms = "lookup_fun_bpl_thms"
 
-    val expRelInfo = "exp_rel_info"
-    val expWfRelInfo = "exp_wf_rel_info"
-
-    val basicStmtRelInfo = "basic_stmt_rel_info"
-    val stmtRelInfo = "stmt_rel_info"
-    val stmtRelInfoWithoutDefChecks = "stmt_rel_info_opt"
     val stmtRelHints = "stmt_rel_hints"
     val stmtInhalePreconditionHints = "stmt_precondition_hints"
     val stmtPostconditionFramingHints = "stmt_postcondition_framing_hints"
@@ -270,11 +264,6 @@ case class MethodProofGenerator(
         Some(AtomicHint(ExhaleStmtHint(Seq(ExhaleStmtComponentHint(methodProofHint.postconditionExhaleHint.conjoinBodyHints)))))
       }
 
-    val inhaleRelInfo = "inhale_rel_info"
-    val inhaleRelInfoWithoutDefChecks = "inhale_rel_info_opt"
-
-    val exhaleRelInfo = "exhale_rel_info"
-    val exhaleRelInfoWithoutDefChecks = "exhale_rel_info_opt"
 
     val auxVarDisjTac = "aux_var_disj_tac"
 
@@ -354,7 +343,7 @@ case class MethodProofGenerator(
           MLUtil.app("field_rel_single_inst_tac", Seq(fieldRelTac, fieldLookupTac))
         ),
 
-        MLUtil.defineVal(expRelInfo, ViperBoogieMLUtil.createExpRelInfo(
+        MLUtil.defineVal(ProofGenMLConstants.expRelInfo, ViperBoogieMLUtil.createExpRelInfo(
           typeSafetyThmMap,
           lookupVarRelTac,
           simpWithTrDef,
@@ -380,11 +369,11 @@ case class MethodProofGenerator(
             lookupMaskVarTac = simpWithTrDef,
             fieldRelSingleTac = fieldRelSingleTac,
             tyArgsEqTac =  simpWithTyReprDef,
-            expRelInfo = expRelInfo
+            expRelInfo = ProofGenMLConstants.expRelInfo
           )
         ),
 
-        MLUtil.defineVal(expWfRelInfo,
+        MLUtil.defineVal(ProofGenMLConstants.expWfRelInfo,
           ViperBoogieMLUtil.createExpWfRelInfo(fieldAccessWfRelTacAuxInst)
         ),
 
@@ -393,10 +382,11 @@ case class MethodProofGenerator(
           MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmas.name, "map_upd_set_dom")))
         ),
 
-        MLUtil.defineVal(basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
+        MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
           ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
           vprProgramContextEqThm = isaToMLThm(vprProgramTotal),
           trDefThm = isaToMLThm(definitionLemmaFromName(translationRecordName)),
+          methodDataTableMLIdent = progAccessor.methodDataTableML,
           varRelTac = lookupVarRelTac,
           varContextVprTac = "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
           fieldRelSingleTac = fieldRelSingleTac,
@@ -406,9 +396,9 @@ case class MethodProofGenerator(
         ),
 
         MLUtil.defineVal(
-          inhaleRelInfo,
+          ProofGenMLConstants.inhaleRelInfo,
           ViperBoogieMLUtil.createInhaleRelInfo(
-            basicStmtRelInfo = basicStmtRelInfo,
+            basicStmtRelInfo = ProofGenMLConstants.basicStmtRelInfo,
             atomicInhaleRelTac = "atomic_inhale_rel_inst_tac",
             isInhRelInvThm = MLUtil.isaToMLThm(InhaleRelUtil.isInhRelInvThm(true)),
             noDefChecksTacOpt = InhaleRelUtil.inhNoDefChecksTacOpt(true),
@@ -416,9 +406,9 @@ case class MethodProofGenerator(
         ),
 
         MLUtil.defineVal(
-          inhaleRelInfoWithoutDefChecks,
+          ProofGenMLConstants.inhaleRelInfoWithoutDefChecks,
           ViperBoogieMLUtil.createInhaleRelInfo(
-            basicStmtRelInfo = basicStmtRelInfo,
+            basicStmtRelInfo = ProofGenMLConstants.basicStmtRelInfo,
             atomicInhaleRelTac = "atomic_inhale_rel_inst_tac",
             isInhRelInvThm = MLUtil.isaToMLThm(InhaleRelUtil.isInhRelInvThm(false)),
             noDefChecksTacOpt = InhaleRelUtil.inhNoDefChecksTacOpt(false),
@@ -426,9 +416,9 @@ case class MethodProofGenerator(
         ),
 
         MLUtil.defineVal(
-          exhaleRelInfo,
+          ProofGenMLConstants.exhaleRelInfo,
           ViperBoogieMLUtil.createExhaleRelInfo(
-            basicStmtRelInfo = basicStmtRelInfo,
+            basicStmtRelInfo = ProofGenMLConstants.basicStmtRelInfo,
             atomicExhaleRelTac = "atomic_exhale_rel_inst_tac",
             isExhRelInvThm = MLUtil.isaToMLThm(ExhaleRelUtil.isExhRelInvThm(true)),
             noDefChecksTacOpt = ExhaleRelUtil.exhNoDefChecksTacOpt(true)
@@ -436,40 +426,40 @@ case class MethodProofGenerator(
         ),
 
         MLUtil.defineVal(
-          exhaleRelInfoWithoutDefChecks,
+          ProofGenMLConstants.exhaleRelInfoWithoutDefChecks,
           ViperBoogieMLUtil.createExhaleRelInfo(
-            basicStmtRelInfo = basicStmtRelInfo,
+            basicStmtRelInfo = ProofGenMLConstants.basicStmtRelInfo,
             atomicExhaleRelTac = "atomic_exhale_rel_inst_tac",
             isExhRelInvThm = MLUtil.isaToMLThm(ExhaleRelUtil.isExhRelInvThm(false)),
             noDefChecksTacOpt = ExhaleRelUtil.exhNoDefChecksTacOpt(false)
           )
         ),
 
-        MLUtil.defineVal(stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
-          basicStmtRelInfo = basicStmtRelInfo,
+        MLUtil.defineVal(ProofGenMLConstants.stmtRelInfo, ViperBoogieMLUtil.createStmtRelInfo(
+          basicStmtRelInfo = ProofGenMLConstants.basicStmtRelInfo,
           atomicRelTac = "atomic_rel_inst_tac",
-          inhaleRelInfo = inhaleRelInfo,
-          exhaleRelInfo = exhaleRelInfo
+          inhaleRelInfo = ProofGenMLConstants.inhaleRelInfo,
+          exhaleRelInfo = ProofGenMLConstants.exhaleRelInfo
         )),
 
-        MLUtil.defineVal(stmtRelInfoWithoutDefChecks, ViperBoogieMLUtil.createStmtRelInfo(
-          basicStmtRelInfo = basicStmtRelInfo,
+        MLUtil.defineVal(ProofGenMLConstants.stmtRelInfoWithoutDefChecks, ViperBoogieMLUtil.createStmtRelInfo(
+          basicStmtRelInfo = ProofGenMLConstants.basicStmtRelInfo,
           atomicRelTac = "atomic_rel_inst_tac",
-          inhaleRelInfo = inhaleRelInfo, //TODO: support optimized inhale
-          exhaleRelInfo = exhaleRelInfoWithoutDefChecks
+          inhaleRelInfo = ProofGenMLConstants.inhaleRelInfoWithoutDefChecks,
+          exhaleRelInfo = ProofGenMLConstants.exhaleRelInfoWithoutDefChecks
         )),
 
-        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(methodProofHint.bodyHint, boogieProg, expWfRelInfo, expRelInfo)),
+        MLUtil.defineVal(stmtRelHints, MLHintGenerator.generateStmtHintsInML(methodProofHint.bodyHint, boogieProg, ProofGenMLConstants.expWfRelInfo, ProofGenMLConstants.expRelInfo)),
       ) ++
       stmtPreconditionHintValue.fold[Seq[String]](Seq())(h => Seq(
-          MLUtil.defineVal(stmtInhalePreconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
+          MLUtil.defineVal(stmtInhalePreconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, ProofGenMLConstants.expWfRelInfo, ProofGenMLConstants.expRelInfo))
       )) ++
       stmtPostconditionFramingValue.fold[Seq[String]](Seq())(h => Seq(
-        MLUtil.defineVal(stmtPostconditionFramingHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo))
+        MLUtil.defineVal(stmtPostconditionFramingHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, ProofGenMLConstants.expWfRelInfo, ProofGenMLConstants.expRelInfo))
       )) ++
       stmtPostconditionHintValue.fold[Seq[String]](Seq())(h =>
         Seq (
-          MLUtil.defineVal(stmtExhalePostconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, expWfRelInfo, expRelInfo)),
+          MLUtil.defineVal(stmtExhalePostconditionHints, MLHintGenerator.generateStmtHintsInML(h, boogieProg, ProofGenMLConstants.expWfRelInfo, ProofGenMLConstants.expRelInfo)),
         )
       )
 
@@ -497,10 +487,10 @@ case class MethodProofGenerator(
           applyTac(introTac("conjI")),
         ) ++
         initBoogieStateProof(bplCtxtWfLabel, IsaPrettyPrinter.prettyPrint(outputStateRel)) ++
-        inhalePreconditionProof(stmtRelInfo, stmtInhalePreconditionHints) ++
-        postconditionFramingProof(methodProofHint.postconditionFramingHint._1, basicStmtRelInfo, stmtRelInfo, stmtPostconditionFramingHints) ++
-        methodBodyProof(stmtRelInfo, stmtRelHints) ++
-        exhalePostconditionProof(stmtRelInfoWithoutDefChecks, stmtExhalePostconditionHints) ++
+        inhalePreconditionProof(ProofGenMLConstants.stmtRelInfo, stmtInhalePreconditionHints) ++
+        postconditionFramingProof(methodProofHint.postconditionFramingHint._1, ProofGenMLConstants.basicStmtRelInfo, ProofGenMLConstants.stmtRelInfo, stmtPostconditionFramingHints) ++
+        methodBodyProof(ProofGenMLConstants.stmtRelInfo, stmtRelHints) ++
+        exhalePostconditionProof(ProofGenMLConstants.stmtRelInfoWithoutDefChecks, stmtExhalePostconditionHints) ++
         Seq(doneTac)
       )
     )
@@ -516,6 +506,8 @@ case class MethodProofGenerator(
       if(methodAccessor.origMethod.pres.isEmpty) {
         Seq(
           applyTac(ruleTac("inhale_stmt_rel_no_inv")), //TODO: do not hardcode theorem names
+          applyTac(simp),
+          applyTac(simp),
           applyTac(ruleTac("inhale_rel_true"))
         )
       } else {
