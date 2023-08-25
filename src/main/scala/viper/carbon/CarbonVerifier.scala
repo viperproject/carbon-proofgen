@@ -332,25 +332,35 @@ case class CarbonVerifier(override val reporter: Reporter,
         {
           node =>
             node match {
-              //TODO: also include Quasihavoc as unsupported once merge Quasihavoc features
-              case SourceQuantifiedPermissionAssertion(_, _) => node
+              /** types */
               case _: sil.SetType => node
-              case _: sil.Domain => node
+              case _: sil.MultisetType => node
+              case _: sil.MapType => node
+              case _: sil.BackendType => node
               case _: sil.SeqType => node
-              case _ : sil.MultisetType => node
-              case _ : sil.MapType => node
-              case _ : sil.BackendType => node
-              case sil.Goto(_) => node
-              case _: sil.MagicWand => node
-              case _: sil.Package => node
-              case _ : sil.Apply => node
+              case _: sil.ExtensionType => node
+              /** members */
+              case _: sil.Predicate => node
+              case _: sil.Function => node
+              case _: sil.Domain => node
+              /** statements (predicate and wand statements already excluded by [[sil.Predicate]] and [[sil.MagicWand]]) */
               case _: sil.NewStmt => node
-              case _: sil.LabelledOld => node
+              case sil.Goto(_) => node
               case _: sil.ExtensionStmt => node
-              case _: sil.CurrentPerm => node
+              case _: sil.LabelledOld => node
+              case _: sil.Quasihavoc => node
+              case _: sil.Quasihavocall => node
+              case _: sil.Label => node
+              /** assertions (predicates already excluded by [[sil.Predicate]] */
               case _: sil.ForPerm => node
-              case _: sil.ExtensionExp => node
+              case _: sil.MagicWand => node
+              case _: sil.QuantifiedExp => node
+              case SourceQuantifiedPermissionAssertion(_, _) => node
               case _: sil.InhaleExhaleExp => node
+              /** expressions */
+              case _: sil.CurrentPerm => node
+              case _: sil.ExtensionExp => node
+              case _: sil.Let => node
               case _: sil.WildcardPerm => node
               case _: sil.EpsilonPerm => node //epsilon should not occur in Viper programs (old feature that has been dropped)
             }
