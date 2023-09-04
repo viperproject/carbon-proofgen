@@ -106,43 +106,37 @@ class DefaultProofGenInterface(val proofDir: Path,
   def methodProgTheory(m: sil.Method) : String = m.name+"_vpr_prog"
 
   def generateProofForMethod(m: sil.Method, procBpl: Procedure, procBplEnv: Environment, methodProofHint: MethodProofHint) : Unit = {
-    m.body match {
-      case Some(_) =>
-        val dir: Path = Files.createDirectory(methodProofPath(m))
+      val dir: Path = Files.createDirectory(methodProofPath(m))
 
-        /* Viper program representation */
-        val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
+      /* Viper program representation */
+      val varTranslation = DeBruijnTranslation.freshTranslation((m.formalArgs ++ m.formalReturns) map (varDecl => varDecl.localVar))
 
-        /* Viper <-> Boogie proof */
-        //here we are assuming how Boogie proof generation names proof folders
-        //TODO: does not work if there are name clashes between namespaces --> pretty printer might not use given name
-        val bplProgTheoryPath =
-          s"../${boogieProofDirName}/${procBpl.name.name}_proofs/${procBpl.name.name}_before_ast_to_cfg_prog"
+      /* Viper <-> Boogie proof */
+      //here we are assuming how Boogie proof generation names proof folders
+      //TODO: does not work if there are name clashes between namespaces --> pretty printer might not use given name
+      val bplProgTheoryPath =
+        s"../${boogieProofDirName}/${procBpl.name.name}_proofs/${procBpl.name.name}_before_ast_to_cfg_prog"
 
-        val bplProcAccessor = new IsaBoogieProcAccessor(
-          procBpl,
-          procBplEnv,
-          globalDataBpl,
-          bplProgTheoryPath)
+      val bplProcAccessor = new IsaBoogieProcAccessor(
+        procBpl,
+        procBplEnv,
+        globalDataBpl,
+        bplProgTheoryPath)
 
-        val methodProofGenerator = MethodProofGenerator(
-          methodRelationalProof(m),
-          vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
-          vprProgGlobalData,
-          varTranslation,
-          bplProcAccessor,
-          methodProofHint,
-          funProofGenInterface)
+      val methodProofGenerator = MethodProofGenerator(
+        methodRelationalProof(m),
+        vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
+        vprProgGlobalData,
+        varTranslation,
+        bplProcAccessor,
+        methodProofHint,
+        funProofGenInterface)
 
-        val relationalProofTheory = methodProofGenerator.generateProof()
+      val relationalProofTheory = methodProofGenerator.generateProof()
 
-        Seq(relationalProofTheory)
+      Seq(relationalProofTheory)
 
-        StoreTheory.storeTheory(relationalProofTheory, dir)
-      case None =>
-        //TODO: pre- and postconditions still matter for abstract methods
-        Seq()
-    }
+      StoreTheory.storeTheory(relationalProofTheory, dir)
   }
 
 

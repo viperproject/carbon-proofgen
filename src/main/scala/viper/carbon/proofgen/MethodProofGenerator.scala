@@ -238,7 +238,7 @@ case class MethodProofGenerator(
     val lookupVarBplThms = "lookup_var_bpl_thms"
     val lookupFunBplThms = "lookup_fun_bpl_thms"
 
-    val stmtRelHints = "stmt_rel_hints"
+    val stmtRelHints = "stmt_body_hints"
     val stmtInhalePreconditionHints = "stmt_precondition_hints"
     val stmtPostconditionFramingHints = "stmt_postcondition_framing_hints"
     val stmtExhalePostconditionHints = "stmt_postcondition_hints"
@@ -489,8 +489,7 @@ case class MethodProofGenerator(
         initBoogieStateProof(bplCtxtWfLabel, IsaPrettyPrinter.prettyPrint(outputStateRel)) ++
         inhalePreconditionProof(ProofGenMLConstants.stmtRelInfo, stmtInhalePreconditionHints) ++
         postconditionFramingProof(methodProofHint.postconditionFramingHint._1, ProofGenMLConstants.basicStmtRelInfo, ProofGenMLConstants.stmtRelInfo, stmtPostconditionFramingHints) ++
-        methodBodyProof(ProofGenMLConstants.stmtRelInfo, stmtRelHints) ++
-        exhalePostconditionProof(ProofGenMLConstants.stmtRelInfoWithoutDefChecks, stmtExhalePostconditionHints) ++
+        methodBodyAndPostconditionProof(ProofGenMLConstants.stmtRelInfo, stmtRelHints, stmtExhalePostconditionHints) ++
         Seq(doneTac)
       )
     )
@@ -566,9 +565,23 @@ case class MethodProofGenerator(
     }
   }
 
-  private def methodBodyProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
+  private def methodBodyAndPostconditionProof(stmtRelInfo: String, stmtRelBodyTacHints: String, stmtRelPostTacHints: String) : Seq[String]  = {
+      if(methodAccessor.origMethod.body.isEmpty) {
+        //no proof obligations on the body and need not check postcondition
+        Seq(
+          applyTac(ruleTac("impI")),
+          applyTac(simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))),
+        )
+      } else {
+        concreteMethodBodyProof(ProofGenMLConstants.stmtRelInfo, stmtRelBodyTacHints) ++
+          exhalePostconditionProof(ProofGenMLConstants.stmtRelInfoWithoutDefChecks, stmtRelPostTacHints)
+      }
+  }
+
+  //this method handles the method body for concrete methods (i.e., methods with a body)
+  private def concreteMethodBodyProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {
     Seq(
-      applyTac(ruleTac("impI")),
+      applyTac("(rule impI)+"),
       applyTac("(rule exI)+"),
       applyTac(introTac("conjI")),
       applyTac(simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))),
