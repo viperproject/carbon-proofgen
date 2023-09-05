@@ -161,6 +161,10 @@ object BoogieExpressionContext {
 
   val wfId = TermIdent("ctxt_wf")
 
+  val exprContextRecordName = "econtext_bpl"
+
+  def exprContextRecordType(abstractValueType: TypeIsa) : TypeIsa = DataType(exprContextRecordName, abstractValueType)
+
   def varContext(exprContext: Term) : Term = TermApp(TermIdent("var_context"), exprContext)
 
   def typeInterp(exprContext: Term) : Term = TermApp(TermIdent("type_interp"), exprContext)
@@ -169,8 +173,11 @@ object BoogieExpressionContext {
 
   def rtypeInterp(totalContext: Term) : Term = TermApp(TermIdent("rtype_interp"), totalContext)
 
-  def wellFormed(viperProgram: Term, tyReprBpl: Term, fieldMap: Term, funMap: Term, exprContext: Term) =
+  def wellFormed(viperProgram: Term, tyReprBpl: Term, fieldMap: Term, funMap: Term, exprContext: Term) : Term =
     TermApp(wfId, Seq(viperProgram, tyReprBpl, fieldMap, funMap, exprContext))
+
+  def makeRecord(typeInterp: Term, varContext: Term, funInterp: Term, rtypeInterp: Term) : Term =
+    IsaTermUtil.makeRecord(exprContextRecordName, Seq(typeInterp, varContext, funInterp, rtypeInterp))
 
 }
 

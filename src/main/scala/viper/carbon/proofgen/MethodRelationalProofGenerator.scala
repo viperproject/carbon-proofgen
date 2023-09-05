@@ -14,7 +14,7 @@ import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, IfHint, InhaleProofHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, ResetStateComponentHint, SeqnProofHint, StateProofHint, StmtProofHint, WhileHint}
 
 
-case class MethodProofGenerator(
+case class MethodRelationalProofGenerator(
                                  theoryName: String,
                                  methodAccessor: IsaViperMethodAccessor,
                                  progAccessor: IsaViperGlobalDataAccessor,
@@ -28,7 +28,6 @@ case class MethodProofGenerator(
 
   val varContextViperName = "var_ctxt_viper"
   val varContextBoogieName = "var_ctxt_bpl"
-  val typeInterpBplName = "type_interp_bpl"
 
   val varRelationListName = "var_relation_list_1"
   val varRelationBoundedByName = "var_relation_list_1_bound"
@@ -39,7 +38,7 @@ case class MethodProofGenerator(
 
   val funReprConcrete = TermIdent("fun_repr_concrete")
 
-  def generateProof() : Theory = {
+  def generateRelationalProof() : (Theory, DefaultRelationalProofData) = {
 
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
@@ -131,31 +130,29 @@ case class MethodProofGenerator(
 
     outerDecls += stateRelInitialAbbrev
 
-    val typeInterpBplAbbrev: AbbrevDecl =
-      AbbrevDecl(
-        typeInterpBplName,
-        None,
-        (Seq(TermIdent("A")), ViperBoogieRelationIsa.viperBoogieAbstractTypeInterp(TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A"))))
-      )
-
-    outerDecls += typeInterpBplAbbrev
+    outerDecls += BoogieIsaTerm.typeInterpBplAbbrev
 
     outerDecls += mainProofLocale()
 
-    Theory(
-      theoryName = theoryName,
-      importTheories = Seq(
-        "TotalViper.ViperBoogieTranslationInterface",
-        "TotalViper.ExprWfRelML",
-        "TotalViper.CPGHelperML",
-        "TotalViper.StmtRelML",
-        "TotalViper.ViperBoogieEndToEndML",
-        "Boogie_Lang.TypingML",
-        "../"+progAccessor.theoryName,
-        boogieProg.procTheoryPath
-      ),
-      decls = outerDecls.toSeq
-    )
+    val theory =
+      Theory(
+        theoryName = theoryName,
+        importTheories = Seq(
+          "TotalViper.ViperBoogieTranslationInterface",
+          "TotalViper.ExprWfRelML",
+          "TotalViper.CPGHelperML",
+          "TotalViper.StmtRelML",
+          "TotalViper.ViperBoogieEndToEndML",
+          "Boogie_Lang.TypingML",
+          "../"+progAccessor.theoryName,
+          boogieProg.procTheoryPath
+        ),
+        decls = outerDecls.toSeq
+      )
+
+    val relationalProofData = DefaultRelationalProofData(theoryName, varRelationBoundedBy.name, varContextBplAbbrev.name)
+
+    (theory, relationalProofData)
   }
 
   private def mainProofLocale() : LocaleDecl = {
@@ -182,7 +179,7 @@ case class MethodProofGenerator(
       //assumes
       Seq( (Some("VarContextBpl [simp]"), TermBinary.eq(BoogieExpressionContext.varContext(exprContextBpl), TermIdent(varContextBoogieName))),
            (Some(s"$tyInterpEqBpl [simp]"), TermBinary.eq(BoogieExpressionContext.typeInterp(exprContextBpl),
-             TermApp(TermIdent(typeInterpBplName), absvalInterpVpr))
+             TermApp(TermIdent(BoogieIsaTerm.typeInterpBplAbbrev.name), absvalInterpVpr))
            ),
         (Some(bplCtxtWfLabel), BoogieExpressionContext.wellFormed(
            viperProgram = progAccessor.vprProgram,

@@ -131,7 +131,7 @@ class DefaultProofGenInterface(val proofDir: Path,
         globalDataBpl,
         bplProgTheoryPath)
 
-      val methodProofGenerator = MethodProofGenerator(
+      val methodProofGenerator = MethodRelationalProofGenerator(
         methodRelationalProof(m),
         vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
         vprProgGlobalData,
@@ -140,7 +140,7 @@ class DefaultProofGenInterface(val proofDir: Path,
         methodProofHint,
         funProofGenInterface)
 
-      val relationalProofTheory = methodProofGenerator.generateProof()
+      val relationalProofTheory = methodProofGenerator.generateRelationalProof()
 
       Seq(relationalProofTheory)
 
