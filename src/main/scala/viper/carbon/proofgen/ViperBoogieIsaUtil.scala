@@ -27,8 +27,18 @@ object ViperBoogieIsaUtil {
     if(termList.list.isEmpty) {
       0
     } else {
-      termList.list.map(t => t.asInstanceOf[isa.TermTuple].list(1).asInstanceOf[isa.NatConst].n).max
+      rangeOfList(termList).max
     }
+  }
+
+  /***
+    *
+    * @param termList term list that only contains [[isa.TermTuple]] elements where the second element of the tuple is always
+    *                 of type [[isa.NatConst]] (i.e., represents a natural number)
+    * @return all the second elements
+    */
+  def rangeOfList(termList: isa.TermList): Seq[BigInt] = {
+    termList.list.map(t => t.asInstanceOf[isa.TermTuple].list(1).asInstanceOf[isa.NatConst].n)
   }
 
 }

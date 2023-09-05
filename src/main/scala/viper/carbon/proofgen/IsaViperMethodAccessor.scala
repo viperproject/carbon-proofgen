@@ -7,6 +7,8 @@ trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
 
   def theoryName : String
   def vprProgram : TermIdent
+
+  def origProgram : sil.Program
   def allMethodsAccessor: IsaViperAllMethodsAccessor
 
   /**

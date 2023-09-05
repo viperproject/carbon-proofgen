@@ -150,8 +150,21 @@ object ViperIsaTerm {
 }
 
 object ViperTotalContext {
-  def absvalInterpTotal(totalContext: Term) : Term = TermApp(TermIdent("absval_interp_total"), totalContext)
+
+  val totalContextRecordName : String = "total_context"
+
+  def totalContextRecordType(abstractValueType : TypeIsa) : TypeIsa = DataType(totalContextRecordName, abstractValueType)
+
   def programTotal(totalContext: Term) : Term = TermApp(TermIdent("program_total"), totalContext)
-  def rtypeInterp(totalContext: Term) : Term = TermApp(TermIdent("rtype_interp"), totalContext)
+
+  def funInterpTotal(totalContext: Term) : Term = TermApp(TermIdent("fun_interp_total"), totalContext)
+
+  def absvalInterpTotal(totalContext: Term) : Term = TermApp(TermIdent("absval_interp_total"), totalContext)
+
+  def makeTotalContext(program: Term, funInterp: Term, absvalInterp: Term) : Term = {
+    IsaTermUtil.makeRecord(totalContextRecordName,
+      Seq(program, funInterp, absvalInterp)
+    )
+  }
 
 }

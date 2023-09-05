@@ -40,6 +40,7 @@ object IsaPrettyPrinter {
     case TermApp(f, arg) => "("+prettyPrint(f) + " " + (arg map prettyPrint).mkString(" ")  +")"
     case TermWithExplicitType(t, ty) => "(" + prettyPrint(t) + ":" + prettyPrint(ty) + ")"
     case TermList(xs) => "[" + xs.mkString(",") + "]"
+    case TermSet(xs) => "{" + xs.mkString(",") + "}"
     case TermTuple(xs) => "(" + xs.mkString(",") + ")"
     case TermQuantifier(qkind, boundVars, body) =>
       val boundVarsString : Seq[String] =  (boundVars map (x => x.toString()))

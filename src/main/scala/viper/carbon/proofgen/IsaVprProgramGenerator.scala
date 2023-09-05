@@ -1,6 +1,6 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, MLDecl, MLNormal, MLUtil, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermTuple, Theory, TupleType, TypeIsa}
+import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, MLDecl, MLNormal, MLUtil, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermSet, TermTuple, Theory, TupleType, TypeIsa}
 import viper.silver.{ast => sil}
 import viper.carbon.proofgen.util.StringBuilderExtension._
 
@@ -83,6 +83,7 @@ object IsaVprProgramGenerator {
         DefaultIsaViperGlobalDataAccessor(
           theoryName = theoryName,
           vprProgramIdent = programDef.name,
+          origProgram = p,
           fieldsIdent = fieldsListDef.name,
           fieldToTerm = fieldToTerm,
           fieldRelIdent = fieldRelationListDef.name,

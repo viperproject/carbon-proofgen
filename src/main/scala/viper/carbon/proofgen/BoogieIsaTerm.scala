@@ -53,6 +53,6 @@ object BoogieIsaTerm {
 
   val redVarThm : String = "Semantics.RedVar"
 
-
+  val mapOfLookupVarDeclsTyThm : String = "map_of_lookup_vdecls_ty"
 
 }

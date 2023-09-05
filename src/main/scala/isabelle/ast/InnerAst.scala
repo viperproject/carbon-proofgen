@@ -46,6 +46,8 @@ case class TermWithExplicitType(t: Term, ty: TypeIsa) extends Term
 
 case class TermList(list: Seq[Term]) extends Term
 
+case class TermSet(list: Seq[Term]) extends Term
+
 case class TermTuple(list: Seq[Term]) extends Term
 
 object TermTuple {

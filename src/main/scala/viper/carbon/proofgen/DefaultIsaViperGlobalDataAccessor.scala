@@ -5,6 +5,7 @@ import viper.silver.{ast => sil}
 
 case class DefaultIsaViperGlobalDataAccessor(override val theoryName: String,
                                              vprProgramIdent: String,
+                                             override val origProgram: sil.Program,
                                              fieldsIdent: String,
                                              private val fieldToTerm : Map[sil.Field, Term],
                                              fieldRelIdent: String,

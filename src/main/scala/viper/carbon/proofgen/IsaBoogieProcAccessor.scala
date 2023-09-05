@@ -44,8 +44,8 @@ class IsaBoogieProcAccessor(
   }
 
   def getGlobalLookupDeclThm(g: BoogieConstGlobal) : String = lookupTyThmFromId(globalDataAccessor.getVarId(g), true)
-  def getLocalLookupDeclThm(x: LocalVar) : String = lookupTyThmFromId(getVarId(x), true)
   def getGlobalLookupTyThm(g: BoogieConstGlobal) : String = lookupTyThmFromId(globalDataAccessor.getVarId(g), false)
+  def getLocalLookupDeclThm(x: LocalVar) : String = lookupTyThmFromId(getVarId(x), true)
   def getLocalLookupTyThm(x: LocalVar) : String = lookupTyThmFromId(getVarId(x), false)
 
   private def lookupTyThmFromId(id: Int, withFullDecl: Boolean) : String =

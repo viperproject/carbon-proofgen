@@ -197,7 +197,7 @@ case class MethodProofGenerator(
           funInterp = BoogieExpressionContext.funInterp(exprContextBpl)
           )),
         (Some ("VprProgramTotal [simp]"), TermBinary.eq(ViperTotalContext.programTotal(totalContextVpr), progAccessor.vprProgram)),
-        (Some(rtypeInterpEmpty + "[simp]"), TermBinary.eq(ViperTotalContext.rtypeInterp(exprContextBpl), TermList(Seq())))
+        (Some(rtypeInterpEmpty + "[simp]"), TermBinary.eq(BoogieExpressionContext.rtypeInterp(exprContextBpl), TermList(Seq())))
       )
     )
 

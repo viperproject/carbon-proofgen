@@ -108,9 +108,22 @@ object ViperBoogieRelationIsa {
 
   val postFramingRelAuxTrivialThm = "post_framing_rel_framing_trivial"
 
+  val funInterpVprBplConcreteName = "fun_interp_vpr_bpl_concrete"
+
+  def funInterpVprBplConcrete(vprProgram: Term, typeRepresentation: Term, fieldMap: Term, funMap: Term, fun: Term) : Term =
+    TermApp(TermIdent(funInterpVprBplConcreteName), Seq(vprProgram, typeRepresentation, fieldMap, funMap, fun))
+
+  val funReprConcreteName = "fun_repr_concrete"
+
+  def funInterpVprBplWf(vprProgram: Term, typeRepresentation: Term, fieldMap: Term, funMap: Term, funInterpBpl: Term) : Term =
+    TermApp(TermIdent("fun_interp_vpr_bpl_wf"), Seq(vprProgram, typeRepresentation, fieldMap, funMap, funInterpBpl))
+
+  val funInterpVprBplConcreteWfLemmaName = "fun_interp_vpr_bpl_concrete_wf"
+  val funReprConcreteInjLemmaName = "fun_repr_concrete_inj"
+
 }
 
-case object TypeRepresentation {
+object TypeRepresentation {
 
   val tyReprBasicName : String = "ty_repr_basic"
 
@@ -121,7 +134,7 @@ case object TypeRepresentation {
   }
 }
 
-case object TranslationRecord {
+object TranslationRecord {
 
   val translationRecordTypeName = "tr_vpr_bpl"
   val translationRecordType = DataType(translationRecordTypeName, Seq())
@@ -144,7 +157,7 @@ case object TranslationRecord {
 
 }
 
-case object BoogieExpressionContext {
+object BoogieExpressionContext {
 
   val wfId = TermIdent("ctxt_wf")
 
@@ -153,6 +166,8 @@ case object BoogieExpressionContext {
   def typeInterp(exprContext: Term) : Term = TermApp(TermIdent("type_interp"), exprContext)
 
   def funInterp(exprContext: Term) : Term = TermApp(TermIdent("fun_interp"), exprContext)
+
+  def rtypeInterp(totalContext: Term) : Term = TermApp(TermIdent("rtype_interp"), totalContext)
 
   def wellFormed(viperProgram: Term, tyReprBpl: Term, fieldMap: Term, funMap: Term, exprContext: Term) =
     TermApp(wfId, Seq(viperProgram, tyReprBpl, fieldMap, funMap, exprContext))

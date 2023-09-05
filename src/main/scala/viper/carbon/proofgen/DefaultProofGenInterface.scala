@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets
 import viper.silver.{ast => sil}
 import viper.carbon.boogie.Procedure
 import viper.carbon.modules.{HeapModule, PermModule}
+import viper.carbon.proofgen.end_to_end.{EndToEndGlobalDataHelper, IsaViperEndToEndGlobalData}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{MethodProofHint, StmtProofHint}
 import viper.carbon.proofgen.util.FileUtil
@@ -40,6 +41,13 @@ class DefaultProofGenInterface(val proofDir: Path,
         StoreTheory.storeTheory(thy, proofDir)
       }
       globalDataAccessor
+    }
+
+  val endToEndGlobalData : IsaViperEndToEndGlobalData =
+    {
+      val (theory, endToEndGlobalAccessor) = EndToEndGlobalDataHelper.generateEndToEndData("global_data_end_to_end", vprProgGlobalData, globalDataBpl, boogieProofDirName)
+      StoreTheory.storeTheory(theory, proofDir)
+      endToEndGlobalAccessor
     }
 
   /***
@@ -97,9 +105,9 @@ class DefaultProofGenInterface(val proofDir: Path,
     Files.write(proofDir.resolve("ROOT"), sb.toString().getBytes(StandardCharsets.UTF_8))
   }
 
-  def methodRelationalProof(m: sil.Method) : String = "relational_proof"
+  def methodRelationalProof(m: sil.Method) : String = s"relational_proof_${m.name}"
 
-  def methodProofDirName(m: sil.Method) : String =  "method_proof"+m.name
+  def methodProofDirName(m: sil.Method) : String =  s"method_proof_${m.name}"
   def methodProofPath(m: sil.Method) : Path =
     proofDir.resolve(methodProofDirName(m))
 
