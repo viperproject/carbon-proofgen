@@ -62,11 +62,16 @@ object ProofUtil {
     if(args.isEmpty) { "" } else {s"$modifier: ${args.mkString(" ")}"}
   }
 
-  def fastforceTac(intros: Seq[String], elims: Seq[String], simps: Seq[String]) : String = {
-    "(fastforce"+ s" ${modifierArgument("intro", intros)}"+ s" ${modifierArgument("elim", elims)}" + s" ${modifierArgument("simp", simps)})"
+  def builtInTac(tacName: String, intros: Seq[String], elims: Seq[String], simps: Seq[String]) : String = {
+    "(" + tacName + s"${modifierArgument(" intro", intros)}"+ s"${modifierArgument(" elim", elims)}" + s"${modifierArgument(" simp", simps)})"
   }
-  def fastforceTacWithIntros(thms: Seq[String]) : String = fastforceTac(thms, Seq(), Seq())
-  def fastforceTacWithSimps(thms: Seq[String]) : String = fastforceTac(Seq(), Seq(), thms)
+  def fastforceTacWithIntros(thms: Seq[String]) : String = builtInTac("fastforce", thms, Seq(), Seq())
+  def fastforceTacWithSimps(thms: Seq[String]) : String = builtInTac("fastforce", Seq(), Seq(), thms)
+
+  def forceTacWithIntros(thms: Seq[String]) : String = builtInTac("force", thms, Seq(), Seq())
+  def forceTacWithSimps(thms: Seq[String]) : String = builtInTac("force", Seq(), Seq(), thms)
+
+  def repeatTac(tac: String) = s"($tac)+"
 
   val assumeTac : String = "assumption"
 

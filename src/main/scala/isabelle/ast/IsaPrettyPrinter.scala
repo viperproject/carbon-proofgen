@@ -6,9 +6,14 @@ import viper.carbon.proofgen.util.StringBuilderExtension._
 object IsaPrettyPrinter {
 
   def prettyPrint(ty: TypeIsa) : String = ty match {
-    case VarType(x) => x
+    case VarType(x) => "'"+x
     case ArrowType(t1, t2) => "(" + prettyPrint(t1) + " => " + prettyPrint(t2) + ")"
-    case DataType(name, args) => "(" + (args map prettyPrint).mkString(" ")  + " " + name + ")"
+    case DataType(name, args) =>
+      if(args.isEmpty) {
+        name
+      } else {
+        "(" + "("+(args map prettyPrint).mkString(", ")+") " + name + ")"
+      }
     case TupleType(args) => "(" + (args map prettyPrint).mkString("\\<times>") + ")"
     case BoolType => "bool"
     case NatType => "nat"
@@ -38,7 +43,7 @@ object IsaPrettyPrinter {
   def prettyPrint(t: Term) : String = t match {
     case TermIdent(id) => id.toString()
     case TermApp(f, arg) => "("+prettyPrint(f) + " " + (arg map prettyPrint).mkString(" ")  +")"
-    case TermWithExplicitType(t, ty) => "(" + prettyPrint(t) + ":" + prettyPrint(ty) + ")"
+    case TermWithExplicitType(t, ty) => "(" + prettyPrint(t) + "::" + prettyPrint(ty) + ")"
     case TermList(xs) => "[" + xs.mkString(",") + "]"
     case TermSet(xs) => "{" + xs.mkString(",") + "}"
     case TermTuple(xs) => "(" + xs.mkString(",") + ")"
@@ -68,7 +73,7 @@ object IsaPrettyPrinter {
     case LemmaDecl(name, context, statements, proof) =>
       sb.append(s"lemma $name : ").newLine
       prettyPrintContextElem(context, sb).newLine
-      sb.append(statements.map(stmt => innerTerm(prettyPrint(stmt))).mkString(" and ")).newLine
+      sb.append("shows ").append(statements.map(stmt => innerTerm(prettyPrint(stmt))).mkString(" and ")).newLine
       prettyPrintProof(proof, sb)
     case LemmasDecl(name, thmNames) =>
       sb.append(s"lemmas $name = ${thmNames.mkString(" ")}").newLine

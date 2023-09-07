@@ -85,6 +85,7 @@ case class TermBinary(bop: BinaryOpCode, left: Term, right: Term) extends Term
 
 case object TermBinary {
   def eq(t1: Term, t2: Term) = TermBinary(Eq, t1, t2)
+  def and(t1: Term, t2: Term) = TermBinary(And, t1, t2)
   def implies(t1: Term, t2: Term) = TermBinary(Implies, t1, t2)
 
 }
