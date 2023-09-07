@@ -151,7 +151,7 @@ class DefaultProofGenInterface(val proofDir: Path,
         methodAccessor = vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
         viperProgAccessor = vprProgGlobalData,
         endToEndData = endToEndGlobalData,
-        relationalProofData = relationalProofData ,
+        relationalProofData = relationalProofData,
         boogieProgAccessor = bplProcAccessor
       )
 

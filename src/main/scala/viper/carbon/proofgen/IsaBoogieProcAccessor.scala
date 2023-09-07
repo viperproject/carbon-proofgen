@@ -68,5 +68,8 @@ class IsaBoogieProcAccessor(
 
   val procDef: TermIdent = TermIdent(procDataDecl("ast_proc"))
 
+  val preconditionDef : TermIdent = TermIdent(procDataDecl("pres"))
+
+
 }
 

@@ -9,6 +9,9 @@ trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
   def vprProgram : TermIdent
 
   def origProgram : sil.Program
+
+  def methodsProgEqLemma : String
+
   def allMethodsAccessor: IsaViperAllMethodsAccessor
 
   /**

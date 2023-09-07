@@ -9,6 +9,7 @@ case class FieldRelInstantiationData(ranFieldRelLemma: String, fieldTrPropLemma:
 case class DefaultIsaViperEndToEndGlobalData(
                         override val theoryName: String,
                         ctxtVprName: String,
+                        programTotalProgEqLemmaName: String,
                         funInterpInstData : FunInterpInstantiationData,
                         fieldRelInstData: FieldRelInstantiationData,
                         axiomSatLemmaName: String) extends IsaViperEndToEndGlobalData
@@ -17,6 +18,8 @@ case class DefaultIsaViperEndToEndGlobalData(
   def qualifyName(name: String) = IsaUtil.qualifyName(theoryName, name)
 
   override val ctxtVpr : TermIdent = TermIdent(qualifyName(ctxtVprName))
+
+  override val programTotalProgEqLemma : String = qualifyName(programTotalProgEqLemmaName)
 
   override val funInterpVprBpl: TermIdent = TermIdent(qualifyName(funInterpInstData.funInterpVprBpl))
 

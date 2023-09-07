@@ -123,6 +123,8 @@ object ViperBoogieRelationIsa {
   val funInterpVprBplConcreteWfLemmaName = "fun_interp_vpr_bpl_concrete_wf"
   val funReprConcreteInjLemmaName = "fun_repr_concrete_inj"
 
+  val trueMonoPropDownwardOrdLemmaName = "true_mono_prop_downward_ord"
+
 }
 
 object TypeRepresentation {

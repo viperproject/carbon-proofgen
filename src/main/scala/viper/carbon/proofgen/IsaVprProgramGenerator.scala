@@ -89,6 +89,7 @@ object IsaVprProgramGenerator {
           fieldToTerm = fieldToTerm,
           fieldRelIdent = fieldRelationListDef.name,
           fieldRelBoundedLemma = fieldRelationBoundedBy.name,
+          methodsProgEqLemmaName = methodProjThm.name,
           allMethodsAccessor = allMethodsAccessor,
           methodDataTableML = methodDataName
         ),

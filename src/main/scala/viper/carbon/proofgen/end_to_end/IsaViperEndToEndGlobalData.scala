@@ -8,6 +8,8 @@ trait IsaViperEndToEndGlobalData {
 
   def ctxtVpr : TermIdent
 
+  def programTotalProgEqLemma : String
+
   def funInterpVprBpl : TermIdent
 
   def funInterpVprBplWfLemma : String

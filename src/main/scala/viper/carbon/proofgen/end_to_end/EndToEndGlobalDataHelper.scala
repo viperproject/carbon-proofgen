@@ -128,6 +128,7 @@ object EndToEndGlobalDataHelper {
       DefaultIsaViperEndToEndGlobalData(
         theoryName = theoryName,
         ctxtVprName = vprContextDef.name,
+        programTotalProgEqLemmaName = programTotalEqLemma.name,
         funInterpInstData = FunInterpInstantiationData(
           funInterpVprBpl = funInterpVprBplInstDef.name,
           funInterpVprBplWfLemma = funInterpVprBplInstWfLemma.name,
