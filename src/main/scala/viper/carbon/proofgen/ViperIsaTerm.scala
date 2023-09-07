@@ -168,3 +168,11 @@ object ViperTotalContext {
   }
 
 }
+
+object ViperMethodCorrectness {
+
+  def correctPartial(totalContext: Term, stateConsistency: Term, methodDecl: Term) : Term = {
+    TermApp(TermIdent("vpr_method_correct_total_partial"), Seq(totalContext, stateConsistency, methodDecl))
+  }
+
+}

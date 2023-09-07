@@ -8,6 +8,8 @@ import scala.collection.mutable.ListBuffer
 
 object EndToEndGlobalDataHelper {
 
+  val typeInterpBplName = "type_interp_bpl"
+
   def generateEndToEndData(theoryName: String, vprProgAccessor: IsaViperGlobalDataAccessor, bplGlobalAccessor: IsaBoogieGlobalAccessor, boogieProofDirName: String) : (Theory, IsaViperEndToEndGlobalData) = {
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
@@ -15,7 +17,7 @@ object EndToEndGlobalDataHelper {
     outerDecls += DeclareDecl(s"${ViperTotalContext.totalContextRecordName}.defs(1)[simp]")
 
 
-    outerDecls += BoogieIsaTerm.typeInterpBplAbbrev
+    outerDecls += BoogieIsaTerm.typeInterpBplAbbrev(typeInterpBplName)
 
     val vprContextDef : DefDecl = DefDecl("ctxt_vpr", None,
       (Seq(), ViperTotalContext.makeTotalContext(
@@ -67,7 +69,7 @@ object EndToEndGlobalDataHelper {
 
     val funInterpWfLemma = LemmaDecl("fun_interp_wf",
       BoogieIsaTerm.funInterpWf(
-        typeInterp = TermApp(TermIdent(BoogieIsaTerm.typeInterpBplAbbrev.name), ViperTotalContext.absvalInterpTotal(vprContextTerm)),
+        typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(vprContextTerm)),
         funDecls = bplGlobalAccessor.funDecls,
         funInterp = TermIdent(funInterpVprBplInstDef.name)
       ),

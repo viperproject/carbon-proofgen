@@ -9,12 +9,32 @@ object ViperBoogieIsaUtil {
 
   val expRelPermAccessThm = "exp_rel_perm_access_2"
 
-  def allVarsInListBoundedBy(list: isa.Term, maxTerm: BigInt) : isa.Term = {
+  val constReprBoundLemmaName = "const_repr_basic_bound_2"
+
+  def allVarsInListBoundedBy(list: isa.Term, minTerm: BigInt, maxTerm: BigInt) : isa.Term = {
     IsaTermUtil.listAll(
       isa.TermQuantifier(isa.Lambda, Seq(isa.SimpleIdentifier("x")),
-        isa.TermBinary(isa.Le, IsaTermUtil.snd(isa.TermIdent("x")), isa.NatConst(maxTerm))),
+        isa.TermBinary.and(
+          isa.TermBinary(isa.Le, isa.NatConst(minTerm), IsaTermUtil.snd(isa.TermIdent("x"))),
+          isa.TermBinary(isa.Le, IsaTermUtil.snd(isa.TermIdent("x")), isa.NatConst(maxTerm)),
+        )
+      ),
       list
     )
+  }
+
+  /***
+    *
+    * @param termList term list that only contains [[isa.TermTuple]] elements where the second element of the tuple is always
+    *                 of type [[isa.NatConst]] (i.e., represents a natural number)
+    * @return minimum natural number in the list (i.e., of all second elements in the tuples) if the list is non-empty and otherwise 0
+    */
+  def minInRangeOfList(termList: isa.TermList): BigInt = {
+    if(termList.list.isEmpty) {
+      0
+    } else {
+      rangeOfList(termList).min
+    }
   }
 
   /***

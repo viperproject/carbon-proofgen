@@ -36,10 +36,13 @@ case class MethodRelationalProofGenerator(
 
   val constReprBasic = TermIdent("const_repr_basic")
 
-  val funReprConcrete = TermIdent("fun_repr_concrete")
+  val funReprConcrete = TermIdent(ViperBoogieRelationIsa.funReprConcreteName)
+
+  val typeInterpBplName = "type_interp_bpl"
+
+  val basicDisjointnessLemmasName = "basic_disjointness_lemmas"
 
   def generateRelationalProof() : (Theory, DefaultRelationalProofData) = {
-
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
     val viperVarContextDef = DefDecl(
@@ -74,6 +77,7 @@ case class MethodRelationalProofGenerator(
       varRelationBoundedByName,
       ViperBoogieIsaUtil.allVarsInListBoundedBy(
         TermIdent(varRelationListName),
+        ViperBoogieIsaUtil.minInRangeOfList(varRelationList),
         ViperBoogieIsaUtil.maxInRangeOfList(varRelationList)
       ),
       Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(varRelationListName)))))
@@ -130,7 +134,18 @@ case class MethodRelationalProofGenerator(
 
     outerDecls += stateRelInitialAbbrev
 
-    outerDecls += BoogieIsaTerm.typeInterpBplAbbrev
+    outerDecls += BoogieIsaTerm.typeInterpBplAbbrev(typeInterpBplName)
+
+    val basicDisjointnessLemmas = LemmasDecl(
+      basicDisjointnessLemmasName,
+      Seq(
+        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", varRelationBoundedByName)),
+        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", progAccessor.fieldRelBoundedLemma)),
+        not_satisfies_prop_set("const_repr_basic_bound_2")
+      )
+    )
+
+    outerDecls += basicDisjointnessLemmas
 
     outerDecls += mainProofLocale()
 
@@ -150,7 +165,14 @@ case class MethodRelationalProofGenerator(
         decls = outerDecls.toSeq
       )
 
-    val relationalProofData = DefaultRelationalProofData(theoryName, varRelationBoundedBy.name, varContextBplAbbrev.name)
+    val relationalProofData = DefaultRelationalProofData(
+      theoryName = theoryName,
+      translationRecordDefName = translationRecordName,
+      varRelationListDefName = varRelationListName,
+      varRelationBoundsLemmaName = varRelationBoundedBy.name,
+      basicDisjointnessLemmaName = basicDisjointnessLemmasName,
+      varContextBplDefName = varContextBplAbbrev.name
+    )
 
     (theory, relationalProofData)
   }
@@ -172,14 +194,14 @@ case class MethodRelationalProofGenerator(
 
     val contextElem = ContextElem(
       //fixes
-      Seq( ( exprContextBpl, ViperBoogieRelationIsa.expressionContextType(VarType("'a")) ),
-           ( totalContextVpr, ViperIsaType.totalContext(VarType("'a")))
+      Seq( ( exprContextBpl, ViperBoogieRelationIsa.expressionContextType(VarType("a")) ),
+           ( totalContextVpr, ViperIsaType.totalContext(VarType("a")))
       ),
 
       //assumes
       Seq( (Some("VarContextBpl [simp]"), TermBinary.eq(BoogieExpressionContext.varContext(exprContextBpl), TermIdent(varContextBoogieName))),
            (Some(s"$tyInterpEqBpl [simp]"), TermBinary.eq(BoogieExpressionContext.typeInterp(exprContextBpl),
-             TermApp(TermIdent(BoogieIsaTerm.typeInterpBplAbbrev.name), absvalInterpVpr))
+             TermApp(TermIdent(typeInterpBplName), absvalInterpVpr))
            ),
         (Some(bplCtxtWfLabel), BoogieExpressionContext.wellFormed(
            viperProgram = progAccessor.vprProgram,
@@ -216,17 +238,6 @@ case class MethodRelationalProofGenerator(
 
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
     outerDecls += varContextWfBplLemma
-
-    val basicDisjointnessLemmas = LemmasDecl(
-      "basic_disjointness_lemmas",
-      Seq(
-        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", varRelationBoundedByName)),
-        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", progAccessor.fieldRelBoundedLemma)),
-        not_satisfies_prop_set("const_repr_basic_bound_2")
-      )
-    )
-
-    outerDecls += basicDisjointnessLemmas
 
     val lookupVarRelTac = "lookup_var_rel_tac"
     val simpWithTrDef = "simp_with_tr_def_tac"
@@ -376,7 +387,7 @@ case class MethodRelationalProofGenerator(
 
         MLUtil.defineVal(auxVarDisjTac,
           //map_upd_set_dom for the method call case
-          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmas.name, "map_upd_set_dom")))
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmasName, "map_upd_set_dom")))
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(

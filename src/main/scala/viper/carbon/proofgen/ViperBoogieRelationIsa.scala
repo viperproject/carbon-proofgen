@@ -15,6 +15,8 @@ object ViperBoogieRelationIsa {
 
   val stateRelEmptyName = "state_rel_empty"
 
+  def viperBoogieAbstractValueType(domainValueType: TypeIsa) = DataType("vbpl_absval", domainValueType)
+
   val viperBoogieAbstractTypeInterpId = TermIdent("vbpl_absval_ty")
 
   def viperBoogieAbstractTypeInterp(tyReprBpl: Term) : Term = TermApp(viperBoogieAbstractTypeInterpId, tyReprBpl)
@@ -161,7 +163,7 @@ object BoogieExpressionContext {
 
   val wfId = TermIdent("ctxt_wf")
 
-  val exprContextRecordName = "econtext_bpl"
+  val exprContextRecordName = "econtext_bpl_general"
 
   def exprContextRecordType(abstractValueType: TypeIsa) : TypeIsa = DataType(exprContextRecordName, abstractValueType)
 

@@ -16,6 +16,7 @@ case class IsaBoogieGlobalAccessor(theoryName: String, fields: Seq[sil.Field]) {
 
   val constDecls : TermIdent = TermIdent(globalDataDecl("constants_vdecls"))
   val globalDecls : TermIdent = TermIdent(globalDataDecl("globals_vdecls"))
+  val axiomDecls : TermIdent = TermIdent(globalDataDecl("axioms"))
 
   def getVarId(g: BoogieConstGlobal) : Int = {
     IsaBoogieGlobalAccessor.constantsIdMap.get(g).fold

@@ -55,4 +55,30 @@ object BoogieIsaTerm {
 
   val mapOfLookupVarDeclsTyThm : String = "map_of_lookup_vdecls_ty"
 
+  def typeInterpBplAbbrev(name: String) : AbbrevDecl =
+    AbbrevDecl(
+      name,
+      None,
+      (Seq(TermIdent("A")), ViperBoogieRelationIsa.viperBoogieAbstractTypeInterp(TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A"))))
+    )
+
+  def procIsCorrect(
+                     typeInterp: Term,
+                     functionDecls: Term,
+                     constDecls: Term,
+                     globalVarDecls: Term,
+                     axiomDecls: Term,
+                     proc: Term,
+                     vprDomainValueType: TypeIsa
+                   ): Term =
+  {
+    TermApp(TermIdent("proc_is_correct"),
+      Seq(typeInterp, functionDecls, constDecls, globalVarDecls, axiomDecls, proc,
+        TermWithExplicitType(
+          TermIdent("Ast.proc_body_satisfies_spec"),
+          DataType("proc_body_satisfies_spec_ty", Seq(ViperBoogieRelationIsa.viperBoogieAbstractValueType(vprDomainValueType), BoogieIsaType.astType))
+        )
+    ))
+  }
+
 }

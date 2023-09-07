@@ -96,7 +96,7 @@ class DefaultProofGenInterface(val proofDir: Path,
     vprProg.methods.foreach(
       method => {
         val methodDir = methodProofDirName(method)
-        for (methodTheoryName <- Seq(methodProgTheory(method), methodRelationalProof(method))) {
+        for (methodTheoryName <- Seq(methodProgTheory(method), methodRelationalProofName(method))) {
           sb.appendInner(methodDir+"/"+methodTheoryName).newLine
         }
       }
@@ -105,7 +105,9 @@ class DefaultProofGenInterface(val proofDir: Path,
     Files.write(proofDir.resolve("ROOT"), sb.toString().getBytes(StandardCharsets.UTF_8))
   }
 
-  def methodRelationalProof(m: sil.Method) : String = s"relational_proof_${m.name}"
+  def methodRelationalProofName(m: sil.Method) : String = s"relational_proof_${m.name}"
+
+  def methodEndToEndProofName(m: sil.Method) : String = s"end_to_end_proof_${m.name}"
 
   def methodProofDirName(m: sil.Method) : String =  s"method_proof_${m.name}"
   def methodProofPath(m: sil.Method) : Path =
@@ -131,8 +133,8 @@ class DefaultProofGenInterface(val proofDir: Path,
         globalDataBpl,
         bplProgTheoryPath)
 
-      val methodProofGenerator = MethodRelationalProofGenerator(
-        methodRelationalProof(m),
+      val relationalProofGenerator = MethodRelationalProofGenerator(
+        methodRelationalProofName(m),
         vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
         vprProgGlobalData,
         varTranslation,
@@ -140,12 +142,22 @@ class DefaultProofGenInterface(val proofDir: Path,
         methodProofHint,
         funProofGenInterface)
 
-      val relationalProofTheory = methodProofGenerator.generateRelationalProof()
-
-      Seq(relationalProofTheory)
+      val (relationalProofTheory, relationalProofData) = relationalProofGenerator.generateRelationalProof()
 
       StoreTheory.storeTheory(relationalProofTheory, dir)
-  }
 
+      val endToEndProofGenerator = MethodEndToEndProofGenerator(
+        theoryName = methodEndToEndProofName(m),
+        methodAccessor = vprProgGlobalData.allMethodsAccessor.methodAccessor(m.name),
+        viperProgAccessor = vprProgGlobalData,
+        endToEndData = endToEndGlobalData,
+        relationalProofData = relationalProofData ,
+        boogieProgAccessor = bplProcAccessor
+      )
+
+      val endToEndTheoryProof = endToEndProofGenerator.generatePartialEndToEndProof()
+
+      StoreTheory.storeTheory(endToEndTheoryProof, dir)
+  }
 
 }

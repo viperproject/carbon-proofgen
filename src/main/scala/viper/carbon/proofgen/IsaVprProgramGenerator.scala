@@ -43,6 +43,7 @@ object IsaVprProgramGenerator {
         "field_rel_bound",
         ViperBoogieIsaUtil.allVarsInListBoundedBy(
           TermIdent(fieldRelationListDef.name),
+          ViperBoogieIsaUtil.minInRangeOfList(fieldRelationList),
           ViperBoogieIsaUtil.maxInRangeOfList(fieldRelationList)
         ),
         Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(fieldRelationListDef.name)))))
