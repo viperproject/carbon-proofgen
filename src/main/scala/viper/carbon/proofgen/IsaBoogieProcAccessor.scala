@@ -53,6 +53,15 @@ class IsaBoogieProcAccessor(
 
   private def procDataDecl(declName: String) = IsaUtil.qualifyName(theoryName, declName)
 
+  val globalsLocalsDisjThm = procDataDecl("globals_locals_disj")
+
+  //TODO: Boogie proof generation should generate consts_wf and globals_wf theorems in the global theory file instead of the procedure theory file
+  val constsWfThm: String = procDataDecl("consts_wf")
+  val globalsWfThm: String = procDataDecl("globals_wf")
+
+  val paramsWfThm: String = procDataDecl("params_wf")
+  val localsWfThm: String = procDataDecl("locals_wf")
+
   val paramsDecls : TermIdent = TermIdent(procDataDecl("params_vdecls"))
   val localsDecls : TermIdent = TermIdent(procDataDecl("locals_vdecls"))
 

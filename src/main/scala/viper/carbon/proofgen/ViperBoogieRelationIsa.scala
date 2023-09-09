@@ -127,6 +127,17 @@ object ViperBoogieRelationIsa {
   val wfTotalConsistencyTrivialLemmaName = "wf_total_consistency_trivial"
 
   val defaultStateRelOptionsName = "default_state_rel_options"
+
+
+  val constReprBasic = TermIdent("const_repr_basic")
+  val constReprBasicInjLemmaName = "inj_const_repr_basic"
+
+  //order in which the Boogie constant constructors are listed when the corresponding datatype is defined
+  val boogieConstDataOrder = Seq(NoPermConst, FullPermConst, NullConst, ZeroMaskConst, ZeroPMaskConst, EmptyFrameConst)
+
+  def boogieConstTy(typeRepresentation: Term, boogieConst: Term) : Term =
+    TermApp(TermIdent("boogie_const_ty"), Seq(typeRepresentation, boogieConst))
+
 }
 
 object TypeRepresentation {

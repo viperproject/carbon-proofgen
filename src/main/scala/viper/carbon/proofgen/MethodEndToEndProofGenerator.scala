@@ -1,5 +1,6 @@
 package viper.carbon.proofgen
 
+import isabelle.ast
 import isabelle.ast.{BoolConst, ContextElem, DeclareDecl, DefDecl, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, LemmasDecl, OuterDecl, Proof, ProofUtil, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermWithExplicitType, Theory, VarType}
 import viper.carbon.proofgen.end_to_end.IsaViperEndToEndGlobalData
 import viper.silver.{ast => sil}
@@ -20,6 +21,10 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
   private val ctxtBplName = "ctxt_bpl"
   private val ctxtBplDefLemmaName = IsaUtil.definitionLemmaFromName("ctxt_bpl")
+
+  private val varCtxtBplEqLemmaName = "var_context_bpl_eq"
+
+  private val translationRecordDisjointLemmaName = "disjoint_property_aux"
 
   def generatePartialEndToEndProof(): Theory = {
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
@@ -43,7 +48,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
     outerDecls += ctxtBplDef
 
-    val varContextBplEqLemma = LemmaDecl("var_context_bpl_eq",
+    val varContextBplEqLemma = LemmaDecl(varCtxtBplEqLemmaName,
       TermBinary.eq(BoogieExpressionContext.varContext(ctxtBplTerm), relationalProofData.varContextBplDef),
       Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(ctxtBplDef.name)))))
     )
@@ -105,7 +110,6 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
     outerDecls += generateMethodPartialLemma(typeInterpBplAbbrev.name)
 
-
     Theory(theoryName, Seq(relationalProofData.theoryName, "../"+endToEndData.theoryName), outerDecls.toSeq)
   }
 
@@ -145,7 +149,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
        generateBoogiePropertiesProof().methods ++
         (generateMethodRelProof().methods :+ ProofUtil.applyTac(
           ProofUtil.simpTac(
-            Seq(IsaUtil.definitionLemmaFromName(relationalProofData.translationRecordDef.id.toString),
+            Seq(translationRecordDefLemma,
               IsaUtil.definitionLemmaFromName(ViperBoogieRelationIsa.defaultStateRelOptionsName)
             )
           )
@@ -189,12 +193,6 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
   }
 
-  private def generateInitialStateRelProof() : Proof = {
-    val methodsWithoutApply = Seq()
-
-    Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
-  }
-
   private def generateMethodRelProof() : Proof = {
     val methodsWithoutApply = Seq(
       //the method project lemmas are for the variable context
@@ -213,6 +211,87 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     )
 
     Proof(methodsWithoutApply.map(f => ProofUtil.applyTac(f)))
+  }
+
+  private def generateInitialStateRelProof() : Proof = {
+
+    val methodsWithoutApply = Seq(
+      ProofUtil.repeatTac(ProofUtil.ruleTac("exI")),
+      ProofUtil.introTac("conjI"),
+      ProofUtil.preferTac(2),
+      ProofUtil.ruleTac(ProofUtil.OF("init_state_in_state_relation", Seq(TypeRepresentation.wfTyReprBasicLemma, translationRecordDisjointLemmaName))),
+      ProofUtil.simp, //empty state
+      ProofUtil.simp, //total heap well typed
+      ProofUtil.fastforceTacWithIntros(Seq(ViperStateIsaUtil.emptyStateHasValidMaskLemma)), //valid mask
+      ProofUtil.simp, //state consistency
+      ProofUtil.simpTac(ctxtBplDefLemmaName), //type interp equality
+      ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName)), //domain type equality
+      ProofUtil.simp, //Boogie state equality
+    ) ++
+      varTranslationInjectiveProof() ++
+      Seq(
+        ProofUtil.simpTac( // constant and global variable types closed
+          Seq(ctxtBplDefLemmaName, boogieProgAccessor.constsWfThm, boogieProgAccessor.globalsWfThm, BoogieIsaTerm.closedWfTyFunEqThm)
+        ),
+        ProofUtil.simpTac( // parameter and local variable types closed
+          Seq(ctxtBplDefLemmaName, boogieProgAccessor.paramsWfThm, boogieProgAccessor.localsWfThm, BoogieIsaTerm.closedWfTyFunEqThm)
+        ),
+      ) ++
+      globalsLocalsDisjointProof() ++
+      Seq(
+        ProofUtil.simpTac(translationRecordDefLemma), // heap var and heap var def same
+        ProofUtil.simpTac(translationRecordDefLemma) // mask var and mask var def same
+      ) ++
+      fieldRelInjectiveProof() ++
+      Seq(
+        ProofUtil.simpTac(Seq(translationRecordDefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)) //injectivity const representation
+      ) ++
+      fieldRelPropertyProof() ++
+      Seq(
+        //the declared types for the heap and mask are correct
+        ProofUtil.simpTac(Seq(translationRecordDefLemma, ctxtBplDefLemmaName, IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName),
+            ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm, boogieProgAccessor.globalDataAccessor.getGlobalMapOfThm(HeapGlobalVar))
+          )
+        ),
+        ProofUtil.simpTac(Seq(translationRecordDefLemma, ctxtBplDefLemmaName, IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName),
+          ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm, boogieProgAccessor.globalDataAccessor.getGlobalMapOfThm(MaskGlobalVar))
+        ))
+      )
+
+    Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
+  }
+
+  private def varTranslationInjectiveProof() : Seq[String] = {
+    Seq(
+      ProofUtil.simpTac(translationRecordDefLemma),
+      ProofUtil.ruleTac(IsaThmUtil.strictlyOrderedListInjMapOfLemma),
+      ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString))
+    )
+  }
+
+  private def globalsLocalsDisjointProof() : Seq[String] = {
+    Seq(
+      ProofUtil.cutTac(boogieProgAccessor.globalsLocalsDisjThm),
+      ProofUtil.simpTac(ctxtBplDefLemmaName)
+    )
+  }
+
+  private def fieldRelInjectiveProof() : Seq[String] = {
+    Seq(
+      ProofUtil.simpTac(translationRecordDefLemma),
+      ProofUtil.ruleTac(IsaThmUtil.strictlyOrderedListInjMapOfLemma),
+      ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(viperProgAccessor.fieldRel.id.toString))
+    )
+  }
+
+  private def fieldRelPropertyProof() : Seq[String] = {
+    Seq(
+      ProofUtil.simpTac(
+        Seq(IsaUtil.definitionLemmaFromName(viperProgAccessor.vprProgram.id.toString), translationRecordDefLemma, endToEndData.programTotalProgEqLemma)
+      ),
+      ProofUtil.simpTacOnly(Seq("fst_conv", varCtxtBplEqLemmaName)),
+      ProofUtil.eruleTac(ProofUtil.OF(IsaThmUtil.listAll2MapOf, Seq(endToEndData.fieldPropLemma, "field_tr_prop_fst")))
+    )
   }
 
 }

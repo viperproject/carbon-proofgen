@@ -1,7 +1,7 @@
 package viper.carbon.proofgen.end_to_end
 
 import isabelle.ast.{AbbrevDecl, DeclareDecl, DefDecl, IsaTermUtil, IsaUtil, Lambda, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, TermApp, TermBinary, TermIdent, TermQuantifier, TermSet, Theory}
-import viper.carbon.proofgen.{BoogieIsaTerm, FieldConst, IsaBoogieGlobalAccessor, IsaViperGlobalDataAccessor, TypeRepresentation, ViperBoogieRelationIsa, ViperTotalContext}
+import viper.carbon.proofgen.{BoogieIsaTerm, EmptyFrameConst, FieldConst, FullPermConst, IsaBoogieGlobalAccessor, IsaViperGlobalDataAccessor, NoPermConst, NullConst, TypeRepresentation, ViperBoogieRelationIsa, ViperTotalContext, ZeroMaskConst, ZeroPMaskConst}
 
 import scala.collection.mutable.ListBuffer
 
@@ -78,6 +78,50 @@ object EndToEndGlobalDataHelper {
 
     outerDecls += funInterpWfLemma
 
+    val lookupConstantsLemma = LemmaDecl("lookup_constants",
+      TermBinary.eq(
+        BoogieIsaTerm.lookupVarDeclsTy(bplGlobalAccessor.constDecls, TermApp(ViperBoogieRelationIsa.constReprBasic, TermIdent("c"))),
+        IsaTermUtil.some(ViperBoogieRelationIsa.boogieConstTy(TypeRepresentation.makeBasicTypeRepresentation(ViperTotalContext.absvalInterpTotal(vprContextTerm)), TermIdent("c")))
+      ),
+      Proof(
+        ProofUtil.mapApplyTac(
+          "cases c" +:
+          ViperBoogieRelationIsa.boogieConstDataOrder.map(
+            boogieConst =>
+            ProofUtil.simpTac(
+              Seq(ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm, bplGlobalAccessor.getConstantWithoutGlobalsMapOfThm(boogieConst)),
+                IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName)
+              )
+            )
+          )
+        ) :+
+        "done"
+      )
+    )
+
+    val lookupConstantsWithGlobalsLemma = LemmaDecl("lookup_constants_with_globals",
+      TermBinary.eq(
+        BoogieIsaTerm.lookupVarDeclsTy(bplGlobalAccessor.constDecls, TermApp(ViperBoogieRelationIsa.constReprBasic, TermIdent("c"))),
+        IsaTermUtil.some(ViperBoogieRelationIsa.boogieConstTy(TypeRepresentation.makeBasicTypeRepresentation(ViperTotalContext.absvalInterpTotal(vprContextTerm)), TermIdent("c")))
+      ),
+      Proof(
+        ProofUtil.mapApplyTac(
+          "cases c" +:
+            ViperBoogieRelationIsa.boogieConstDataOrder.map(
+              boogieConst =>
+                ProofUtil.simpTac(
+                  Seq(ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm, bplGlobalAccessor.getConstantWithoutGlobalsMapOfThm(boogieConst)),
+                    IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName)
+                  )
+                )
+            )
+        ) :+
+          "done"
+      )
+    )
+
+    outerDecls += lookupConstantsLemma
+
     val ranFieldRelationLemma = LemmaDecl(
       "field_rel_ran",
       TermBinary.eq(
@@ -140,5 +184,7 @@ object EndToEndGlobalDataHelper {
 
     (theory, data)
   }
+
+  private
 
 }

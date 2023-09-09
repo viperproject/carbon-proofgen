@@ -53,6 +53,8 @@ object ProofUtil {
 
   def ruleTac(thm: String) : String = s"(rule $thm)"
 
+  def eruleTac(thm: String) : String = s"(erule $thm)"
+
   def introTac(thm: String) : String = s"(intro $thm)"
 
   def unfoldTac(thm: String) : String = unfoldTac(Seq(thm))
@@ -78,5 +80,10 @@ object ProofUtil {
   val assumeTac : String = "assumption"
 
   val reflTac : String = ruleTac("HOL.refl")
+
+  def preferTac(subgoalId: Int) = s"(prefer $subgoalId)"
+
+  def cutTac(thms: Seq[String]) = s"(cut_tac ${thms.mkString(" ")})"
+  def cutTac(thm: String) = s"(cut_tac $thm)"
 
 }

@@ -38,10 +38,8 @@ case class IsaBoogieGlobalAccessor(theoryName: String, fields: Seq[sil.Field]) {
     { id => id }
   }
 
-  def getGlobalMapOfThm(g: BoogieConstGlobal) : String = mapOfThmFromId(getVarId(g))
-
-  private def mapOfThmFromId(id: Int) : String =
-    IsaUtil.qualifyName(theoryName, "mvar"+id)
+  def getGlobalMapOfThm(g: BoogieConstGlobal) : String = IsaUtil.qualifyName(theoryName, "mvar"+getVarId(g))
+  def getConstantWithoutGlobalsMapOfThm(g: BoogieConstGlobal) : String = IsaUtil.qualifyName(theoryName, "mconst"+getVarId(g))
 
   val numGlobalsAndConstants : Int = {
     IsaBoogieGlobalAccessor.constantsIdMap.size+

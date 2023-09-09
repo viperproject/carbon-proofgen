@@ -10,6 +10,9 @@ object BoogieIsaTerm {
   def lookupVarTy(varContext: Term, varName: Term) : Term =
     TermApp(TermIdent("lookup_var_ty"), varContext, varName)
 
+  def lookupVarDeclsTy(varContext: Term, varName: Term) : Term =
+    TermApp(TermIdent("lookup_vdecls_ty"), varContext, varName)
+
   def wfTy(ty: Term) : Term =
     TermApp(TermIdent("wf_ty"), NatConst(0), ty)
 
@@ -54,6 +57,8 @@ object BoogieIsaTerm {
   val redVarThm : String = "Semantics.RedVar"
 
   val mapOfLookupVarDeclsTyThm : String = "map_of_lookup_vdecls_ty"
+
+  val closedWfTyFunEqThm : String = "closed_wf_ty_fun_eq"
 
   def typeInterpBplAbbrev(name: String) : AbbrevDecl =
     AbbrevDecl(
