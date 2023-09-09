@@ -48,7 +48,13 @@ case class MethodRelationalProofGenerator(
     val viperVarContextDef = DefDecl(
       varContextViperName,
       Some(ArrowType(IsaTypeUtil.natType, IsaTypeUtil.optionType(ViperIsaType.viperTyType))),
-      (Seq(), IsaTermUtil.mapOf(IsaTermUtil.appendList(methodAccessor.methodArgs, methodAccessor.methodRets)))
+      (Seq(), IsaTermUtil.nthOption(IsaTermUtil.appendList(
+        /* we use the types directly here instead of the method declaration, since then the proof of the relational
+        lemma does not need to unfold the method declaration every time the Viper variable context is required
+         */
+        TermList(methodAccessor.origMethod.formalArgs.map(d => ViperIsaType.translate(d.typ))),
+        TermList(methodAccessor.origMethod.formalReturns.map(d => ViperIsaType.translate(d.typ))),
+      )))
     )
 
     outerDecls += viperVarContextDef
@@ -147,7 +153,8 @@ case class MethodRelationalProofGenerator(
 
     outerDecls += basicDisjointnessLemmas
 
-    outerDecls += mainProofLocale()
+    val (relationalProofLocaleDecl, relationalProofLemmaName) = generateRelationalProofLocale()
+    outerDecls += relationalProofLocaleDecl
 
     val theory =
       Theory(
@@ -167,17 +174,19 @@ case class MethodRelationalProofGenerator(
 
     val relationalProofData = DefaultRelationalProofData(
       theoryName = theoryName,
+      relationalLemmaData = RelationalLemmaData(IsaUtil.qualifyName(relationalProofLocaleDecl.name, relationalProofLemmaName), relationalProofLocaleDecl.name),
       translationRecordDefName = translationRecordName,
       varRelationListDefName = varRelationListName,
       varRelationBoundsLemmaName = varRelationBoundedBy.name,
       basicDisjointnessLemmaName = basicDisjointnessLemmasName,
-      varContextBplDefName = varContextBplAbbrev.name
+      varContextVprDefName = viperVarContextDef.name,
+      varContextBplDefName = varContextBoogieName
     )
 
     (theory, relationalProofData)
   }
 
-  private def mainProofLocale() : LocaleDecl = {
+  private def generateRelationalProofLocale() : (LocaleDecl, String) = {
     val exprContextBpl = TermIdent("ectxt")
     val totalContextVpr = TermIdent("ctxt_vpr")
 
@@ -504,7 +513,7 @@ case class MethodRelationalProofGenerator(
 
     outerDecls += mainTheorem
 
-    LocaleDecl("method_proof", contextElem, outerDecls.toSeq)
+    (LocaleDecl("method_proof", contextElem, outerDecls.toSeq), mainTheorem.name)
   }
 
   private def inhalePreconditionProof(stmtRelInfo: String, stmtRelTacHints: String) : Seq[String] = {

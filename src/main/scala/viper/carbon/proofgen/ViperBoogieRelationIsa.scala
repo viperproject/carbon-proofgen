@@ -124,12 +124,16 @@ object ViperBoogieRelationIsa {
   val funReprConcreteInjLemmaName = "fun_repr_concrete_inj"
 
   val trueMonoPropDownwardOrdLemmaName = "true_mono_prop_downward_ord"
+  val wfTotalConsistencyTrivialLemmaName = "wf_total_consistency_trivial"
 
+  val defaultStateRelOptionsName = "default_state_rel_options"
 }
 
 object TypeRepresentation {
 
   val tyReprBasicName : String = "ty_repr_basic"
+
+  val wfTyReprBasicLemma : String = "wf_ty_repr_basic"
 
   private val tyReprBasic = TermIdent(tyReprBasicName)
 

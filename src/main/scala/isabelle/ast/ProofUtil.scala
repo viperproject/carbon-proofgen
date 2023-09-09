@@ -20,6 +20,8 @@ object ProofUtil {
 
   def applyTac(tactic: String) : String = s"apply ($tactic)"
 
+  def mapApplyTac(tactics: Seq[String]) : Seq[String] = tactics.map(tac => applyTac(tac))
+
   def using(thm: String, tactic: String) : String = using(Seq(thm), tactic)
 
   def using(thm: Seq[String], tactic: String) : String  = s"using ${thm.mkString(" ")} $tactic"

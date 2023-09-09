@@ -4,6 +4,8 @@ object IsaTermUtil {
 
   def mapOf(argList: Term) : Term = TermApp(TermIdent("map_of"), argList)
 
+  def nthOption(argList: Term) : Term = TermApp(TermIdent("nth_option"), argList)
+
   def ran(partialFun: Term) : Term = TermApp(TermIdent("ran"), partialFun)
 
   def makeRecord(recordName: String, recordArgs: Seq[Term]) : Term = TermApp(TermIdent(recordName+".make"), recordArgs)

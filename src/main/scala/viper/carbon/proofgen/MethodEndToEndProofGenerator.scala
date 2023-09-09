@@ -18,6 +18,9 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
   private val translationRecordDefLemma = IsaUtil.definitionLemmaFromName(relationalProofData.translationRecordDef.id.toString)
 
+  private val ctxtBplName = "ctxt_bpl"
+  private val ctxtBplDefLemmaName = IsaUtil.definitionLemmaFromName("ctxt_bpl")
+
   def generatePartialEndToEndProof(): Theory = {
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
@@ -27,7 +30,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     val typeInterpBplAbbrev = BoogieIsaTerm.typeInterpBplAbbrev("type_interp_bpl")
     outerDecls += typeInterpBplAbbrev
 
-    val ctxtBplDef = DefDecl("ctxt_bpl", None,
+    val ctxtBplDef = DefDecl(ctxtBplName, None,
       (Seq(), BoogieExpressionContext.makeRecord(
         typeInterp = TermApp(TermIdent(typeInterpBplAbbrev.name), ViperTotalContext.absvalInterpTotal(endToEndData.ctxtVpr)),
         varContext = relationalProofData.varContextBplDef,
@@ -130,24 +133,86 @@ case class MethodEndToEndProofGenerator( theoryName: String,
   }
 
   private def generateMethodPartialProof() : Proof  = {
-    val initTacCommands = Seq(
-        ProofUtil.ruleTac(ProofUtil.OF("end_to_end_vpr_method_correct_partial", Seq("assms", ViperBoogieRelationIsa.trueMonoPropDownwardOrdLemmaName))),
+    val methods =
+      ProofUtil.applyTac(
+        ProofUtil.ruleTac(s"end_to_end_vpr_method_correct_partial[" +
+        s"where ?ctxt = $ctxtBplName, " +
+        s"OF assms ${ViperBoogieRelationIsa.trueMonoPropDownwardOrdLemmaName} ${TypeRepresentation.wfTyReprBasicLemma} ${ViperBoogieRelationIsa.wfTotalConsistencyTrivialLemmaName}" +
+        s"]"
+        )
+      ) +:
+      (generateViperPropertiesProof().methods ++
+       generateBoogiePropertiesProof().methods ++
+        (generateMethodRelProof().methods :+ ProofUtil.applyTac(
+          ProofUtil.simpTac(
+            Seq(IsaUtil.definitionLemmaFromName(relationalProofData.translationRecordDef.id.toString),
+              IsaUtil.definitionLemmaFromName(ViperBoogieRelationIsa.defaultStateRelOptionsName)
+            )
+          )
+        )) ++
+       generateInitialStateRelProof().methods)
+
+    Proof(methods)
+  }
+
+  private def generateViperPropertiesProof() : Proof = {
+    val methodsWithoutApply =
+      Seq(
+        ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName)),
         ProofUtil.simpTacOnly(endToEndData.programTotalProgEqLemma),
         ProofUtil.ruleTac(ProofUtil.simplified(viperProgAccessor.allMethodsAccessor.lookupLemmaName(methodAccessor.origMethod.name),
-          ProofUtil.OF("HOL.sym", viperProgAccessor.methodsProgEqLemma))),
+        ProofUtil.OF("HOL.sym", viperProgAccessor.methodsProgEqLemma))),
         ProofUtil.ruleTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody)),
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodPostcondition).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodArgTypes).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
         ProofUtil.simpTac,
-        ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(boogieProgAccessor.procBodyAstDef)),
-        ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(boogieProgAccessor.procBodyAstDef), IsaUtil.definitionLemmaFromName(boogieProgAccessor.preconditionDef.id.toString))),
-        ProofUtil.ruleTac("HOL.refl"),
-        ProofUtil.simpTacOnly(Seq(viperProgAccessor.methodsProgEqLemma, methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
+        ProofUtil.simpTacOnly(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
+      )
+
+    Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
+  }
+
+  private def generateBoogiePropertiesProof() : Proof = {
+    val procBplDefLemma = IsaUtil.definitionLemmaFromName(boogieProgAccessor.procDef.id.toString)
+
+    val methodsWithoutApply =
+      Seq(
+        ProofUtil.simpTac(Seq(endToEndData.funInterpBplWfLemma, ctxtBplDefLemmaName)),
+        ProofUtil.simpTac(ctxtBplDefLemmaName),
+        ProofUtil.simpTac(ctxtBplDefLemmaName),
+        ProofUtil.simpTac(Seq(procBplDefLemma, ctxtBplDefLemmaName)),
+        ProofUtil.simpTac(Seq(procBplDefLemma, IsaUtil.definitionLemmaFromName(boogieProgAccessor.preconditionDef.id.toString))),
+        ProofUtil.simpTac(procBplDefLemma),
+        ProofUtil.simpTac(procBplDefLemma),
+      )
+
+    Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
+  }
+
+  private def generateInitialStateRelProof() : Proof = {
+    val methodsWithoutApply = Seq()
+
+    Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
+  }
+
+  private def generateMethodRelProof() : Proof = {
+    val methodsWithoutApply = Seq(
+      //the method project lemmas are for the variable context
+      ProofUtil.simpTacOnly(Seq(endToEndData.programTotalProgEqLemma, methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes))),
+      ProofUtil.ruleTac(ProofUtil.simplified(relationalProofData.relationalLemmaName,
+        IsaUtil.definitionLemmaFromName(relationalProofData.varContextVprDef.id.toString))
+      ),
+      ProofUtil.simpTacOnly(IsaUtil.definitionLemmaFromName(relationalProofData.relationalLemmaAssumptionDefName)),
+      ProofUtil.introTac("conjI"),
+      ProofUtil.simpTac(ctxtBplDefLemmaName),
+      ProofUtil.simpTac(ctxtBplDefLemmaName),
+      ProofUtil.ruleTac(BoogieExpressionContext.wfId.id.toString),
+      ProofUtil.simpTac(Seq(endToEndData.funInterpBplWfLemma, ctxtBplDefLemmaName)),
+      ProofUtil.simpTac(endToEndData.programTotalProgEqLemma),
+      ProofUtil.simpTac(ctxtBplDefLemmaName)
     )
 
-    val initTac = initTacCommands.map(f => ProofUtil.applyTac(f))
-
-    Proof(initTac)
+    Proof(methodsWithoutApply.map(f => ProofUtil.applyTac(f)))
   }
 
 }
