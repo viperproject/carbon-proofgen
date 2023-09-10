@@ -6,11 +6,14 @@ case class FunInterpInstantiationData(funInterpVprBpl: String, funInterpVprBplWf
 
 case class FieldRelInstantiationData(ranFieldRelLemma: String, fieldTrPropLemma: String)
 
+case class ConstantsData(lookupConstantsNoGlobalsLemma: String, constantsLookupWithGlobalsLemma: String)
+
 case class DefaultIsaViperEndToEndGlobalData(
                         override val theoryName: String,
                         ctxtVprName: String,
                         programTotalProgEqLemmaName: String,
                         funInterpInstData : FunInterpInstantiationData,
+                        constantsData: ConstantsData,
                         fieldRelInstData: FieldRelInstantiationData,
                         axiomSatLemmaName: String) extends IsaViperEndToEndGlobalData
 {
@@ -27,8 +30,13 @@ case class DefaultIsaViperEndToEndGlobalData(
 
   override def funInterpBplWfLemma: String = qualifyName(funInterpInstData.funInterpBplWfLemma)
 
+  override def constantsLookupWithoutGlobalsLemma: String = qualifyName(constantsData.lookupConstantsNoGlobalsLemma)
+
+  override def constantsLookupWithGlobalsLemma: String = qualifyName(constantsData.constantsLookupWithGlobalsLemma)
+
+  override def ranFieldRelLemma: String =qualifyName(fieldRelInstData.ranFieldRelLemma)
+
   override def fieldPropLemma: String = qualifyName(fieldRelInstData.fieldTrPropLemma)
 
   override def axiomSatLemma: String = qualifyName(axiomSatLemmaName)
-
 }

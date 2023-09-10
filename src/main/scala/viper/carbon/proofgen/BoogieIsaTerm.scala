@@ -67,8 +67,10 @@ object BoogieIsaTerm {
       (Seq(TermIdent("A")), ViperBoogieRelationIsa.viperBoogieAbstractTypeInterp(TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A"))))
     )
 
-  def procIsCorrect(
-                     typeInterp: Term,
+  def axiomsSat(typeInterp: Term, varContext: Term, funInterp: Term, normalState: Term, axioms: Term)  =
+    TermApp(TermIdent("axioms_sat"), Seq(typeInterp, varContext, funInterp, normalState, axioms))
+
+  def procIsCorrect( typeInterp: Term,
                      functionDecls: Term,
                      constDecls: Term,
                      globalVarDecls: Term,

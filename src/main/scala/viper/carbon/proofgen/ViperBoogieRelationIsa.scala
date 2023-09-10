@@ -131,12 +131,16 @@ object ViperBoogieRelationIsa {
 
   val constReprBasic = TermIdent("const_repr_basic")
   val constReprBasicInjLemmaName = "inj_const_repr_basic"
+  val constReprBasicRangeLemmaName = "range_const_repr_basic"
 
   //order in which the Boogie constant constructors are listed when the corresponding datatype is defined
   val boogieConstDataOrder = Seq(NoPermConst, FullPermConst, NullConst, ZeroMaskConst, ZeroPMaskConst, EmptyFrameConst)
 
   def boogieConstTy(typeRepresentation: Term, boogieConst: Term) : Term =
     TermApp(TermIdent("boogie_const_ty"), Seq(typeRepresentation, boogieConst))
+
+  def boogieConstRel(constRepr: Term, varContext: Term, normalState: Term) : Term =
+    TermApp(TermIdent("boogie_const_rel"), Seq(constRepr, varContext, normalState))
 
 }
 

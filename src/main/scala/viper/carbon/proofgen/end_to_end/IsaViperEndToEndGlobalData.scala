@@ -10,11 +10,18 @@ trait IsaViperEndToEndGlobalData {
 
   def programTotalProgEqLemma : String
 
+  def constantsLookupWithoutGlobalsLemma : String
+
+  def constantsLookupWithGlobalsLemma : String
+
+
   def funInterpVprBpl : TermIdent
 
   def funInterpVprBplWfLemma : String
 
   def funInterpBplWfLemma : String
+
+  def ranFieldRelLemma : String
 
   def fieldPropLemma : String
 

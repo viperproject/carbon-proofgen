@@ -20,6 +20,8 @@ object ProofUtil {
 
   def applyTac(tactic: String) : String = s"apply ($tactic)"
 
+  def preferTac(subgoalId: Int) = s"prefer $subgoalId"
+
   def mapApplyTac(tactics: Seq[String]) : Seq[String] = tactics.map(tac => applyTac(tac))
 
   def using(thm: String, tactic: String) : String = using(Seq(thm), tactic)
@@ -75,13 +77,13 @@ object ProofUtil {
   def forceTacWithIntros(thms: Seq[String]) : String = builtInTac("force", thms, Seq(), Seq())
   def forceTacWithSimps(thms: Seq[String]) : String = builtInTac("force", Seq(), Seq(), thms)
 
+  val blastTac: String = "blast"
+
   def repeatTac(tac: String) = s"($tac)+"
 
   val assumeTac : String = "assumption"
 
   val reflTac : String = ruleTac("HOL.refl")
-
-  def preferTac(subgoalId: Int) = s"(prefer $subgoalId)"
 
   def cutTac(thms: Seq[String]) = s"(cut_tac ${thms.mkString(" ")})"
   def cutTac(thm: String) = s"(cut_tac $thm)"
