@@ -23,7 +23,11 @@ trait IsaViperEndToEndGlobalData {
 
   def ranFieldRelLemma : String
 
-  def fieldPropLemma : String
+  def injFieldRelLemma : String
+
+  def fieldPropWithoutGlobalsLemma : String
+
+  def fieldPropWithGlobalsLemma : String
 
   def axiomSatLemma : String
 

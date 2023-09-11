@@ -28,4 +28,8 @@ object IsaTermUtil {
 
   val undefined : Term = TermIdent("undefined")
 
+  def injectiveOnDom(fun: Term, domain: Term) : Term = TermApp(TermIdent("inj_on"), fun, domain)
+
+  def domainOfPartialFun(fun: Term) : Term = TermApp(TermIdent("dom"), fun)
+
 }

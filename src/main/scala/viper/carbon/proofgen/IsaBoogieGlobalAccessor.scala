@@ -55,10 +55,10 @@ case object IsaBoogieGlobalAccessor {
     Seq(NullConst,
       //AllocatedConst, (relevant if do not use --disableAllocEncoding option)
       ZeroMaskConst,
-      ZeroPMaskConst,
+      //ZeroPMaskConst,
       NoPermConst,
-      FullPermConst,
-      EmptyFrameConst)
+      FullPermConst)
+      //EmptyFrameConst)
 
   private val constantsIdMap : Map[BoogieConstGlobal, Int] =
     constantsOrder.zipWithIndex.toMap
