@@ -16,7 +16,7 @@ import viper.carbon.verifier.{Environment, Verifier}
 import viper.carbon.boogie.Implicits._
 import viper.silver.ast.utility._
 import viper.carbon.modules.components.{DefinednessComponent, DefinednessState, ExhaleComponent, InhaleComponent}
-import viper.carbon.proofgen.hints.{ExhaleComponentProofHint, InhaleComponentProofHint}
+import viper.carbon.proofgen.hints.{BoogieDeclNotSupportedHint, ExhaleComponentProofHint, InhaleComponentProofHint}
 import viper.silver.verifier.{NullPartialVerificationError, PartialVerificationError, errors}
 
 import scala.collection.mutable.ListBuffer
@@ -91,73 +91,78 @@ with DefinednessComponent with ExhaleComponent with InhaleComponent {
         ConstDecl(assumeFunctionsAboveName, Int)
     }
     fp ++
-      CommentedDecl("Declarations for function framing",
-        TypeDecl(frameType) ++
-          ConstDecl(emptyFrameName, frameType) ++
-          Func(frameFragmentName, Seq(LocalVarDecl(Identifier("t"), TypeVar("T"))), frameType) ++
-          Func(condFrameName, Seq(LocalVarDecl(Identifier("p"), permType), LocalVarDecl(Identifier("f"), frameType)), frameType) ++
-          Func(dummyTriggerName, Seq(LocalVarDecl(Identifier("t"), TypeVar("T"))), Bool) ++
-          Func(combineFramesName,
-            Seq(LocalVarDecl(Identifier("a"), frameType), LocalVarDecl(Identifier("b"), frameType)),
-            frameType), size = 1) ++
-      CommentedDecl("Definition of conditional frame fragments", {
-        val params = Seq(LocalVarDecl(Identifier("p"), permType), LocalVarDecl(Identifier("f"), frameType))
-        val condFrameApp = FuncApp(condFrameName, params map (_.l), frameType)
-        Axiom(Forall(params, Trigger(condFrameApp),
-          condFrameApp === CondExp(LocalVar(Identifier("p"), permType) > RealLit(0),LocalVar(Identifier("f"), frameType), emptyFrame)
-        ))
-      }
-      ) ++
-      CommentedDecl("Function for recording enclosure of one predicate instance in another",
-        Func(insidePredicateName,
-          Seq(
-            LocalVarDecl(Identifier("p"), predicateVersionFieldType("A")),
-            LocalVarDecl(Identifier("v"), predicateVersionType),
-            LocalVarDecl(Identifier("q"), predicateVersionFieldType("B")),
-            LocalVarDecl(Identifier("w"), predicateVersionType)
-          ),
-          Bool), size = 1) ++
-      CommentedDecl(s"Transitivity of ${insidePredicateName.name}", {
-        val vars1 = Seq(
-          LocalVarDecl(Identifier("p"), predicateVersionFieldType("A")),
-          LocalVarDecl(Identifier("v"), predicateVersionType)
-        )
-        val vars2 = Seq(
-          LocalVarDecl(Identifier("q"), predicateVersionFieldType("B")),
-          LocalVarDecl(Identifier("w"), predicateVersionType)
-        )
-        val vars3 = Seq(
-          LocalVarDecl(Identifier("r"), predicateVersionFieldType("C")),
-          LocalVarDecl(Identifier("u"), predicateVersionType)
-        )
-        val f1 = FuncApp(insidePredicateName, (vars1 ++ vars2) map (_.l), Bool)
-        val f2 = FuncApp(insidePredicateName, (vars2 ++ vars3) map (_.l), Bool)
-        val f3 = FuncApp(insidePredicateName, (vars1 ++ vars3) map (_.l), Bool)
-        Axiom(
-          Forall(
-            vars1 ++ vars2 ++ vars3,
-            Trigger(Seq(f1, f2)),
-            (f1 && f2) ==> f3
-          )
-        )
-      }, size = 1) ++
-      CommentedDecl(s"Knowledge that two identical instances of the same predicate cannot be inside each other", {
-        val p = LocalVarDecl(Identifier("p"), predicateVersionFieldType())
-        val vars = Seq(
-          p,
-          LocalVarDecl(Identifier("v"), predicateVersionType),
-          p,
-          LocalVarDecl(Identifier("w"), predicateVersionType)
-        )
-        val f = FuncApp(insidePredicateName, vars map (_.l), Bool)
-        Axiom(
-          Forall(
-            vars.distinct,
-            Trigger(f),
-            UnExp(Not, f)
-          )
-        )
-      }, size = 1)
+      (if(verifier.generateProofs) {
+        Nil
+      } else {
+        //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since functions and predicates are not supported)
+        CommentedDecl("Declarations for function framing",
+          TypeDecl(frameType) ++
+            ConstDecl(emptyFrameName, frameType) ++
+            Func(frameFragmentName, Seq(LocalVarDecl(Identifier("t"), TypeVar("T"))), frameType) ++
+            Func(condFrameName, Seq(LocalVarDecl(Identifier("p"), permType), LocalVarDecl(Identifier("f"), frameType)), frameType) ++
+            Func(dummyTriggerName, Seq(LocalVarDecl(Identifier("t"), TypeVar("T"))), Bool) ++
+            Func(combineFramesName,
+              Seq(LocalVarDecl(Identifier("a"), frameType), LocalVarDecl(Identifier("b"), frameType)),
+              frameType), size = 1) ++
+          CommentedDecl("Definition of conditional frame fragments", {
+            val params = Seq(LocalVarDecl(Identifier("p"), permType), LocalVarDecl(Identifier("f"), frameType))
+            val condFrameApp = FuncApp(condFrameName, params map (_.l), frameType)
+            Axiom(Forall(params, Trigger(condFrameApp),
+              condFrameApp === CondExp(LocalVar(Identifier("p"), permType) > RealLit(0),LocalVar(Identifier("f"), frameType), emptyFrame)
+            ))
+          }
+          ) ++
+          CommentedDecl("Function for recording enclosure of one predicate instance in another",
+            Func(insidePredicateName,
+              Seq(
+                LocalVarDecl(Identifier("p"), predicateVersionFieldType("A")),
+                LocalVarDecl(Identifier("v"), predicateVersionType),
+                LocalVarDecl(Identifier("q"), predicateVersionFieldType("B")),
+                LocalVarDecl(Identifier("w"), predicateVersionType)
+              ),
+              Bool), size = 1) ++
+          CommentedDecl(s"Transitivity of ${insidePredicateName.name}", {
+            val vars1 = Seq(
+              LocalVarDecl(Identifier("p"), predicateVersionFieldType("A")),
+              LocalVarDecl(Identifier("v"), predicateVersionType)
+            )
+            val vars2 = Seq(
+              LocalVarDecl(Identifier("q"), predicateVersionFieldType("B")),
+              LocalVarDecl(Identifier("w"), predicateVersionType)
+            )
+            val vars3 = Seq(
+              LocalVarDecl(Identifier("r"), predicateVersionFieldType("C")),
+              LocalVarDecl(Identifier("u"), predicateVersionType)
+            )
+            val f1 = FuncApp(insidePredicateName, (vars1 ++ vars2) map (_.l), Bool)
+            val f2 = FuncApp(insidePredicateName, (vars2 ++ vars3) map (_.l), Bool)
+            val f3 = FuncApp(insidePredicateName, (vars1 ++ vars3) map (_.l), Bool)
+            Axiom(
+              Forall(
+                vars1 ++ vars2 ++ vars3,
+                Trigger(Seq(f1, f2)),
+                (f1 && f2) ==> f3
+              )
+            )
+          }, size = 1) ++
+          CommentedDecl(s"Knowledge that two identical instances of the same predicate cannot be inside each other", {
+            val p = LocalVarDecl(Identifier("p"), predicateVersionFieldType())
+            val vars = Seq(
+              p,
+              LocalVarDecl(Identifier("v"), predicateVersionType),
+              p,
+              LocalVarDecl(Identifier("w"), predicateVersionType)
+            )
+            val f = FuncApp(insidePredicateName, vars map (_.l), Bool)
+            Axiom(
+              Forall(
+                vars.distinct,
+                Trigger(f),
+                UnExp(Not, f)
+              )
+            )
+          }, size = 1)
+      })
   }
 
   override def start(): Unit = {

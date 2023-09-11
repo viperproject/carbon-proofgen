@@ -36,8 +36,8 @@ object Transformer {
             case ConstDecl(name, typ, unique) => ConstDecl(name, go(typ), unique)
             case TypeDecl(_) => parent
             case TypeAlias(n, de) => TypeAlias(go(n), go(de))
-            case Func(name, args, typ, attrs) => Func(name, args map go, go(typ), attrs)
-            case Axiom(exp) => Axiom(go(exp))
+            case Func(name, args, typ, attrs, hint) => Func(name, args map go, go(typ), attrs, hint)
+            case Axiom(exp, hint) => Axiom(go(exp), hint)
             case GlobalVarDecl(name, typ) => GlobalVarDecl(name, go(typ))
             case Procedure(name, ins, outs, body) => Procedure(name, ins map go, outs map go, go(body))
             case CommentedDecl(s, ds, a, b) => CommentedDecl(s, ds map go, a, b)
@@ -135,8 +135,8 @@ object DuplicatingTransformer {
             case ConstDecl(name, typ, unique) => go(typ) map (ConstDecl(name, _, unique))
             case TypeDecl(_) => Seq(parent)
             case TypeAlias(n, de) => for {nResult <- go(n); deResult <- go(de)} yield TypeAlias(nResult, deResult)
-            case Func(name, args, typ, attrs) => for {argsResult <- goSeq(args); typResult <- go(typ)} yield Func(name, argsResult, typResult, attrs)
-            case Axiom(exp) => go(exp) map (Axiom(_))
+            case Func(name, args, typ, attrs, hint) => for {argsResult <- goSeq(args); typResult <- go(typ)} yield Func(name, argsResult, typResult, attrs, hint)
+            case Axiom(exp, hint) => go(exp) map (Axiom(_, hint))
             case GlobalVarDecl(name, typ) => go(typ) map (GlobalVarDecl(name, _))
             case Procedure(name, ins, outs, body) =>
               for {insResult <- goSeq(ins); outsResult <- goSeq(outs); bodyResult <- go(body)} yield

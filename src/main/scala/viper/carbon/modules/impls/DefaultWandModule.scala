@@ -110,7 +110,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
   }
 
   override def preamble = wandToShapes.values.collect({
-    case fun@Func(name,args,typ,_) =>
+    case fun@Func(name,args,typ,_,_) =>
       val vars = args.map(decl => decl.l)
       val f0 = FuncApp(name,vars,typ)
       val f1 = FuncApp(heapModule.wandMaskIdentifier(name), vars, heapModule.predicateMaskFieldTypeOfWand(name.name)) // w#sm (wands secondary mask)
@@ -146,7 +146,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
     val shape:WandShape = wandToShapes(wand.structure(mainModule.verifier.program))
 
     shape match {
-      case Func(name, _, typ,_) => FuncApp(name, arguments.map(arg => expModule.translateExp(arg)), typ)
+      case Func(name, _, typ, _, _) => FuncApp(name, arguments.map(arg => expModule.translateExp(arg)), typ)
     }
   }
 
@@ -161,7 +161,7 @@ DefaultWandModule(val verifier: Verifier) extends WandModule with StmtComponent 
     val shape:WandShape = wandToShapes(wand.structure(mainModule.verifier.program))
 
     shape match {
-      case Func(name, _, typ,_) =>
+      case Func(name, _, typ, _, _) =>
         if(ftsm == 0){
           FuncApp(heapModule.wandFtIdentifier(name), arguments.map(arg => expModule.translateExp(arg)), typ)
         }else if(ftsm == 1){

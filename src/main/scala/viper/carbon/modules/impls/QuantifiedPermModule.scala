@@ -140,52 +140,72 @@ class QuantifiedPermModule(val verifier: Verifier)
     val permInZeroPMask = currentPermission(zeroPMask, obj.l, field.l, true)
 
     // permission type
-    TypeAlias(permType, Real) ::
+    TypeAlias(permType, Real) ++
       // mask and mask type
       (if (verifier.usePolyMapsInEncoding)
         TypeAlias(maskType, MapType(Seq(refType, fieldType), permType, fieldType.freeTypeVars))
-      else TypeDecl(maskType)) ::
-      GlobalVarDecl(maskName, maskType) ::
+      else TypeDecl(maskType)) ++
+      GlobalVarDecl(maskName, maskType) ++
       // zero mask
-      ConstDecl(zeroMaskName, maskType) ::
+      ConstDecl(zeroMaskName, maskType) ++
       Axiom(Forall(
         Seq(obj, field),
         Trigger(permInZeroMask),
-        (permInZeroMask === noPerm))) ::
+        (permInZeroMask === noPerm))) ++
       // pmask type
       (if(verifier.usePolyMapsInEncoding)
         TypeAlias(pmaskType, MapType(Seq(refType, fieldType), Bool, fieldType.freeTypeVars))
-      else TypeDecl(pmaskType)) ::
+      else TypeDecl(pmaskType)) ++
       // zero pmask
-      ConstDecl(zeroPMaskName, pmaskType) ::
-      Axiom(Forall(
-        Seq(obj, field),
-        Trigger(permInZeroPMask),
-        permInZeroPMask === FalseLit())) ::
-      // predicate mask function
-      Func(predicateMaskFieldName,
-        Seq(LocalVarDecl(Identifier("f"), predicateVersionFieldType())),
-        predicateMaskFieldType) ::
-      Func(wandMaskFieldName,
-        Seq(LocalVarDecl(Identifier("f"), predicateVersionFieldType())),
-        predicateMaskFieldType) ::
+      (if(!verifier.generateProofs) {
+        //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since predicates are not supported)
+        ConstDecl(zeroPMaskName, pmaskType) ++
+          Axiom(Forall(
+            Seq(obj, field),
+            Trigger(permInZeroPMask),
+            permInZeroPMask === FalseLit()))
+      } else {
+        Nil
+      }) ++
+      (if(!verifier.generateProofs) {
+        //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since predicates and wands are not supported)
+        // predicate mask function
+        Func(predicateMaskFieldName,
+          Seq(LocalVarDecl(Identifier("f"), predicateVersionFieldType())),
+          predicateMaskFieldType) ++
+          Func(wandMaskFieldName,
+            Seq(LocalVarDecl(Identifier("f"), predicateVersionFieldType())),
+            predicateMaskFieldType)
+      } else {
+        Nil
+      }) ++
       // permission amount constants
-      ConstDecl(noPermName, permType) ::
-      Axiom(noPerm === RealLit(0)) ::
-      ConstDecl(fullPermName, permType) ::
-      Axiom(fullPerm === RealLit(1)) ::
+      ConstDecl(noPermName, permType) ++
+      Axiom(noPerm === RealLit(0)) ++
+      ConstDecl(fullPermName, permType) ++
+      Axiom(fullPerm === RealLit(1)) ++
       // permission constructor
-      Func(permConstructName, Seq(LocalVarDecl(Identifier("a"), Real), LocalVarDecl(Identifier("b"), Real)), permType) :: Nil ++
+      (if(!verifier.generateProofs){
+        //CARBON_CHANGE: this declaration is not required for the subset supported by proof generation
+       Func(permConstructName, Seq(LocalVarDecl(Identifier("a"), Real), LocalVarDecl(Identifier("b"), Real)), permType)
+      } else {
+        Nil
+      }) ++
       //read and update mask/pmask
       (if(!verifier.usePolyMapsInEncoding) {
         val maskPolyMapDesugarHelper = PolyMapDesugarHelper(refType, fieldTypeConstructor, namespace)
         val maskRep = maskPolyMapDesugarHelper.desugarPolyMap(maskType, (readMaskName, updateMaskName), _ => permType)
-        val pmaskRep = maskPolyMapDesugarHelper.desugarPolyMap(pmaskType, (readPMaskName, updatePMaskName), _ => Bool)
 
         MaybeCommentedDecl("read and update permission mask",
           maskRep.select ++ maskRep.store ++ maskRep.axioms) ++
-        MaybeCommentedDecl("read and update known-folded mask",
+        (if(!verifier.generateProofs) {
+          //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since predicates are not supported)
+          val pmaskRep = maskPolyMapDesugarHelper.desugarPolyMap(pmaskType, (readPMaskName, updatePMaskName), _ => Bool)
+          MaybeCommentedDecl("read and update known-folded mask",
             pmaskRep.select ++ pmaskRep.store ++ pmaskRep.axioms)
+        } else {
+          Nil
+        })
       } else {
         Nil
       }) ++
@@ -215,20 +235,25 @@ class QuantifiedPermModule(val verifier: Verifier)
           funcApp <==> permissionPositive(permission)
         ))
     } ++ {
-      val obj = LocalVarDecl(Identifier("o")(axiomNamespace), refType)
-      val field = LocalVarDecl(Identifier("f")(axiomNamespace), fieldType)
-      val args = Seq(resultMask,summandMask1,summandMask2)
-      val funcApp = FuncApp(sumMasks, args map (_.l), Bool)
-      val permResult = currentPermission(resultMask.l, obj.l, field.l)
-      val permSummand1 = currentPermission(summandMask1.l,obj.l,field.l)
-      val permSummand2 = currentPermission(summandMask2.l,obj.l,field.l)
-      Func(sumMasks,args,Bool) ++
-        Axiom(Forall(
-          args++Seq(obj,field),
-          Trigger(Seq(funcApp,permResult)) ++ Trigger(Seq(funcApp,permSummand1)) ++
-            Trigger(Seq(funcApp,permSummand2)),
-          funcApp ==> (permResult === (permSummand1 + permSummand2))
-        ))
+      if(!verifier.generateProofs) {
+        //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since quantified permissions, wands, and gotos are not supported)
+        val obj = LocalVarDecl(Identifier("o")(axiomNamespace), refType)
+        val field = LocalVarDecl(Identifier("f")(axiomNamespace), fieldType)
+        val args = Seq(resultMask,summandMask1,summandMask2)
+        val funcApp = FuncApp(sumMasks, args map (_.l), Bool)
+        val permResult = currentPermission(resultMask.l, obj.l, field.l)
+        val permSummand1 = currentPermission(summandMask1.l,obj.l,field.l)
+        val permSummand2 = currentPermission(summandMask2.l,obj.l,field.l)
+        Func(sumMasks,args,Bool) ++
+          Axiom(Forall(
+            args++Seq(obj,field),
+            Trigger(Seq(funcApp,permResult)) ++ Trigger(Seq(funcApp,permSummand1)) ++
+              Trigger(Seq(funcApp,permSummand2)),
+            funcApp ==> (permResult === (permSummand1 + permSummand2))
+          ))
+      } else {
+        Nil
+      }
     } ++ {
       MaybeCommentedDecl("Function for trigger used in checks which are never triggered",
         triggerFuncs.toSeq)
