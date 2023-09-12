@@ -6,13 +6,15 @@
 
 package viper.carbon.modules.impls
 
+import isabelle.ast.{IsaUtil, ProofUtil}
 import viper.carbon.modules._
 import viper.carbon.modules.components.{CarbonStateComponentIdentifier, DefinednessComponent, InhaleComponent, SimpleStmtComponent}
 import viper.silver.ast.utility.Expressions
 import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
-import viper.carbon.proofgen.hints.{ResetStateComponentHint, StateProofHint, StmtComponentProofHint}
+import viper.carbon.proofgen.{IdenticalOnKnownLocsBoogieFun, IsPredicateFieldBoogieFun, IsWandFieldBoogieFun, ReadHeapBoogieFun, UpdateHeapBoogieFun}
+import viper.carbon.proofgen.hints.{BoogieAxiomProofHint, BoogieFuncProofHint, ResetStateComponentHint, StateProofHint, StmtComponentProofHint}
 import viper.carbon.verifier.Verifier
 import viper.carbon.utility.{PolyMapDesugarHelper, PolyMapRep}
 import viper.silver.ast.utility.QuantifiedPermissions.QuantifiedPermissionAssertion
@@ -104,6 +106,8 @@ class DefaultHeapModule(val verifier: Verifier)
   private val readHeapName = Identifier("readHeap")
   private val updateHeapName = Identifier("updHeap")
 
+  private val readHeapDefLemma = IsaUtil.definitionLemmaFromName("select_heap_aux")
+
   override def refType = NamedType("Ref")
 
   override def fieldTypeConstructor = (2, (ts: Seq[Type]) => NamedType(fieldTypeName, ts).asInstanceOf[Type])
@@ -147,7 +151,8 @@ class DefaultHeapModule(val verifier: Verifier)
       }) ++
       Func(identicalOnKnownLocsName,
         Seq(LocalVarDecl(heapName, heapTyp), LocalVarDecl(exhaleHeapName, heapTyp)) ++ staticMask,
-        Bool) ++
+        Bool,
+        proofHint = Some(BoogieFuncProofHint.createStandardProofHint(IdenticalOnKnownLocsBoogieFun))) ++
       {
         if(useSumOfStatesAxioms)
           Func(identicalOnKnownLocsLiberalName,
@@ -158,7 +163,13 @@ class DefaultHeapModule(val verifier: Verifier)
       {
         if(!verifier.usePolyMapsInEncoding) {
           val heapMapDesugarHelper = PolyMapDesugarHelper(refType, fieldTypeConstructor, heapNamespace)
-          val heapDesugaringRep : PolyMapRep = heapMapDesugarHelper.desugarPolyMap(heapTyp, (readHeapName, updateHeapName), t1 => t1.freeTypeVars(1))
+          val heapDesugaringRep : PolyMapRep = heapMapDesugarHelper.desugarPolyMap(
+            heapTyp, (readHeapName, updateHeapName), t1 => t1.freeTypeVars(1),
+            Some (BoogieFuncProofHint.createStandardProofHint(ReadHeapBoogieFun), BoogieFuncProofHint.createStandardProofHint(UpdateHeapBoogieFun)),
+            Some (BoogieAxiomProofHint.createStandardAxiomHint("read upd heap same ref", ProofUtil.simpTac(readHeapDefLemma))),
+            Some (BoogieAxiomProofHint.createStandardAxiomHint("read upd heap different ref", ProofUtil.simpTac(readHeapDefLemma)))
+          )
+
           heapDesugaringRep.select ++
           heapDesugaringRep.store ++
           MaybeCommentedDecl("Read and update axioms for the heap", heapDesugaringRep.axioms)
@@ -171,10 +182,13 @@ class DefaultHeapModule(val verifier: Verifier)
       */
       Func(isPredicateFieldName,
         Seq(LocalVarDecl(Identifier("f"), fieldType)),
-        Bool) ++
+        Bool,
+        proofHint = Some(BoogieFuncProofHint.createStandardProofHint(IsPredicateFieldBoogieFun))) ++
       Func(isWandFieldName,
         Seq(LocalVarDecl(Identifier("f"), fieldType)),
-        Bool) ++
+        Bool,
+        proofHint = Some(BoogieFuncProofHint.createStandardProofHint(IsWandFieldBoogieFun))
+      ) ++
       (if(!verifier.generateProofs) {
         //CARBON_CHANGE: this function is not required for the subset supported by proof generation (since predicates are not supported)
         Func(getPredicateIdName,
@@ -310,7 +324,10 @@ class DefaultHeapModule(val verifier: Verifier)
       identicalFuncApp ==>
         (staticPermissionPositive(obj.l, field.l) ==>
           (lookup(h.l, obj.l, field.l) === lookup(eh.l, obj.l, field.l)))
-    )), size = 1) ++
+    ), proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint(
+      "identical on known locs - direct permission",
+      Seq(ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName("select_heap_aux"))))
+    ))), size = 1) ++
     {
       if(!verifier.generateProofs) { //CARBON_CHANGE: this axiom is not required for the subset supported by proof generation (since predicates are not supported)
         // frame all predicate masks
@@ -473,8 +490,12 @@ class DefaultHeapModule(val verifier: Verifier)
   override def translateField(f: sil.Field) = {
     val field = locationIdentifier(f)
     ConstDecl(field, NamedType(fieldTypeName, Seq(normalFieldType, translateType(f.typ))), unique = true) ++
-      Axiom(UnExp(Not, isPredicateField(Const(field)))) ++
-      Axiom(UnExp(Not, isWandField(Const(field))))
+      Axiom(UnExp(Not, isPredicateField(Const(field))),
+        proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint(s"${f.name} is not a predicate field", ProofUtil.simp))
+      ) ++
+      Axiom(UnExp(Not, isWandField(Const(field))),
+        proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint(s"${f.name} is not a wand field", ProofUtil.simp))
+      )
   }
 
 

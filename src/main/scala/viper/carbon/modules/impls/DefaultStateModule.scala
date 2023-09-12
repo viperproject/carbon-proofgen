@@ -11,7 +11,8 @@ import viper.carbon.verifier.Verifier
 import viper.carbon.boogie._
 import viper.carbon.boogie.Implicits._
 import viper.carbon.modules.components.CarbonStateComponent
-import viper.carbon.proofgen.hints.{IdentityStateComponentHint, StateProofHint, UpdateStateComponentHint}
+import viper.carbon.proofgen.GoodStateBoogieFun
+import viper.carbon.proofgen.hints.{BoogieFuncProofHint, IdentityStateComponentHint, StateProofHint, UpdateStateComponentHint}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.CollectionHasAsScala
@@ -33,7 +34,7 @@ class DefaultStateModule(val verifier: Verifier) extends StateModule {
   }
 
   override def preamble = {
-    Func(Identifier(isGoodState), staticStateContributions(), Bool)
+    Func(Identifier(isGoodState), staticStateContributions(), Bool, proofHint = Some(BoogieFuncProofHint.createStandardProofHint(GoodStateBoogieFun)))
   }
 
   override def reset : Unit = {

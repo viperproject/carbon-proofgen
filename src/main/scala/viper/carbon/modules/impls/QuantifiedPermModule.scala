@@ -6,6 +6,7 @@
 
 package viper.carbon.modules.impls
 
+import isabelle.ast.{IsaUtil, ProofUtil}
 import viper.carbon.modules._
 import viper.carbon.modules.components._
 import viper.silver.ast.utility.Expressions
@@ -36,7 +37,8 @@ import viper.carbon.boogie.Assign
 import viper.carbon.boogie.Func
 import viper.carbon.boogie.TypeAlias
 import viper.carbon.boogie.FuncApp
-import viper.carbon.proofgen.hints.{ExhaleComponentProofHint, ExhaleMainComponentHint, InhaleComponentProofHint, InhaleMainComponentHint, ResetStateComponentHint, StmtComponentProofHint}
+import viper.carbon.proofgen.{GoodMaskBoogieFun, HasPermBoogieFun, ReadMaskBoogieFun, UpdateMaskBoogieFun}
+import viper.carbon.proofgen.hints.{BoogieAxiomProofHint, BoogieFuncProofHint, ExhaleComponentProofHint, ExhaleMainComponentHint, InhaleComponentProofHint, InhaleMainComponentHint, ResetStateComponentHint, StmtComponentProofHint}
 import viper.carbon.utility.PolyMapDesugarHelper
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.utility.rewriter.Traverse
@@ -133,6 +135,8 @@ class QuantifiedPermModule(val verifier: Verifier)
 
   override val pmaskTypeDesugared = PMaskDesugaredRep(readPMaskName, updatePMaskName)
 
+  private val maskRelDefLemma = IsaUtil.definitionLemmaFromName("mask_rel")
+
   override def preamble = {
     val obj = LocalVarDecl(Identifier("o")(axiomNamespace), refType)
     val field = LocalVarDecl(Identifier("f")(axiomNamespace), fieldType)
@@ -151,7 +155,8 @@ class QuantifiedPermModule(val verifier: Verifier)
       Axiom(Forall(
         Seq(obj, field),
         Trigger(permInZeroMask),
-        (permInZeroMask === noPerm))) ++
+        (permInZeroMask === noPerm)),
+        proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint("zero mask", Seq(ProofUtil.simp)))) ++
       // pmask type
       (if(verifier.usePolyMapsInEncoding)
         TypeAlias(pmaskType, MapType(Seq(refType, fieldType), Bool, fieldType.freeTypeVars))
@@ -181,9 +186,9 @@ class QuantifiedPermModule(val verifier: Verifier)
       }) ++
       // permission amount constants
       ConstDecl(noPermName, permType) ++
-      Axiom(noPerm === RealLit(0)) ++
+      Axiom(noPerm === RealLit(0), proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint("const zero perm", Seq(ProofUtil.simp)))) ++
       ConstDecl(fullPermName, permType) ++
-      Axiom(fullPerm === RealLit(1)) ++
+      Axiom(fullPerm === RealLit(1), proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint("const full perm", Seq(ProofUtil.simp)))) ++
       // permission constructor
       (if(!verifier.generateProofs){
         //CARBON_CHANGE: this declaration is not required for the subset supported by proof generation
@@ -194,13 +199,17 @@ class QuantifiedPermModule(val verifier: Verifier)
       //read and update mask/pmask
       (if(!verifier.usePolyMapsInEncoding) {
         val maskPolyMapDesugarHelper = PolyMapDesugarHelper(refType, fieldTypeConstructor, namespace)
-        val maskRep = maskPolyMapDesugarHelper.desugarPolyMap(maskType, (readMaskName, updateMaskName), _ => permType)
+        val maskRep = maskPolyMapDesugarHelper.desugarPolyMap(maskType, (readMaskName, updateMaskName), _ => permType,
+          Some (BoogieFuncProofHint.createStandardProofHint(ReadMaskBoogieFun), BoogieFuncProofHint.createStandardProofHint(UpdateMaskBoogieFun)),
+          Some (BoogieAxiomProofHint.createStandardAxiomHint(" read update mask same ref", Seq(ProofUtil.simp))),
+          Some (BoogieAxiomProofHint.createStandardAxiomHint(" read update mask different ref", Seq(ProofUtil.simp)))
+        )
 
         MaybeCommentedDecl("read and update permission mask",
           maskRep.select ++ maskRep.store ++ maskRep.axioms) ++
         (if(!verifier.generateProofs) {
           //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since predicates are not supported)
-          val pmaskRep = maskPolyMapDesugarHelper.desugarPolyMap(pmaskType, (readPMaskName, updatePMaskName), _ => Bool)
+          val pmaskRep = maskPolyMapDesugarHelper.desugarPolyMap(pmaskType, (readPMaskName, updatePMaskName), _ => Bool, None, None, None)
           MaybeCommentedDecl("read and update known-folded mask",
             pmaskRep.select ++ pmaskRep.store ++ pmaskRep.axioms)
         } else {
@@ -210,10 +219,12 @@ class QuantifiedPermModule(val verifier: Verifier)
         Nil
       }) ++
       // good mask
-      Func(goodMaskName, LocalVarDecl(maskName, maskType), Bool) ++
+      Func(goodMaskName, LocalVarDecl(maskName, maskType), Bool, proofHint = Some(BoogieFuncProofHint.createStandardProofHint(GoodMaskBoogieFun))) ++
       Axiom(Forall(stateModule.staticStateContributions(),
         Trigger(Seq(staticGoodState)),
-        staticGoodState ==> staticGoodMask)) ++ {
+        staticGoodState ==> staticGoodMask),
+        proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint("good state implies good mask", Seq(ProofUtil.forceTacWithSimps(maskRelDefLemma))))
+      ) ++ {
       val perm = currentPermission(obj.l, field.l)
       Axiom(Forall(staticStateContributions(true, true) ++ obj ++ field,
         Trigger(Seq(staticGoodMask, perm)),
@@ -222,18 +233,19 @@ class QuantifiedPermModule(val verifier: Verifier)
           // permissions for fields which aren't predicates are smaller than 1
           // permissions for fields which aren't predicates or wands are smaller than 1
           ((staticGoodMask && heapModule.isPredicateField(field.l).not && heapModule.isWandField(field.l).not) ==> perm <= fullPerm )))
-      ))    } ++ {
+        ), proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint("good mask implies bounded permission", Seq(ProofUtil.simpTac("non_pred_is_bounded_field_bpl"))))
+      ) } ++ {
       val obj = LocalVarDecl(Identifier("o")(axiomNamespace), refType)
       val field = LocalVarDecl(Identifier("f")(axiomNamespace), fieldType)
       val args = staticMask ++ Seq(obj, field)
       val funcApp = FuncApp(hasDirectPermName, args map (_.l), Bool)
       val permission = currentPermission(staticMask(0).l, obj.l, field.l)
-      Func(hasDirectPermName, args, Bool) ++
+      Func(hasDirectPermName, args, Bool, proofHint = Some(BoogieFuncProofHint.createStandardProofHint(HasPermBoogieFun))) ++
         Axiom(Forall(
           staticMask ++ Seq(obj, field),
           Trigger(funcApp),
           funcApp <==> permissionPositive(permission)
-        ))
+        ), proofHint = Some(BoogieAxiomProofHint.createStandardAxiomHint("zero mask", Seq(ProofUtil.simpTac(maskRelDefLemma)))))
     } ++ {
       if(!verifier.generateProofs) {
         //CARBON_CHANGE: these declarations are not required for the subset supported by proof generation (since quantified permissions, wands, and gotos are not supported)
