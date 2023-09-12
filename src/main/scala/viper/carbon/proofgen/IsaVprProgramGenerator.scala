@@ -1,6 +1,6 @@
 package viper.carbon.proofgen
 
-import isabelle.ast.{AbbrevDecl, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, MLDecl, MLNormal, MLUtil, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermSet, TermTuple, Theory, TupleType, TypeIsa}
+import isabelle.ast.{AbbrevDecl, ContextElem, DefDecl, IsaTermUtil, IsaTypeUtil, IsaUtil, LemmaDecl, LemmasDecl, MLDecl, MLNormal, MLUtil, NatConst, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermSet, TermTuple, Theory, TupleType, TypeIsa}
 import viper.silver.{ast => sil}
 import viper.carbon.proofgen.util.StringBuilderExtension._
 
@@ -10,92 +10,149 @@ import scala.collection.mutable.ListBuffer
 object IsaVprProgramGenerator {
 
   def globalData(p: sil.Program, boogieGlobalAccessor: IsaBoogieGlobalAccessor, theoryName: String, pathToTheoryDir: String) : (Theory, IsaViperGlobalDataAccessor, Seq[Theory]) =
-    {
-      val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
+  {
+    val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
-      val fieldToTerm : Map[sil.Field, Term] = p.fields.map(f => (f, StringConst(f.name))).toMap
+    val fieldToTerm : Map[sil.Field, Term] = p.fields.map(f => (f, StringConst(f.name))).toMap
 
-      val fieldsList = TermList(p.fields.map(f => TermTuple(fieldToTerm.get(f).get, ViperIsaType.translate(f.typ))))
+    val fieldsList = TermList(p.fields.map(f => TermTuple(fieldToTerm.get(f).get, ViperIsaType.translate(f.typ))))
 
-      val fieldsListDef = DefDecl("fields", None, (Seq(), fieldsList))
-      outerDecls += fieldsListDef
+    val fieldsListDef = DefDecl("field_list", None, (Seq(), fieldsList))
+    outerDecls += fieldsListDef
 
-      val fieldRelationList = {
-        TermList(
-          p.fields.map(f => {
-            val vprFieldConstTerm = fieldToTerm.get(f).get
-            val bplFieldConstId = boogieGlobalAccessor.getVarId(FieldConst(f))
-            TermTuple(vprFieldConstTerm, NatConst(bplFieldConstId))
-          }
-          )
+    val fieldRelationList = {
+      TermList(
+        p.fields.map(f => {
+          val vprFieldConstTerm = fieldToTerm.get(f).get
+          val bplFieldConstId = boogieGlobalAccessor.getVarId(FieldConst(f))
+          TermTuple(vprFieldConstTerm, NatConst(bplFieldConstId))
+        }
         )
-      }
-
-      val fieldRelationListDef = DefDecl(
-        "field_rel",
-        Some(IsaTypeUtil.listType(TupleType(IsaTypeUtil.stringType, BoogieIsaType.varNameType))),
-        (Seq(), fieldRelationList)
-      )
-
-      outerDecls += fieldRelationListDef
-
-      val fieldRelationBoundedBy = LemmaDecl(
-        "field_rel_bound",
-        ViperBoogieIsaUtil.allVarsInListBoundedBy(
-          TermIdent(fieldRelationListDef.name),
-          ViperBoogieIsaUtil.minInRangeOfList(fieldRelationList),
-          ViperBoogieIsaUtil.maxInRangeOfList(fieldRelationList)
-        ),
-        Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(fieldRelationListDef.name)))))
-      )
-
-      outerDecls += fieldRelationBoundedBy
-
-      val (methodTheory, allMethodsAccessor) = methodsRepr("method_decls", p)
-
-      val programDef = DefDecl("vpr_prog",
-        Some(ViperIsaType.vprProgramType),
-        (Seq(), IsaTermUtil.makeRecord(ViperIsaType.vprProgramTypeName, Seq(
-          allMethodsAccessor.methodLookupFun,
-          TermIdent("f_None"),//TODO: predicates
-          TermIdent("f_None"),//TODO: functions
-          IsaTermUtil.mapOf(TermIdent(fieldsListDef.name)), //functions
-          NatConst(0)) //domains
-        ))
-      )
-
-      outerDecls += programDef
-
-      val methodProjThm = LemmaDecl(
-        "methods_vpr_prog",
-        TermBinary.eq(ViperIsaTerm.methodsOfProgramProjection(TermIdent(programDef.name)), allMethodsAccessor.methodLookupFun),
-        Proof(
-          Seq(ProofUtil.byTac(ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(programDef.name), "ViperLang.program.defs(1)"))))
-        ))
-
-      outerDecls += methodProjThm
-
-      val methodDataName = "method_decl_data"
-
-      outerDecls += methodDataML(methodDataName, p.methods, allMethodsAccessor, methodProjThm.name)
-
-      (
-        Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", methodTheory.theoryName), outerDecls.toSeq),
-        DefaultIsaViperGlobalDataAccessor(
-          theoryName = theoryName,
-          vprProgramIdent = programDef.name,
-          origProgram = p,
-          fieldsIdent = fieldsListDef.name,
-          fieldToTerm = fieldToTerm,
-          fieldRelIdent = fieldRelationListDef.name,
-          fieldRelBoundedLemma = fieldRelationBoundedBy.name,
-          methodsProgEqLemmaName = methodProjThm.name,
-          allMethodsAccessor = allMethodsAccessor,
-          methodDataTableML = methodDataName
-        ),
-        Seq(methodTheory)
       )
     }
+
+    val fieldRelationListDef = DefDecl(
+      "field_rel_list",
+      Some(IsaTypeUtil.listType(TupleType(IsaTypeUtil.stringType, BoogieIsaType.varNameType))),
+      (Seq(), fieldRelationList)
+    )
+
+    outerDecls += fieldRelationListDef
+
+    val fieldRelationBoundedBy = LemmaDecl(
+      "field_rel_bound",
+      ViperBoogieIsaUtil.allVarsInListBoundedBy(
+        TermIdent(fieldRelationListDef.name),
+        ViperBoogieIsaUtil.minInRangeOfList(fieldRelationList),
+        ViperBoogieIsaUtil.maxInRangeOfList(fieldRelationList)
+      ),
+      Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(fieldRelationListDef.name)))))
+    )
+
+    outerDecls += fieldRelationBoundedBy
+
+    val (methodTheory, allMethodsAccessor) = methodsRepr("method_decls", p)
+
+    val programDef = DefDecl("vpr_prog",
+      Some(ViperIsaType.vprProgramType),
+      (Seq(), IsaTermUtil.makeRecord(ViperIsaType.vprProgramTypeName, Seq(
+        allMethodsAccessor.methodLookupFun,
+        TermIdent("f_None"),//TODO: predicates
+        TermIdent("f_None"),//TODO: functions
+        IsaTermUtil.mapOf(TermIdent(fieldsListDef.name)), //functions
+        NatConst(0)) //domains
+      ))
+    )
+
+    outerDecls += programDef
+
+    val fieldRelLookupDecls = generateFieldRelLookupLemmas("field_rel_lookup_lemmas",
+      vprProgramTerm = TermIdent(programDef.name),
+      fields = p.fields,
+      fieldsListDef = TermIdent(fieldsListDef.name),
+      fieldRelListDef = TermIdent(fieldRelationListDef.name),
+      boogieGlobalAccessor = boogieGlobalAccessor)
+
+    outerDecls.addAll(fieldRelLookupDecls)
+
+    val methodProjThm = LemmaDecl(
+      "methods_vpr_prog",
+      TermBinary.eq(ViperIsaTerm.methodsOfProgramProjection(TermIdent(programDef.name)), allMethodsAccessor.methodLookupFun),
+      Proof(
+        Seq(ProofUtil.byTac(ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(programDef.name), "ViperLang.program.defs(1)"))))
+      ))
+
+    outerDecls += methodProjThm
+
+    val methodDataName = "method_decl_data"
+
+    outerDecls += methodDataML(methodDataName, p.methods, allMethodsAccessor, methodProjThm.name)
+
+    (
+      //ViperBoogieTranslationInterface is required for the field lookup lemmas, could think about putting those in a separate theory
+      Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", "TotalViper.ViperBoogieTranslationInterface",  methodTheory.theoryName), outerDecls.toSeq),
+      DefaultIsaViperGlobalDataAccessor(
+        theoryName = theoryName,
+        vprProgramIdent = programDef.name,
+        origProgram = p,
+        fieldsIdent = fieldsListDef.name,
+        fieldToTerm = fieldToTerm,
+        fieldRelIdent = fieldRelationListDef.name,
+        fieldRelBoundedLemma = fieldRelationBoundedBy.name,
+        methodsProgEqLemmaName = methodProjThm.name,
+        allMethodsAccessor = allMethodsAccessor,
+        methodDataTableML = methodDataName
+      ),
+      Seq(methodTheory)
+    )
+  }
+
+  private def mapOfFieldLemmaName(f: sil.Field) : String = s"mfield_${f.name}"
+
+  private def lookupFieldLemmaName(f: sil.Field) : String = s"lfield_${f.name}"
+
+  private def generateFieldRelLookupLemmas(lookupLemmasName: String, vprProgramTerm: TermIdent, fields: Seq[sil.Field], fieldsListDef: TermIdent, fieldRelListDef: TermIdent, boogieGlobalAccessor: IsaBoogieGlobalAccessor) : Seq[OuterDecl] =
+  {
+    val varContextBpl = TermIdent("VarC")
+    val normalState = TermIdent("ns")
+
+    val fieldRelAssumption = ViperBoogieRelationIsa.fieldRel(vprProgramTerm, varContextBpl, IsaTermUtil.mapOf(fieldRelListDef), normalState)
+
+
+    val decls =
+      for(f <- fields) yield {
+        val boogieVarId = NatConst(boogieGlobalAccessor.getVarId(FieldConst(f)))
+
+        val mapOfLemma : OuterDecl =
+          LemmaDecl(mapOfFieldLemmaName(f),
+            TermBinary.eq(TermApp(IsaTermUtil.mapOf(fieldRelListDef), StringConst(f.name)), IsaTermUtil.some(boogieVarId)),
+            Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(fieldRelListDef.toString)))))
+          )
+
+        val lookupLemma =
+          LemmaDecl(lookupFieldLemmaName(f),
+            ContextElem.onlyAssumptions(Seq((Some("FieldRel"), fieldRelAssumption))),
+            TermBinary.eq(BoogieIsaTerm.lookupVar(varContextBpl, normalState, boogieVarId),
+              IsaTermUtil.some(BoogieIsaTerm.normalFieldAbstractValue(boogieVarId, ViperIsaType.translate(f.typ)))),
+            Proof(
+              Seq(
+                ProofUtil.applyTac(ProofUtil.ruleTac(ProofUtil.OF("lookup_field_rel", Seq("FieldRel", mapOfLemma.name)))),
+                ProofUtil.byTac(ProofUtil.simpTac(
+                  Seq(IsaUtil.definitionLemmaFromName(vprProgramTerm.toString),
+                    IsaUtil.definitionLemmaFromName(fieldsListDef.toString),
+                    "program.defs(1)"))
+                )
+              )
+            )
+          )
+
+        Seq(mapOfLemma, lookupLemma)
+      }
+
+    decls.flatten :+
+      LemmasDecl(lookupLemmasName, fields.map(lookupFieldLemmaName))
+  }
+
 
   private def methodDataML(methodDataName: String, methods: Seq[sil.Method], allMethodsAccessor: IsaViperAllMethodsAccessor, vprProgMethodsProjThm: String) : OuterDecl =
   {

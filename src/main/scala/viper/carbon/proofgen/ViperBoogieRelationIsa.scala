@@ -142,6 +142,9 @@ object ViperBoogieRelationIsa {
   def boogieConstRel(constRepr: Term, varContext: Term, normalState: Term) : Term =
     TermApp(TermIdent("boogie_const_rel"), Seq(constRepr, varContext, normalState))
 
+  def fieldRel(vprProgram: Term, bplVarContext: Term, fieldMap: Term, normalState: Term) : Term =
+    TermApp(TermIdent("field_rel"), Seq(vprProgram, bplVarContext, fieldMap, normalState))
+
 }
 
 object TypeRepresentation {

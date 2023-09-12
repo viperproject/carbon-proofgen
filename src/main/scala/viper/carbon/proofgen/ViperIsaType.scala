@@ -19,10 +19,11 @@ object ViperIsaType {
 
 
   def translate(ty : sil.Type) : Term = ty match {
-    case sil.Bool => TermIdent("TBool")
-    case sil.Int => TermIdent("TInt")
-    case sil.Perm => TermIdent("TPerm")
-    case sil.Ref => TermIdent("TRef")
+    //use explicit accesses to avoid clashes with the Boogie formalization
+    case sil.Bool => TermIdent("ViperLang.TBool")
+    case sil.Int => TermIdent("ViperLang.TInt")
+    case sil.Perm => TermIdent("ViperLang.TPerm")
+    case sil.Ref => TermIdent("ViperLang.TRef")
     case _ => sys.error("do not support Viper type" + ty.toString())
   }
 

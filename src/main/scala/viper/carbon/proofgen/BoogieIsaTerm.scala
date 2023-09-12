@@ -16,6 +16,16 @@ object BoogieIsaTerm {
   def wfTy(ty: Term) : Term =
     TermApp(TermIdent("wf_ty"), NatConst(0), ty)
 
+  def lookupVar(varContext: Term, normalState: Term, varName: Term) : Term =
+    TermApp(TermIdent("lookup_var"), Seq(varContext, normalState, varName))
+
+  val abstractField : TermIdent = TermIdent("AField")
+  val normalField : TermIdent = TermIdent("NormalField")
+
+  def normalFieldAbstractValue(constId: Term, vprType: Term) : Term =
+    abstractValueConstr(TermApp(abstractField, TermApp(normalField, constId, vprType)))
+
+  def abstractValueConstr(absValue: Term) = TermApp(TermIdent("AbsV"), absValue)
 
   def astBlock(name: Option[Term], simpleCommands: Term, structuralCommand: Option[Term], transferCommand: Option[Term]): Term = {
     TermApp(
