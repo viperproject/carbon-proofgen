@@ -168,10 +168,14 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         ProofUtil.simpTacOnly(endToEndData.programTotalProgEqLemma),
         ProofUtil.ruleTac(ProofUtil.simplified(viperProgAccessor.allMethodsAccessor.lookupLemmaName(methodAccessor.origMethod.name),
         ProofUtil.OF("HOL.sym", viperProgAccessor.methodsProgEqLemma))),
-        ProofUtil.ruleTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody)),
+        methodAccessor.origMethod.body.fold(
+          ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
+        )(_ => ProofUtil.ruleTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))),
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodPostcondition).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodArgTypes).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
-        ProofUtil.simpTac,
+        methodAccessor.origMethod.body.fold(
+          ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
+        )(_ => ProofUtil.simp),
         ProofUtil.simpTacOnly(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
       )
 
