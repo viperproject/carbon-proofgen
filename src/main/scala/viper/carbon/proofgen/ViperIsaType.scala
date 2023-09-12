@@ -17,7 +17,6 @@ object ViperIsaType {
 
   def totalContext(absType: TypeIsa) = DataType("total_context", absType)
 
-
   def translate(ty : sil.Type) : Term = ty match {
     //use explicit accesses to avoid clashes with the Boogie formalization
     case sil.Bool => TermIdent("ViperLang.TBool")

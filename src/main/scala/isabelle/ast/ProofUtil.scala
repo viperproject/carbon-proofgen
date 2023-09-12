@@ -34,22 +34,20 @@ object ProofUtil {
 
   val simp = "simp"
 
-  def simpAddModifier(onlyFlag: Boolean): String = {
-    if(onlyFlag) { "only" } else { "add"}
-  }
+  val simpTac : String = simpTacGeneral(Seq())
+  def simpTac(thm: String) : String = simpTacGeneral(Seq((SimpAddModifier, Seq(thm))))
+  def simpTac(thms: Seq[String]) : String = simpTacGeneral(Seq((SimpAddModifier, thms)))
+  def simpTacOnly(thm: String) : String = simpTacGeneral(Seq((SimpOnlyModifier, Seq(thm))))
+  def simpTacOnly(thms: Seq[String]) : String = simpTacGeneral(Seq((SimpOnlyModifier, thms)))
+  def simpTacDel(thm: String) : String = simpTacGeneral(Seq((SimpDelModifier, Seq(thm))))
+  def simpTacDel(thms: Seq[String]) : String = simpTacGeneral(Seq((SimpDelModifier, thms)))
+  def simpTacAddDel(addThms: Seq[String], delThms: Seq[String]) = simpTacGeneral(Seq((SimpAddModifier, addThms), (SimpDelModifier, delThms)))
 
-  val simpTac : String = simpTacGeneral(Seq(), false)
-  def simpTac(thm: String) : String = simpTacGeneral(Seq(thm), false)
-  def simpTac(thms: Seq[String]) : String = simpTacGeneral(thms, false)
-  def simpTacOnly(thm: String) : String = simpTacGeneral(Seq(thm), true)
-
-  def simpTacOnly(thms: Seq[String]) : String = simpTacGeneral(thms, true)
-
-  def simpTacGeneral(thms: Seq[String], onlyFlag: Boolean) : String = {
-    if(thms.isEmpty) {
+  def simpTacGeneral(modifierValues: Seq[(SimpModifier, Seq[String])]) : String = {
+    if(modifierValues.isEmpty) {
       "simp"
     } else {
-      s"(simp ${simpAddModifier(onlyFlag)}: ${thms.mkString(" ")})"
+      s"(simp ${modifierValues.map( modVal => modVal._1.name + ": " + modVal._2.mkString(" ")).mkString(" ")})"
     }
   }
 
@@ -88,4 +86,21 @@ object ProofUtil {
   def cutTac(thms: Seq[String]) = s"(cut_tac ${thms.mkString(" ")})"
   def cutTac(thm: String) = s"(cut_tac $thm)"
 
+}
+
+sealed trait SimpModifier
+{
+  def name: String
+}
+
+case object SimpAddModifier extends SimpModifier {
+  override val name: String = "add"
+}
+
+case object SimpOnlyModifier extends SimpModifier {
+  override val name: String = "only"
+}
+
+case object SimpDelModifier extends SimpModifier {
+  override val name: String = "del"
 }

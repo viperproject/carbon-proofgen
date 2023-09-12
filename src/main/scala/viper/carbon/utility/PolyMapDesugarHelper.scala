@@ -1,6 +1,7 @@
 package viper.carbon.utility
 
 import viper.carbon.boogie.{Axiom, Forall, Func, FuncApp, Identifier, LocalVarDecl, NamedType, Namespace, Trigger, Type, TypeVar}
+import viper.carbon.proofgen.hints.{BoogieAxiomProofHint, BoogieFuncProofHint}
 
 /**
   * Representation of desugared version of polymorphic type
@@ -31,8 +32,15 @@ case class PolyMapDesugarHelper(refType: Type, fieldTypeConstructor: (Int, Seq[T
     */
   def desugarPolyMap(mapRepType: NamedType,
                      selectAndStoreId: (Identifier, Identifier),
-                     mapRangeTypeFromField: Type => Type): PolyMapRep =  {
+                     mapRangeTypeFromField: Type => Type,
+                     selectAndStoreProofHint: Option[(BoogieFuncProofHint, BoogieFuncProofHint)],
+                     selectStoreRefSameAxiomHint: Option[BoogieAxiomProofHint],
+                     selectStoreRefDifferentAxiomHint: Option[BoogieAxiomProofHint]): PolyMapRep =  {
     val (selectId, storeId) = selectAndStoreId
+    val (selectProofHint, storeProofHint) =
+      selectAndStoreProofHint.fold[(Option[BoogieFuncProofHint], Option[BoogieFuncProofHint])]((None,None))(hint => (Some(hint._1), Some(hint._2)))
+
+
     val mapTypeId = Identifier(mapRepType.name)
     val h = LocalVarDecl(mapTypeId, mapRepType)
     val obj = LocalVarDecl(Identifier("obj"), refType)
@@ -46,12 +54,14 @@ case class PolyMapDesugarHelper(refType: Type, fieldTypeConstructor: (Int, Seq[T
     val selectFun =
       Func(selectId,
         Seq(h, obj, field),
-        mapRangeTypeFromField(field.typ))
+        mapRangeTypeFromField(field.typ),
+        proofHint = selectProofHint)
 
     val storeFun =
       Func(storeId,
         Seq(h, obj, field, LocalVarDecl(Identifier("y"), mapRangeTypeFromField(field.typ))),
-        mapRepType)
+        mapRepType,
+        proofHint = storeProofHint)
 
     val declInHeapRange = LocalVarDecl(Identifier("y"), mapRangeTypeFromField(field.typ))
     val readUpdateGeneral =
@@ -68,14 +78,15 @@ case class PolyMapDesugarHelper(refType: Type, fieldTypeConstructor: (Int, Seq[T
             Seq(FuncApp(storeId, Seq(h.l, obj.l, field.l, declInHeapRange.l), mapRepType), obj.l, field.l),
             mapRangeTypeFromField(field.typ)
           ) === declInHeapRange.l
-        )),
+        ), proofHint = selectStoreRefSameAxiomHint),
           Axiom(Forall(
             Seq(h,obj,obj2, field,field2, declInHeapRange),
             Seq(Trigger(Seq(readUpdateGeneral))),
             ( (obj.l !== obj2.l) || (field.l !== field2.l) ) ==>
               ( readUpdateGeneral === FuncApp(selectId, Seq(h.l, obj2.l, field2.l),
                 mapRangeTypeFromField(field2.typ) ) )
-          )))
+          ), proofHint = selectStoreRefDifferentAxiomHint)
+      )
 
     PolyMapRep(selectFun, storeFun, axioms)
   }

@@ -66,7 +66,9 @@ object IsaVprProgramGenerator {
 
     outerDecls += programDef
 
-    val fieldRelLookupDecls = generateFieldRelLookupLemmas("field_rel_lookup_lemmas",
+    val fieldRelLookupLemmasName = "field_rel_lookup_lemmas"
+
+    val fieldRelLookupDecls = generateFieldRelLookupLemmas(fieldRelLookupLemmasName,
       vprProgramTerm = TermIdent(programDef.name),
       fields = p.fields,
       fieldsListDef = TermIdent(fieldsListDef.name),
@@ -99,6 +101,7 @@ object IsaVprProgramGenerator {
         fieldToTerm = fieldToTerm,
         fieldRelIdent = fieldRelationListDef.name,
         fieldRelBoundedLemma = fieldRelationBoundedBy.name,
+        allFieldLookupLemmas = fieldRelLookupLemmasName,
         methodsProgEqLemmaName = methodProjThm.name,
         allMethodsAccessor = allMethodsAccessor,
         methodDataTableML = methodDataName

@@ -4,8 +4,13 @@ import isabelle.ast._
 
 object BoogieIsaTerm {
 
+  val funInterpWfId: TermIdent = TermIdent("fun_interp_wf")
+  val funInterpSingleWfId: TermIdent = TermIdent("fun_interp_single_wf")
+
+  val funInterpSingleWf2Id: TermIdent = TermIdent("fun_interp_single_wf_2")
+
   def funInterpWf(typeInterp: Term, funDecls: Term, funInterp: Term) : Term =
-    TermApp(TermIdent("fun_interp_wf"), Seq(typeInterp, funDecls, funInterp))
+    TermApp(funInterpWfId, Seq(typeInterp, funDecls, funInterp))
 
   def lookupVarTy(varContext: Term, varName: Term) : Term =
     TermApp(TermIdent("lookup_var_ty"), varContext, varName)
@@ -77,8 +82,10 @@ object BoogieIsaTerm {
       (Seq(TermIdent("A")), ViperBoogieRelationIsa.viperBoogieAbstractTypeInterp(TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A"))))
     )
 
+  val axiomsSatId : TermIdent = TermIdent("axioms_sat")
+
   def axiomsSat(typeInterp: Term, varContext: Term, funInterp: Term, normalState: Term, axioms: Term)  =
-    TermApp(TermIdent("axioms_sat"), Seq(typeInterp, varContext, funInterp, normalState, axioms))
+    TermApp(axiomsSatId, Seq(typeInterp, varContext, funInterp, normalState, axioms))
 
   def procIsCorrect( typeInterp: Term,
                      functionDecls: Term,

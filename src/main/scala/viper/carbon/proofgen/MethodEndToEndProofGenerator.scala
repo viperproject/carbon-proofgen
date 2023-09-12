@@ -269,7 +269,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         (ProofUtil.blastTac +: //state equality ++
         axiomsProof())
 
-    Proof(initTac ++ ProofUtil.mapApplyTac(methodsWithoutApply) :+ "done")
+    Proof(initTac ++ ProofUtil.mapApplyTac(methodsWithoutApply) :+ ProofUtil.doneTac)
   }
 
   private def varTranslationInjectiveProof() : Seq[String] = {
@@ -334,7 +334,8 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ProofUtil.fastforceTac,
       ProofUtil.cutTac(endToEndData.axiomSatLemma),
       ProofUtil.simpTac(ctxtBplDefLemmaName),
-      ProofUtil.simp
+      ProofUtil.simp,
+      ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.programTotalProgEqLemma)),
     )
   }
 

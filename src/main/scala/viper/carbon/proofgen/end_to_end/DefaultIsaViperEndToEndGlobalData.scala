@@ -43,4 +43,5 @@ case class DefaultIsaViperEndToEndGlobalData(
   override def fieldPropWithGlobalsLemma: String = qualifyName(fieldRelInstData.fieldTrPropWithGlobalsLemma)
 
   override def axiomSatLemma: String = qualifyName(axiomSatLemmaName)
+
 }

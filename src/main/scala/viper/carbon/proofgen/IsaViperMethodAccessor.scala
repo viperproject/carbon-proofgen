@@ -23,11 +23,14 @@ trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
 }
 
 trait IsaViperFieldsAccessor {
+
   def fields : TermIdent
   def fieldRel : TermIdent
   def fieldRelBoundedLemma : String
   def fieldIdent(f: sil.Field) : Term
   def fieldLookupLemma(fieldName: String) : String
+  def allFieldLookupLemmas : String
+
 }
 
 trait IsaViperMethodAccessor {

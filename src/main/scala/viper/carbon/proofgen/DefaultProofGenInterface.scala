@@ -5,11 +5,11 @@ import isabelle.ast.IsaUtil
 import java.nio.file.{Files, Path}
 import java.nio.charset.StandardCharsets
 import viper.silver.{ast => sil}
-import viper.carbon.boogie.Procedure
+import viper.carbon.boogie.{Decl, Procedure}
 import viper.carbon.modules.{HeapModule, PermModule}
-import viper.carbon.proofgen.end_to_end.{EndToEndGlobalDataHelper, IsaViperEndToEndGlobalData}
+import viper.carbon.proofgen.end_to_end.{DefaultIsaViperEndToEndGlobalData, EndToEndGlobalDataHelper, IsaViperEndToEndGlobalData}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
-import viper.carbon.proofgen.hints.{MethodProofHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{BoogieDeclProofHint, MethodProofHint, StmtProofHint}
 import viper.carbon.proofgen.util.FileUtil
 import viper.carbon.verifier.Environment
 
@@ -43,12 +43,7 @@ class DefaultProofGenInterface(val proofDir: Path,
       globalDataAccessor
     }
 
-  val endToEndGlobalData : IsaViperEndToEndGlobalData =
-    {
-      val (theory, endToEndGlobalAccessor) = EndToEndGlobalDataHelper.generateEndToEndData("global_data_end_to_end", vprProgGlobalData, globalDataBpl, boogieProofDirName)
-      StoreTheory.storeTheory(theory, proofDir)
-      endToEndGlobalAccessor
-    }
+  val endToEndGlobalData: DefaultIsaViperEndToEndGlobalData  = EndToEndGlobalDataHelper.generateEndToEndData("global_data_end_to_end")
 
   /***
     * Creates and stores the Isabelle proof relating the Viper and Boogie programs
@@ -158,6 +153,13 @@ class DefaultProofGenInterface(val proofDir: Path,
       val endToEndTheoryProof = endToEndProofGenerator.generatePartialEndToEndProof()
 
       StoreTheory.storeTheory(endToEndTheoryProof, dir)
+  }
+
+  override def generateProofForPreamble(preamble: Seq[Decl]): Unit = {
+    val declHints = preamble.map(BoogieDeclProofHint.extractHintsFromAllDecls).flatten
+
+    val theory = EndToEndGlobalDataHelper.generateEndToEndTheory(endToEndGlobalData, vprProgGlobalData, globalDataBpl, declHints, boogieProofDirName)
+    StoreTheory.storeTheory(theory, proofDir)
   }
 
 }

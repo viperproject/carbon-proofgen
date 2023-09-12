@@ -1,6 +1,7 @@
 package viper.carbon.proofgen.end_to_end
 
 import isabelle.ast.{AbbrevDecl, ContextElem, DeclareDecl, DefDecl, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, Term, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermSet, TermTuple, Theory}
+import viper.carbon.proofgen.hints.{AxiomTacticInput, BoogieAxiomProofHint, BoogieDeclProofHint, BoogieFuncProofHint}
 import viper.carbon.proofgen.{BoogieConstGlobal, BoogieIsaTerm, EmptyFrameConst, FieldConst, FullPermConst, IsaBoogieGlobalAccessor, IsaViperGlobalDataAccessor, NoPermConst, NullConst, TypeRepresentation, ViperBoogieRelationIsa, ViperTotalContext, ZeroMaskConst, ZeroPMaskConst}
 
 import scala.collection.mutable.ListBuffer
@@ -10,7 +11,53 @@ object EndToEndGlobalDataHelper {
 
   val typeInterpBplName = "type_interp_bpl"
 
-  def generateEndToEndData(theoryName: String, vprProgAccessor: IsaViperGlobalDataAccessor, bplGlobalAccessor: IsaBoogieGlobalAccessor, boogieProofDirName: String) : (Theory, IsaViperEndToEndGlobalData) = {
+  /**
+    * Initializes the names of the global end-to-end data theory file. This allows decoupling theory files that need
+    * to refer to data in the global end-to-end theory file from the actual generation of the global end-to-end theory file.
+    * This is important, because the global end-to-end theory file can only be generated at the end, since the Boogie
+    * declaration preamble (containing functions and axioms) is generated at the end.
+    * @param theoryName
+    * @return
+    */
+  def generateEndToEndData(theoryName: String): DefaultIsaViperEndToEndGlobalData = {
+    DefaultIsaViperEndToEndGlobalData(
+      theoryName = theoryName,
+      ctxtVprName = "ctxt_vpr",
+      programTotalProgEqLemmaName = "program_total_eq",
+      funInterpInstData = FunInterpInstantiationData(
+        funInterpVprBpl = "has_direct_perm_fun_interp_single_wf",
+        funInterpVprBplWfLemma = "fun_interp_vpr_bpl_inst_wf",
+        funInterpBplWfLemma = "fun_interp_wf"
+      ),
+      constantsData = ConstantsData("lookup_constants", "lookup_constants_with_globals"),
+      fieldRelInstData = FieldRelInstantiationData(
+        ranFieldRelLemma = "field_rel_ran",
+        injFieldRelLemma = "inj_field_rel",
+        fieldTrPropNoGlobalsLemma = "field_prop_aux_no_globals",
+        fieldTrPropWithGlobalsLemma = "field_prop_aux_with_globals"
+      ),
+      axiomSatLemmaName = "axiom_sat"
+    )
+  }
+
+  /**
+    * Creates a theory file that contains declarations to be used by the end-to-end proof theories for each method.
+    * @param endToEndData names to be used in the theory that are accessed by other theories
+    * @param vprProgAccessor
+    * @param bplGlobalAccessor
+    * @param declHints Hints for all functions and axioms in the Boogie program. The order of the hints must match the order
+    *                  in which the declarations appear in the Boogie program.
+    * @param boogieProofDirName
+    * @return
+    */
+  def generateEndToEndTheory(endToEndData: DefaultIsaViperEndToEndGlobalData,
+                             vprProgAccessor: IsaViperGlobalDataAccessor, bplGlobalAccessor: IsaBoogieGlobalAccessor,
+                             declHints: Seq[BoogieDeclProofHint],
+                             boogieProofDirName: String) : Theory= {
+
+    val funDeclHints = declHints.collect { case h: BoogieFuncProofHint => h }
+    val axiomDeclHints = declHints.collect { case h: BoogieAxiomProofHint => h }
+
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
     outerDecls += DeclareDecl("Nat.One_nat_def[simp del]")
@@ -20,7 +67,7 @@ object EndToEndGlobalDataHelper {
 
     outerDecls += BoogieIsaTerm.typeInterpBplAbbrev(typeInterpBplName)
 
-    val vprContextDef : DefDecl = DefDecl("ctxt_vpr", None,
+    val vprContextDef : DefDecl = DefDecl(endToEndData.ctxtVprName, None,
       (Seq(), ViperTotalContext.makeTotalContext(
           program = vprProgAccessor.vprProgram,
           funInterp = TermQuantifier(Lambda, Seq(isabelle.ast.Wildcard), IsaTermUtil.none),
@@ -32,12 +79,12 @@ object EndToEndGlobalDataHelper {
 
     outerDecls += vprContextDef
 
-    val programTotalEqLemma = LemmaDecl("program_total_vpr", TermBinary.eq(ViperTotalContext.programTotal(vprContextTerm), vprProgAccessor.vprProgram),
+    val programTotalEqLemma = LemmaDecl(endToEndData.programTotalProgEqLemmaName, TermBinary.eq(ViperTotalContext.programTotal(vprContextTerm), vprProgAccessor.vprProgram),
       Proof(Seq(ProofUtil.byTac(ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(vprContextDef.name))))))
 
     outerDecls += programTotalEqLemma
 
-    val funInterpVprBplInstDef = DefDecl("fun_interp_vpr_bpl_inst", None,
+    val funInterpVprBplInstDef = DefDecl(endToEndData.funInterpInstData.funInterpVprBpl, None,
       (Seq(TermIdent("f")), ViperBoogieRelationIsa.funInterpVprBplConcrete(
         vprProgram = vprProgAccessor.vprProgram,
         typeRepresentation = TypeRepresentation.makeBasicTypeRepresentation(ViperTotalContext.absvalInterpTotal(vprContextTerm)),
@@ -49,7 +96,7 @@ object EndToEndGlobalDataHelper {
 
     outerDecls += funInterpVprBplInstDef
 
-    val funInterpVprBplInstWfLemma = LemmaDecl("fun_interp_vpr_bpl_inst_wf",
+    val funInterpVprBplInstWfLemma = LemmaDecl(endToEndData.funInterpInstData.funInterpVprBplWfLemma,
       ViperBoogieRelationIsa.funInterpVprBplWf(
         vprProgram = vprProgAccessor.vprProgram,
         typeRepresentation = TypeRepresentation.makeBasicTypeRepresentation(ViperTotalContext.absvalInterpTotal(vprContextTerm)),
@@ -68,31 +115,30 @@ object EndToEndGlobalDataHelper {
 
     outerDecls += funInterpVprBplInstWfLemma
 
-    val funInterpWfLemma = LemmaDecl("fun_interp_wf",
-      BoogieIsaTerm.funInterpWf(
-        typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(vprContextTerm)),
-        funDecls = bplGlobalAccessor.funDecls,
-        funInterp = TermIdent(funInterpVprBplInstDef.name)
-      ),
-      Proof(Seq("sorry"))
+    val funInterpWfLemma = generateFunInterpWfLemma(
+      lemmaName = endToEndData.funInterpInstData.funInterpBplWfLemma,
+      vprContextTerm = vprContextTerm,
+      funInterpVprBplInstDef = funInterpVprBplInstDef.name,
+      bplGlobalAccessor = bplGlobalAccessor,
+      hints = funDeclHints
     )
 
     outerDecls += funInterpWfLemma
 
     val lookupConstantsNoGlobalsLemma = lookupConstantsLemma(
-      lemmaName = "lookup_constants", varDeclList = bplGlobalAccessor.constDecls,
+      lemmaName = endToEndData.constantsData.lookupConstantsNoGlobalsLemma, varDeclList = bplGlobalAccessor.constDecls,
       vprContext = vprContextTerm, constToMapOfThm = bplGlobalAccessor.getConstantWithoutGlobalsMapOfThm)
 
     outerDecls += lookupConstantsNoGlobalsLemma
 
     val lookupConstantsWithGlobalsLemma = lookupConstantsLemma(
-      lemmaName = "lookup_constants_with_globals", varDeclList = IsaTermUtil.appendList(bplGlobalAccessor.constDecls, bplGlobalAccessor.globalDecls),
+      lemmaName = endToEndData.constantsData.constantsLookupWithGlobalsLemma, varDeclList = IsaTermUtil.appendList(bplGlobalAccessor.constDecls, bplGlobalAccessor.globalDecls),
       vprContext = vprContextTerm, constToMapOfThm = bplGlobalAccessor.getGlobalMapOfThm)
 
     outerDecls += lookupConstantsWithGlobalsLemma
 
     val ranFieldRelationLemma = LemmaDecl(
-      "field_rel_ran",
+      endToEndData.fieldRelInstData.ranFieldRelLemma,
       TermBinary.eq(
         IsaTermUtil.ran(IsaTermUtil.mapOf(vprProgAccessor.fieldRel)),
         TermSet(vprProgAccessor.origProgram.fields.map(f => NatConst(bplGlobalAccessor.getVarId(FieldConst(f)))))
@@ -103,7 +149,7 @@ object EndToEndGlobalDataHelper {
     outerDecls += ranFieldRelationLemma
 
     val injFieldRelationLemma = LemmaDecl(
-      "inj_field_rel",
+      endToEndData.fieldRelInstData.injFieldRelLemma,
       IsaTermUtil.injectiveOnDom(IsaTermUtil.mapOf(vprProgAccessor.fieldRel), IsaTermUtil.domainOfPartialFun(IsaTermUtil.mapOf(vprProgAccessor.fieldRel))),
       Proof(Seq(
         ProofUtil.applyTac(ProofUtil.ruleTac(IsaThmUtil.strictlyOrderedListInjMapOfLemma)),
@@ -113,61 +159,34 @@ object EndToEndGlobalDataHelper {
 
     outerDecls += injFieldRelationLemma
 
-    val fieldPropNoGlobalsLemmaName = "field_prop_aux_no_globals"
+    val fieldPropNoGlobalsLemmaName = endToEndData.fieldRelInstData.fieldTrPropNoGlobalsLemma
     val fieldPropNoGlobalsDecls = fieldPropListAll2Lemma(fieldPropNoGlobalsLemmaName, vprProgAccessor, programTotalEqLemma.name,
       vprContextTerm, bplGlobalAccessor.constDecls, bplGlobalAccessor.getConstantWithoutGlobalsMapOfThm)
 
     outerDecls.addAll(fieldPropNoGlobalsDecls)
 
 
-    val fieldPropWithGlobalsLemmaName = "field_prop_aux_with_globals"
+    val fieldPropWithGlobalsLemmaName = endToEndData.fieldRelInstData.fieldTrPropWithGlobalsLemma
     val fieldPropWithGlobalsDecls = fieldPropListAll2Lemma(fieldPropWithGlobalsLemmaName, vprProgAccessor, programTotalEqLemma.name,
       vprContextTerm, IsaTermUtil.appendList(bplGlobalAccessor.constDecls, bplGlobalAccessor.globalDecls), bplGlobalAccessor.getGlobalMapOfThm)
 
     outerDecls.addAll(fieldPropWithGlobalsDecls)
 
-    val axiomsSatLemma = LemmaDecl("axioms_sat",
-      ContextElem.onlyAssumptionsNoLabels(Seq(ViperBoogieRelationIsa.boogieConstRel(
-        constRepr = ViperBoogieRelationIsa.constReprBasic,
-        varContext = TermTuple(bplGlobalAccessor.constDecls, TermList.empty),
-        normalState = TermIdent("ns")))),
-      BoogieIsaTerm.axiomsSat(
-        typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(vprContextTerm)),
-        varContext = TermTuple(bplGlobalAccessor.constDecls, TermList.empty),
-        funInterp = TermIdent(funInterpVprBplInstDef.name),
-        normalState = TermIdent("ns"),
-        axioms = bplGlobalAccessor.axiomDecls
-      ),
-      Proof(Seq("sorry"))
+    val axiomsSatLemma = generateAxiomSatLemma(
+      lemmaName = endToEndData.axiomSatLemmaName,
+      vprProgAccessor = vprProgAccessor,
+      vprContextTerm = vprContextTerm,
+      bplGlobalAccessor = bplGlobalAccessor,
+      funInterpVprBplInstDef = funInterpVprBplInstDef.name,
+      lookupFieldLemmas = vprProgAccessor.allFieldLookupLemmas,
+      hints = axiomDeclHints
     )
 
     outerDecls += axiomsSatLemma
 
-    val theory = Theory(theoryName,
+    Theory(endToEndData.theoryName,
       Seq(vprProgAccessor.theoryName, boogieProofDirName+"/"+bplGlobalAccessor.theoryName, "TotalViper.ViperBoogieEndToEndML"),
       outerDecls.toSeq)
-
-    val data =
-      DefaultIsaViperEndToEndGlobalData(
-        theoryName = theoryName,
-        ctxtVprName = vprContextDef.name,
-        programTotalProgEqLemmaName = programTotalEqLemma.name,
-        funInterpInstData = FunInterpInstantiationData(
-          funInterpVprBpl = funInterpVprBplInstDef.name,
-          funInterpVprBplWfLemma = funInterpVprBplInstWfLemma.name,
-          funInterpBplWfLemma = funInterpWfLemma.name
-        ),
-        constantsData = ConstantsData(lookupConstantsNoGlobalsLemma.name, lookupConstantsWithGlobalsLemma.name),
-        fieldRelInstData = FieldRelInstantiationData(
-          ranFieldRelLemma = ranFieldRelationLemma.name,
-          injFieldRelLemma = injFieldRelationLemma.name,
-          fieldTrPropNoGlobalsLemma = fieldPropNoGlobalsLemmaName,
-          fieldTrPropWithGlobalsLemma = fieldPropWithGlobalsLemmaName
-        ),
-        axiomSatLemmaName = axiomsSatLemma.name
-      )
-
-    (theory, data)
   }
 
   private def lookupConstantsLemma(lemmaName: String, varDeclList: Term, vprContext: Term, constToMapOfThm: BoogieConstGlobal => String) : LemmaDecl = {
@@ -188,7 +207,7 @@ object EndToEndGlobalDataHelper {
                 )
             )
         ) :+
-          "done"
+        ProofUtil.doneTac
       )
     )
   }
@@ -247,6 +266,75 @@ object EndToEndGlobalDataHelper {
       )
 
     Seq(helperLemma, mainLemma)
+  }
+
+  private def generateFunInterpWfLemma(lemmaName: String, vprContextTerm: Term, bplGlobalAccessor: IsaBoogieGlobalAccessor, funInterpVprBplInstDef: String, hints: Seq[BoogieFuncProofHint]) : LemmaDecl = {
+    val initTacticsWithoutApply =
+      Seq(
+        ProofUtil.simpTacOnly(IsaUtil.definitionLemmaFromName(BoogieIsaTerm.funInterpWfId.toString)),
+        ProofUtil.ruleTac(IsaThmUtil.listAllMapOf),
+        ProofUtil.simpTacOnly(Seq(IsaUtil.definitionLemmaFromName(bplGlobalAccessor.funDecls.toString), "List.list_all_simps(1)")),
+        ProofUtil.simpTacDel(Seq(IsaUtil.simpsOfFun(BoogieIsaTerm.funInterpSingleWfId.toString), IsaUtil.simpsOfFun(BoogieIsaTerm.funInterpSingleWf2Id.toString))),
+        ProofUtil.simpTacOnly(IsaUtil.definitionLemmaFromName(funInterpVprBplInstDef)),
+        ProofUtil.introTac("conjI")
+      )
+
+    val funWfTactics =
+        hints.map(h => h.funInterpWellFormednessProof()).flatten
+
+    LemmaDecl(lemmaName,
+      BoogieIsaTerm.funInterpWf(
+        typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(vprContextTerm)),
+        funDecls = bplGlobalAccessor.funDecls,
+        funInterp = TermIdent(funInterpVprBplInstDef)
+      ),
+      Proof(ProofUtil.mapApplyTac(initTacticsWithoutApply) ++ funWfTactics :+ ProofUtil.doneTac)
+    )
+  }
+
+  private def generateAxiomSatLemma(lemmaName: String, vprProgAccessor: IsaViperGlobalDataAccessor, vprContextTerm: Term, bplGlobalAccessor: IsaBoogieGlobalAccessor, funInterpVprBplInstDef: String, lookupFieldLemmas: String, hints: Seq[BoogieAxiomProofHint]) : LemmaDecl = {
+    val initTacticsWithoutApply =
+      Seq(
+        ProofUtil.simpTacOnly(Seq(IsaUtil.definitionLemmaFromName(bplGlobalAccessor.axiomDecls.toString), IsaUtil.definitionLemmaFromName(BoogieIsaTerm.axiomsSatId.toString))),
+        ProofUtil.simp,
+        ProofUtil.introTac("conjI")
+      )
+      
+    val axiomTacticInput = AxiomTacticInput(
+      funInterpDef = funInterpVprBplInstDef,
+      boogieConstRel = "assms(1)",
+      fieldRel = "assms(2)",
+      lookupFieldLemmas = lookupFieldLemmas,
+      delThms = "axioms_sat_proof_del"
+    )
+
+    val axiomSatTactics = hints.map(h => h.satProof(axiomTacticInput)).flatten
+
+    LemmaDecl(lemmaName,
+      ContextElem.onlyAssumptionsNoLabels(Seq(
+          ViperBoogieRelationIsa.boogieConstRel(
+            constRepr = ViperBoogieRelationIsa.constReprBasic,
+            varContext = TermTuple(bplGlobalAccessor.constDecls, TermList.empty),
+            normalState = TermIdent("ns") ),
+          ViperBoogieRelationIsa.fieldRel(
+            vprProgram = vprProgAccessor.vprProgram,
+            bplVarContext = TermTuple(bplGlobalAccessor.constDecls, TermList.empty),
+            fieldMap = IsaTermUtil.mapOf(vprProgAccessor.fieldRel),
+            normalState = TermIdent("ns")
+          )
+        )
+      ),
+      BoogieIsaTerm.axiomsSat(
+        typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(vprContextTerm)),
+        varContext = TermTuple(bplGlobalAccessor.constDecls, TermList.empty),
+        funInterp = TermIdent(funInterpVprBplInstDef),
+        normalState = TermIdent("ns"),
+        axioms = bplGlobalAccessor.axiomDecls
+      ),
+      Proof(
+        ProofUtil.mapApplyTac(initTacticsWithoutApply) ++ axiomSatTactics :+ ProofUtil.doneTac
+      )
+    )
   }
 
 }

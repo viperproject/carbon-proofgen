@@ -10,6 +10,7 @@ case class DefaultIsaViperGlobalDataAccessor(override val theoryName: String,
                                              private val fieldToTerm : Map[sil.Field, Term],
                                              fieldRelIdent: String,
                                              override val fieldRelBoundedLemma: String,
+                                             override val allFieldLookupLemmas: String,
                                              methodsProgEqLemmaName: String,
                                              allMethodsAccessor: IsaViperAllMethodsAccessor,
                                              methodDataTableML: String

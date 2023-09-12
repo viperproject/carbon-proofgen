@@ -32,6 +32,8 @@ object MLUtil {
     }
   }
 
+  def isaToMLThms(isaThms: String) : String = s"@{thms $isaThms}"
+
   val contextAniquotation = "@{context}"
 
   def simpAsmSolved(thms: String, ctxt : String = "") : String =

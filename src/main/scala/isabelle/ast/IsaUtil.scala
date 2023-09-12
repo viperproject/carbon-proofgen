@@ -6,6 +6,8 @@ object IsaUtil {
 
   def definitionLemmaFromName(defName: String) : String = defName+"_def"
 
+  def simpsOfFun(fun: String) : String = fun+".simps"
+
   /***
     *
     * @param id desired identifier
