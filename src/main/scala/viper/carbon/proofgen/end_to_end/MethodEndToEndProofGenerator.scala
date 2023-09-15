@@ -1,14 +1,33 @@
-package viper.carbon.proofgen
+package viper.carbon.proofgen.end_to_end
 
-import isabelle.ast
-import isabelle.ast.{BoolConst, ContextElem, DeclareDecl, DefDecl, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, LemmasDecl, OuterDecl, Proof, ProofUtil, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermWithExplicitType, Theory, VarType}
-import viper.carbon.proofgen.end_to_end.IsaViperEndToEndGlobalData
-import viper.silver.{ast => sil}
+import isabelle.ast._
+import viper.carbon.proofgen._
 
 import scala.collection.mutable.ListBuffer
 
 
-case class MethodEndToEndProofData()
+trait MethodEndToEndProofData {
+
+  def theoryName : String
+
+  def endToEndLemma : String
+
+  /**
+    * This assumption should be the only assumption for [[endToEndLemma]]
+    */
+  def boogieProcCorrectAssumption : Term
+
+
+}
+
+case class DefaultMethodEndToEndProofData(override val theoryName : String,
+                                          endToEndLemmaName: String,
+                                          override val boogieProcCorrectAssumption: Term) extends MethodEndToEndProofData
+{
+
+  override def endToEndLemma: String = IsaUtil.qualifyName(theoryName, endToEndLemmaName)
+
+}
 
 case class MethodEndToEndProofGenerator( theoryName: String,
                                          methodAccessor: IsaViperMethodAccessor,
@@ -28,7 +47,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
   private val typeReprBasicDefLemmaName = IsaUtil.definitionLemmaFromName(TypeRepresentation.tyReprBasicName)
 
-  def generatePartialEndToEndProof(): Theory = {
+  def generatePartialEndToEndProof(): (Theory, MethodEndToEndProofData) = {
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
     outerDecls += DeclareDecl("Nat.One_nat_def[simp del]")
@@ -110,16 +129,19 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
     outerDecls += disjVarsStateRel
 
-    outerDecls += generateMethodPartialLemma(typeInterpBplAbbrev.name)
+    val (endToEndLemma, boogieProcCorrectAssm) = generateMethodPartialLemma(typeInterpBplAbbrev.name)
+    outerDecls += endToEndLemma
 
-    Theory(theoryName, Seq(relationalProofData.theoryName, "../"+endToEndData.theoryName), outerDecls.toSeq)
+    val methodEndToEndProofData = DefaultMethodEndToEndProofData(theoryName, endToEndLemma.name, boogieProcCorrectAssm)
+
+    val theory = Theory(theoryName, Seq(relationalProofData.theoryName, "../"+endToEndData.theoryName), outerDecls.toSeq)
+
+    (theory, methodEndToEndProofData)
   }
 
-  private def generateMethodPartialLemma(typeInterpBplName: String) : LemmaDecl = {
+  private def generateMethodPartialLemma(typeInterpBplName: String) : (LemmaDecl, Term) = {
 
-    LemmaDecl("method_partial_proof",
-      ContextElem.onlyAssumptionsNoLabels(
-        Seq(BoogieIsaTerm.procIsCorrect(
+    val boogieProcCorrectAssm = BoogieIsaTerm.procIsCorrect(
           typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(endToEndData.ctxtVpr)),
           functionDecls = boogieProgAccessor.globalDataAccessor.funDecls,
           constDecls = boogieProgAccessor.globalDataAccessor.constDecls,
@@ -127,15 +149,22 @@ case class MethodEndToEndProofGenerator( theoryName: String,
           axiomDecls = boogieProgAccessor.globalDataAccessor.axiomDecls,
           proc = boogieProgAccessor.procDef,
           vprDomainValueType = VarType("a")
-        ))
-      ),
-      ViperMethodCorrectness.correctPartial(
-        totalContext = TermWithExplicitType(endToEndData.ctxtVpr, ViperTotalContext.totalContextRecordType(VarType("a"))),
-        stateConsistency = TermQuantifier(Lambda, Seq(isabelle.ast.Wildcard), BoolConst(true)),
-        methodAccessor.methodDecl
-      ),
-      generateMethodPartialProof()
-    )
+        )
+
+    val lemma =
+      LemmaDecl("method_partial_proof",
+        ContextElem.onlyAssumptionsNoLabels(
+          Seq(boogieProcCorrectAssm)
+        ),
+        ViperMethodCorrectness.correctPartial(
+          totalContext = TermWithExplicitType(endToEndData.ctxtVpr, ViperTotalContext.totalContextRecordType(VarType("a"))),
+          stateConsistency = TermQuantifier(Lambda, Seq(isabelle.ast.Wildcard), BoolConst(true)),
+          methodAccessor.methodDecl
+        ),
+        generateMethodPartialProof()
+      )
+
+    (lemma, boogieProcCorrectAssm)
   }
 
   private def generateMethodPartialProof() : Proof  = {
@@ -171,11 +200,14 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         methodAccessor.origMethod.body.fold(
           ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
         )(_ => ProofUtil.ruleTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))),
+        // constraints specs
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodPostcondition).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
+        // free variables in precondition must be argument variables
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodArgTypes).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
+        //argument and return variables are not modified by the body
         methodAccessor.origMethod.body.fold(
           ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
-        )(_ => ProofUtil.simp),
+        )(_ => ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftDownSet))),
         ProofUtil.simpTacOnly(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
       )
 
@@ -311,14 +343,20 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ProofUtil.ruleTac(ProofUtil.where("var_rel_prop_aux", "var_rel_list", relationalProofData.varRelationListDef)),
       ProofUtil.simp,
       ProofUtil.simpTac(typeReprBasicDefLemmaName),
-      ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString) +: (Seq(IsaMethodArgTypes, IsaMethodRetTypes).map(methodAccessor.methodDeclProjectionLemmaName))),
-      ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName("var_rel_prop"), ctxtBplDefLemmaName)),
-      ProofUtil.simpTac( typeReprBasicDefLemmaName +: (methodAccessor.origMethod.formalArgs ++ methodAccessor.origMethod.formalReturns).map(
-        decl => ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm,
-          boogieProgAccessor.mapOfThmFromId(boogieProgAccessor.getBoogieVarId(decl.localVar)))
-      )),
+      ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString) +: (Seq(IsaMethodArgTypes, IsaMethodRetTypes).map(methodAccessor.methodDeclProjectionLemmaName)))
+    ) ++
+      (if(methodAccessor.origMethod.formalArgs.isEmpty && methodAccessor.origMethod.isEmpty) {
+        Nil
+      } else{
+        Seq(
+          ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName("var_rel_prop"), ctxtBplDefLemmaName)),
+          ProofUtil.simpTac(typeReprBasicDefLemmaName +: (methodAccessor.origMethod.formalArgs ++ methodAccessor.origMethod.formalReturns).map(
+            decl => ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm,
+              boogieProgAccessor.mapOfThmFromId(boogieProgAccessor.getBoogieVarId(decl.localVar)))
+          ))
+        )
+      }) :+
       ProofUtil.simpTac(translationRecordDefLemma)
-    )
   }
 
   private def axiomsProof() : Seq[String] = {
