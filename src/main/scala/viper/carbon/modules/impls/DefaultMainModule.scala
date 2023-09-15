@@ -111,7 +111,9 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             else Nil
         }
 
-        verifier.proofGenInterface.generateProofForPreamble(preambles ++ translateFields)
+        if(verifier.generateProofs) {
+          verifier.proofGenInterface.generateProofForPreamble(preambles ++ translateFields)
+        }
 
         // some header information for debugging
         val deps = verifier.dependencyDescs map ("  " + _)
