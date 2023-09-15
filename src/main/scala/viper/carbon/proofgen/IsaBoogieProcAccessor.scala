@@ -20,7 +20,7 @@ class IsaBoogieProcAccessor(
      TODO: use common method to share the code
 
      Note that here we using that Boogie proof generation uses the variable identifier ordering:
-     1) arguments, 2) local variables, 3) return variables
+     1) arguments, 2) return, variables 3) local variables,
    */
   private val procVarMapping: Map[LocalVar, Int] = {
     val procLocalVars = proc.body.undeclLocalVars filter (v1 => (proc.ins ++ proc.outs).forall(v2 => v2.name != v1.name))
