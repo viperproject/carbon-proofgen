@@ -4,7 +4,10 @@ import isabelle.ast.Term
 class DeBruijnTranslation[T](val debruijnMapping: Map[T, Int]) extends VarTranslation[T] {
 
   override def addFreshVariables(xs: Seq[T]): VarTranslation[T] = {
-    val res = DeBruijnTranslation.updateMapWithFreshVars(debruijnMapping, xs)
+    /* we input the reverse of xs to make sure that xs(0) gets the largest index (adding a sequence of variables
+       must correspond to adding the first, then the second etc...)
+     */
+    val res = DeBruijnTranslation.updateMapWithFreshVars(debruijnMapping, xs.reverse)
 
     new DeBruijnTranslation(res)
   }

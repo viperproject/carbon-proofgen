@@ -7,7 +7,7 @@ import java.nio.charset.StandardCharsets
 import viper.silver.{ast => sil}
 import viper.carbon.boogie.{Decl, Procedure}
 import viper.carbon.modules.{HeapModule, PermModule}
-import viper.carbon.proofgen.end_to_end.{DefaultIsaViperEndToEndGlobalData, EndToEndGlobalDataHelper, IsaViperEndToEndGlobalData}
+import viper.carbon.proofgen.end_to_end.{DefaultIsaViperEndToEndGlobalData, EndToEndGlobalDataHelper, IsaViperEndToEndGlobalData, MethodEndToEndProofGenerator}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{BoogieDeclProofHint, MethodProofHint, StmtProofHint}
 import viper.carbon.proofgen.util.FileUtil
@@ -150,7 +150,7 @@ class DefaultProofGenInterface(val proofDir: Path,
         boogieProgAccessor = bplProcAccessor
       )
 
-      val endToEndTheoryProof = endToEndProofGenerator.generatePartialEndToEndProof()
+      val (endToEndTheoryProof, methodEndToEndProofData) = endToEndProofGenerator.generatePartialEndToEndProof()
 
       StoreTheory.storeTheory(endToEndTheoryProof, dir)
   }

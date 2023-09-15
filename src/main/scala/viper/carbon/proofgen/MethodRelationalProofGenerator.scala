@@ -293,7 +293,7 @@ case class MethodRelationalProofGenerator(
 
     val mlInitializationCode =
       Seq(
-        MLUtil.defineVal(lookupVarRelTac, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), definitionLemmaFromName(varRelationListName))))),
+        MLUtil.defineVal(lookupVarRelTac, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), definitionLemmaFromName(varRelationListName), definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))))),
         MLUtil.defineVal(simpWithTrDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName))))),
         MLUtil.defineVal(simpWithTyReprDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(TypeRepresentation.tyReprBasicName))))),
         MLUtil.defineVal(typeSafetyThmMap, ViperBoogieMLUtil.genTypeSafetyThmMap(
@@ -393,8 +393,8 @@ case class MethodRelationalProofGenerator(
         ),
 
         MLUtil.defineVal(auxVarDisjTac,
-          //map_upd_set_dom for the method call case
-          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmasName, "map_upd_set_dom")))
+          //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmasName, "map_upd_set_dom", DeBruijnIsaUtil.ranShiftAndAddLemma)))
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(

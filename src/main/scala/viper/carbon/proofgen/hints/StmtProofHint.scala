@@ -1,10 +1,14 @@
 package viper.carbon.proofgen.hints
 
+import viper.carbon.boogie.LocalVar
 import viper.carbon.{boogie => bpl}
 import viper.silver.{ast => sil}
 
 sealed trait StmtProofHint
-case class SeqnProofHint(hints: Seq[StmtProofHint], scopedDecls: Seq[sil.Declaration]) extends StmtProofHint
+
+case class ScopeProofHint(scopedDecls: Seq[sil.Declaration], varsBpl: Seq[LocalVar], bodyHint: StmtProofHint) extends StmtProofHint
+
+case class SeqnProofHint(hints: Seq[StmtProofHint]) extends StmtProofHint
 
 case class IfHint(cond: sil.Exp, componentHints: Seq[StmtComponentProofHint]) extends StmtProofHint
 

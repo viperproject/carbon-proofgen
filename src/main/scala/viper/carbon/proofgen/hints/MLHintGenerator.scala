@@ -150,9 +150,9 @@ object MLHintGenerator {
 
   def generateAtomicStmtHintsInML(atomicProofHint: AtomicStmtProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String ={
     atomicProofHint match {
-      case LocalVarAssignHint(assignVpr, lhsBpl, hints) =>
+      case LocalVarAssignHint(_, lhsBpl, _) =>
         MLUtil.app("AssignHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, MLUtil.isaToMLThm(boogieProcAccessor.getLocalLookupTyThm(lhsBpl)))))
-      case FieldAssignHint(fieldAssignVpr, hints) =>
+      case FieldAssignHint(_, hints) =>
         MLUtil.app("FieldAssignHint", MLUtil.createTuple(Seq(expWfRelInfo, expWfRelInfo, expRelInfo, expRelInfo)))
       case InhaleStmtHint(componentHints) =>
         componentHints match {
@@ -187,9 +187,15 @@ object MLHintGenerator {
 
   def generateStmtHintsInML(stmtProofHint: StmtProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
     stmtProofHint match {
-      case SeqnProofHint(hints, scopedDecls) =>
+      case SeqnProofHint(hints) =>
         MLUtil.app("SeqnHint", MLUtil.createList(hints.map(hint => generateStmtHintsInML(hint, boogieProcAccessor, expWfRelInfo, expRelInfo))))
-      case IfHint(cond, componentHints) =>
+      case ScopeProofHint(_, varsBpl, bodyHint) =>
+        def computeHintFromVar(localVar: LocalVar, hint: String) : String = {
+          MLUtil.app("ScopeHint", MLUtil.createTuple(Seq(MLUtil.isaToMLThm(boogieProcAccessor.getLocalLookupDeclThm(localVar)), hint)))
+        }
+
+        varsBpl.foldRight(generateStmtHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo))(computeHintFromVar)
+      case IfHint(_, componentHints) =>
         componentHints match {
           case Seq(IfComponentHint(thnHint, elsHint)) =>
             val thnHintString = generateStmtHintsInML(thnHint, boogieProcAccessor, expWfRelInfo, expRelInfo)

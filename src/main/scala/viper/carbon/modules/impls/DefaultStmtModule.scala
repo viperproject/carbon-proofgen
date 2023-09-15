@@ -13,7 +13,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import Implicits._
-import viper.carbon.proofgen.hints.{AssertStmtComponentHint, AssertStmtHint, AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MethodCallHint, MethodCallStmtComponentHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
+import viper.carbon.proofgen.hints.{AssertStmtComponentHint, AssertStmtHint, AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, FieldAssignHint, IfComponentHint, IfHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MethodCallHint, MethodCallStmtComponentHint, ScopeProofHint, SeqnProofHint, StmtComponentProofHint, StmtProofHint}
 import viper.silver.ast.FieldAssign
 import viper.silver.verifier.{PartialVerificationError, errors, reasons}
 import viper.silver.ast.utility.Expressions
@@ -282,6 +282,8 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         locals map (v => mainModule.env.define(v.localVar)) // add local variables to environment
         val s =
           {
+            //CARBON_CHANGE: havoc of scoped variables should be merged into main Carbon repo
+            val havocLocalsVars = MaybeCommentBlock("Havoc scoped variables", locals map (lv => Havoc(mainModule.env.get(lv.localVar))))
             val assmsLocalVars =
               MaybeCommentBlock("Assumptions about local variables", locals map (a => mainModule.allAssumptionsAboutValue(a.typ, mainModule.translateLocalVarDecl(a), true)))
             val translatedStmtsAndProofHints = ss map (st => translateStmt(st, statesStack, allStateAssms, duringPackage))
@@ -289,9 +291,16 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
 
             /**
               * in Isabelle we represent Seqn( Seq(s) ) as s
-              * TODO: take scopes into account also if size is only 1
               */
-            (Seqn(assmsLocalVars++translatedStmts), if(ss.size == 1) { translatedProofs(0) } else { SeqnProofHint(translatedProofs, scopedDecls) })
+            val seqnProofHint = if(ss.size == 1) { translatedProofs(0) } else { SeqnProofHint(translatedProofs) }
+            val scopeWithSeqnProofHint =
+              if(scopedDecls.isEmpty) {
+                seqnProofHint
+              } else {
+                ScopeProofHint(scopedDecls, locals map (v => mainModule.env.get(v.localVar)), seqnProofHint)
+              }
+
+            (Seqn(havocLocalsVars++assmsLocalVars++translatedStmts), scopeWithSeqnProofHint)
           }
         locals map (v => mainModule.env.undefine(v.localVar)) // remove local variables from environment
         // return to avoid adding a comment, and to avoid the extra 'assumeGoodState'
