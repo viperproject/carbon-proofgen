@@ -391,8 +391,8 @@ sealed trait Decl extends Node
 case class ConstDecl(name: Identifier, typ: Type, unique: Boolean = false) extends Decl
 case class TypeDecl(t: NamedType) extends Decl
 case class TypeAlias(name: NamedType, definition: Type) extends Decl
-case class Func(name: Identifier, args: Seq[LocalVarDecl], typ: Type, attributes: Map[String, String] = Map()) extends Decl
-case class Axiom(exp: Exp) extends Decl
+case class Func(name: Identifier, args: Seq[LocalVarDecl], typ: Type, attributes: Map[String, String] = Map(), proofHint: Option[BoogieFuncProofHint] = None) extends Decl
+case class Axiom(exp: Exp, proofHint: Option[BoogieAxiomProofHint] = None) extends Decl
 case class GlobalVarDecl(name: Identifier, typ: Type) extends Decl
 case class Procedure(name: Identifier, ins: Seq[LocalVarDecl], outs: Seq[LocalVarDecl], body: Stmt) extends Decl
 /**
