@@ -7,6 +7,7 @@
 package viper.carbon.boogie
 
 import UnicodeString.string2unicodestring
+import viper.carbon.proofgen.hints.{BoogieAxiomProofHint, BoogieFuncProofHint}
 import viper.silver.ast.Member
 import viper.silver.ast.pretty._
 import viper.silver.verifier.VerificationError
@@ -358,8 +359,12 @@ case class LocalVarWhereDecl(name: Identifier, where: Exp) extends Stmt
 case class Comment(s: String) extends Stmt
 object MaybeComment {
   def apply(s: String, stmt: Stmt) = {
-    if (stmt.optimize.asInstanceOf[Stmt].children.isEmpty) Statements.EmptyStmt
-    else Seqn(Comment(s) :: stmt.optimize.asInstanceOf[Stmt] :: Nil)
+    /** CARBON_CHANGE: we do not switch on the basic Boogie-to-Boogie optimizations defined by [[Optimizer]], since they
+      * are currently not supported by proof generation.
+      * In the main repo optimizations are switch on by invoking [[stmt.optimize]] instead of just [[stmt]].
+      */
+    if (stmt.children.isEmpty) Statements.EmptyStmt
+    else Seqn(Comment(s) :: stmt :: Nil)
   }
 }
 /**
@@ -369,8 +374,12 @@ object MaybeComment {
 case class CommentBlock(s: String, stmt: Stmt) extends Stmt
 object MaybeCommentBlock {
   def apply(s: String, stmt: Stmt) = {
-    if (stmt.optimize.asInstanceOf[Stmt].children.isEmpty) Statements.EmptyStmt
-    else CommentBlock(s, stmt.optimize.asInstanceOf[Stmt])
+    /** CARBON_CHANGE: we do not switch on the basic Boogie-to-Boogie optimizations defined by [[Optimizer]], since they
+      * are currently not supported by proof generation.
+      * In the main repo optimizations are switch on by invoking [[stmt.optimize]] instead of just [[stmt]].
+      */
+    if (stmt.children.isEmpty) Statements.EmptyStmt
+    else CommentBlock(s, stmt)
   }
 }
 
