@@ -1,12 +1,14 @@
 package viper.carbon.proofgen.end_to_end
 
-import isabelle.ast.TermIdent
+import isabelle.ast.{TermIdent, TypeIsa}
 
 trait IsaViperEndToEndGlobalData {
 
   def theoryName : String
 
   def ctxtVpr : TermIdent
+
+  def abstractValueType: TypeIsa
 
   def programTotalProgEqLemma : String
 

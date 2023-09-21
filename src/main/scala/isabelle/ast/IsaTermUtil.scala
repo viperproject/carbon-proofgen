@@ -17,7 +17,9 @@ object IsaTermUtil {
   val none = TermIdent("None")
 
   def fst(t: Term) = TermApp(TermIdent("fst"), t)
-  def snd(t: Term) = TermApp(TermIdent("snd"), t)
+
+  val sndId = TermIdent("snd")
+  def snd(t: Term) = TermApp(sndId, t)
 
   def convertOpt(termOpt: Option[Term]) : Term = termOpt.fold[Term](none)(t => some(t))
 
@@ -31,5 +33,7 @@ object IsaTermUtil {
   def injectiveOnDom(fun: Term, domain: Term) : Term = TermApp(TermIdent("inj_on"), fun, domain)
 
   def domainOfPartialFun(fun: Term) : Term = TermApp(TermIdent("dom"), fun)
+
+  def compose(fun1: Term, fun2: Term)  : Term = TermApp(TermIdent("comp"), fun1, fun2)
 
 }

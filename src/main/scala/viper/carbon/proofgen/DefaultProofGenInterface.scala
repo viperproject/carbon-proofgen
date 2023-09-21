@@ -7,11 +7,13 @@ import java.nio.charset.StandardCharsets
 import viper.silver.{ast => sil}
 import viper.carbon.boogie.{Decl, Procedure}
 import viper.carbon.modules.{HeapModule, PermModule}
-import viper.carbon.proofgen.end_to_end.{DefaultIsaViperEndToEndGlobalData, EndToEndGlobalDataHelper, IsaViperEndToEndGlobalData, MethodEndToEndProofGenerator}
+import viper.carbon.proofgen.end_to_end.{DefaultIsaViperEndToEndGlobalData, EndToEndGlobalDataHelper, FullEndToEndProofGenerator, IsaViperEndToEndGlobalData, MethodEndToEndProofData, MethodEndToEndProofGenerator}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{BoogieDeclProofHint, MethodProofHint, StmtProofHint}
 import viper.carbon.proofgen.util.FileUtil
 import viper.carbon.verifier.Environment
+
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentMap}
 
 //a directory with path proofGenDir must exist
 
@@ -45,6 +47,8 @@ class DefaultProofGenInterface(val proofDir: Path,
 
   val endToEndGlobalData: DefaultIsaViperEndToEndGlobalData  = EndToEndGlobalDataHelper.generateEndToEndData("global_data_end_to_end")
 
+  val methodProofDataMap : ConcurrentMap[sil.Method, MethodEndToEndProofData] = new ConcurrentHashMap
+
   /***
     * Creates and stores the Isabelle proof relating the Viper and Boogie programs
     *
@@ -63,7 +67,6 @@ class DefaultProofGenInterface(val proofDir: Path,
 
     generateRootFile()
   }
-
 
   def generateRootFile() : Unit = {
     import viper.carbon.proofgen.util.StringBuilderExtension._
@@ -152,6 +155,8 @@ class DefaultProofGenInterface(val proofDir: Path,
 
       val (endToEndTheoryProof, methodEndToEndProofData) = endToEndProofGenerator.generatePartialEndToEndProof()
 
+      methodProofDataMap.put(m, methodEndToEndProofData)
+
       StoreTheory.storeTheory(endToEndTheoryProof, dir)
   }
 
@@ -159,6 +164,23 @@ class DefaultProofGenInterface(val proofDir: Path,
     val declHints = preamble.map(BoogieDeclProofHint.extractHintsFromAllDecls).flatten
 
     val theory = EndToEndGlobalDataHelper.generateEndToEndTheory(endToEndGlobalData, vprProgGlobalData, globalDataBpl, declHints, boogieProofDirName)
+    StoreTheory.storeTheory(theory, proofDir)
+  }
+
+  override def generateEndToEndProof(): Unit = {
+    import scala.jdk.CollectionConverters._
+
+    val methodProofDataMapImmutable = methodProofDataMap.asScala.toMap
+
+    val theory =
+      FullEndToEndProofGenerator.generateFullEndToEndProof(
+      "end_to_end_proof",
+      endToEndGlobalData,
+      methodProofDataMapImmutable,
+      methodProofDataMapImmutable.map(m => methodProofDirName(m._1)+"/"+m._2.theoryName).toSeq,
+      vprProgGlobalData
+    )
+
     StoreTheory.storeTheory(theory, proofDir)
   }
 

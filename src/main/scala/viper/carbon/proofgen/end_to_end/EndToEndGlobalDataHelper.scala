@@ -1,6 +1,6 @@
 package viper.carbon.proofgen.end_to_end
 
-import isabelle.ast.{AbbrevDecl, ContextElem, DeclareDecl, DefDecl, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, Term, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermSet, TermTuple, Theory}
+import isabelle.ast.{AbbrevDecl, ContextElem, DeclareDecl, DefDecl, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, Term, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermSet, TermTuple, Theory, VarType}
 import viper.carbon.proofgen.hints.{AxiomTacticInput, BoogieAxiomProofHint, BoogieDeclProofHint, BoogieFuncProofHint}
 import viper.carbon.proofgen.{BoogieConstGlobal, BoogieIsaTerm, EmptyFrameConst, FieldConst, FullPermConst, IsaBoogieGlobalAccessor, IsaViperGlobalDataAccessor, NoPermConst, NullConst, TypeRepresentation, ViperBoogieRelationIsa, ViperTotalContext, ZeroMaskConst, ZeroPMaskConst}
 
@@ -23,6 +23,7 @@ object EndToEndGlobalDataHelper {
     DefaultIsaViperEndToEndGlobalData(
       theoryName = theoryName,
       ctxtVprName = "ctxt_vpr",
+      abstractValueType = VarType("a"),
       programTotalProgEqLemmaName = "program_total_eq",
       funInterpInstData = FunInterpInstantiationData(
         funInterpVprBpl = "has_direct_perm_fun_interp_single_wf",

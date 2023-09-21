@@ -112,7 +112,11 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
         }
 
         if(verifier.generateProofs) {
+          //proofs for the preambles must be generated after the preambles are generated
           verifier.proofGenInterface.generateProofForPreamble(preambles ++ translateFields)
+
+          //generate main end-to-end theorem (must happen after all proofs for the methods have been generated)
+          verifier.proofGenInterface.generateEndToEndProof()
         }
 
         // some header information for debugging

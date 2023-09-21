@@ -82,6 +82,5 @@ class IsaBoogieProcAccessor(
 
   val preconditionDef : TermIdent = TermIdent(procDataDecl("pres"))
 
-
 }
 

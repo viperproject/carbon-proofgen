@@ -13,7 +13,7 @@ trait MethodEndToEndProofData {
   def endToEndLemma : String
 
   /**
-    * This assumption should be the only assumption for [[endToEndLemma]]
+    * The term provides the only assumption for [[endToEndLemma]].
     */
   def boogieProcCorrectAssumption : Term
 
@@ -148,7 +148,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
           globalVarDecls = boogieProgAccessor.globalDataAccessor.globalDecls,
           axiomDecls = boogieProgAccessor.globalDataAccessor.axiomDecls,
           proc = boogieProgAccessor.procDef,
-          vprDomainValueType = VarType("a")
+          vprDomainValueType = endToEndData.abstractValueType
         )
 
     val lemma =
@@ -157,7 +157,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
           Seq(boogieProcCorrectAssm)
         ),
         ViperMethodCorrectness.correctPartial(
-          totalContext = TermWithExplicitType(endToEndData.ctxtVpr, ViperTotalContext.totalContextRecordType(VarType("a"))),
+          totalContext = TermWithExplicitType(endToEndData.ctxtVpr, ViperTotalContext.totalContextRecordType(endToEndData.abstractValueType)),
           stateConsistency = TermQuantifier(Lambda, Seq(isabelle.ast.Wildcard), BoolConst(true)),
           methodAccessor.methodDecl
         ),
@@ -347,9 +347,9 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ProofUtil.simpTac(typeReprBasicDefLemmaName),
       ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString) +: (Seq(IsaMethodArgTypes, IsaMethodRetTypes).map(methodAccessor.methodDeclProjectionLemmaName)))
     ) ++
-      (if(methodAccessor.origMethod.formalArgs.isEmpty && methodAccessor.origMethod.isEmpty) {
+      (if(methodAccessor.origMethod.formalArgs.isEmpty && methodAccessor.origMethod.formalReturns.isEmpty) {
         Nil
-      } else{
+      } else {
         Seq(
           ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName("var_rel_prop"), ctxtBplDefLemmaName)),
           ProofUtil.simpTac(typeReprBasicDefLemmaName +: (methodAccessor.origMethod.formalArgs ++ methodAccessor.origMethod.formalReturns).map(

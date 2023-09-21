@@ -15,6 +15,8 @@ trait ProofGenInterface {
 
   def generateProofForPreamble(preamble: Seq[Decl]) : Unit
 
+  def generateEndToEndProof() : Unit
+
   def finishProof() : Unit
 
 }

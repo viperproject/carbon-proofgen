@@ -1,6 +1,6 @@
 package viper.carbon.proofgen.end_to_end
 
-import isabelle.ast.{IsaUtil, TermIdent}
+import isabelle.ast.{IsaUtil, TermIdent, TypeIsa}
 
 case class FunInterpInstantiationData(funInterpVprBpl: String, funInterpVprBplWfLemma: String, funInterpBplWfLemma: String)
 
@@ -11,6 +11,7 @@ case class ConstantsData(lookupConstantsNoGlobalsLemma: String, constantsLookupW
 case class DefaultIsaViperEndToEndGlobalData(
                         override val theoryName: String,
                         ctxtVprName: String,
+                        override val abstractValueType: TypeIsa,
                         programTotalProgEqLemmaName: String,
                         funInterpInstData : FunInterpInstantiationData,
                         constantsData: ConstantsData,
