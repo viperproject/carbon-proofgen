@@ -21,14 +21,18 @@ object IsaVprProgramGenerator {
     outerDecls += fieldsListDef
 
     val fieldRelationList = {
+      //we need to sort the values such that we can prove injectivity via an ordering lemma
       TermList(
         p.fields.map(f => {
           val vprFieldConstTerm = fieldToTerm.get(f).get
           val bplFieldConstId = boogieGlobalAccessor.getVarId(FieldConst(f))
-          TermTuple(vprFieldConstTerm, NatConst(bplFieldConstId))
-        }
+          (vprFieldConstTerm, bplFieldConstId)
+        }).sortBy(a => a._2)
+          .map( {
+            case (vprFieldConstTerm, bplFieldConstId) =>
+              TermTuple(vprFieldConstTerm, NatConst(bplFieldConstId))
+          })
         )
-      )
     }
 
     val fieldRelationListDef = DefDecl(
@@ -153,7 +157,10 @@ object IsaVprProgramGenerator {
       }
 
     decls.flatten :+
-      LemmasDecl(lookupLemmasName, fields.map(lookupFieldLemmaName))
+      LemmasDecl(lookupLemmasName,
+        //if there are no fields, then just add a placeholder lemma (need at least one lemma for the declaration to be valid)
+        if(fields.isEmpty) { Seq("HOL.refl") } else { fields.map(lookupFieldLemmaName) }
+      )
   }
 
 

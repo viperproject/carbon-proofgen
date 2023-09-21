@@ -58,13 +58,14 @@ case class MethodRelationalProofGenerator(
     outerDecls += viperVarContextDef
 
     val varRelationList = {
+      //we need to sort the values such that we can prove injectivity of the mapping via an ordering lemma
       TermList(
-        vprTranslation.availableVariables().map(
-          vprVar => {
-            val vprVarId = vprTranslation.translateVariableId(vprVar).get
-            val bplVarId = boogieProg.getBoogieVarId(vprVar)
-            TermTuple(Seq(NatConst(vprVarId), NatConst(bplVarId)))
-          }
+        vprTranslation.availableVariables().map(vprVar => (vprVar, boogieProg.getBoogieVarId(vprVar))).sortBy(a => a._2)
+          .map( {
+           case (vprVar, bplVarId) =>
+             val vprVarId = vprTranslation.translateVariableId(vprVar).get
+             TermTuple(Seq(NatConst(vprVarId), NatConst(bplVarId)))
+         }
         )
       )
     }
@@ -143,8 +144,19 @@ case class MethodRelationalProofGenerator(
     val basicDisjointnessLemmas = LemmasDecl(
       basicDisjointnessLemmasName,
       Seq(
-        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", varRelationBoundedByName)),
-        not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", progAccessor.fieldRelBoundedLemma)),
+        //if the list is empty, then boundedness lemma does not help, instead expose the full definition
+        if(methodAccessor.origMethod.formalArgs.isEmpty && methodAccessor.origMethod.formalReturns.isEmpty) {
+          IsaUtil.definitionLemmaFromName(varRelationListName)
+        } else {
+          not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", varRelationBoundedByName))
+        },
+        //if the list is empty, then boundedness lemma does not help, instead expose the full definition
+        if(progAccessor.origProgram.fields.isEmpty) {
+          IsaUtil.definitionLemmaFromName(progAccessor.fieldRel.id.toString)
+        } else {
+          not_satisfies_prop_set(ProofUtil.OF("list_all_ran_map_of", progAccessor.fieldRelBoundedLemma))
+        },
+        //const repr is not empty
         not_satisfies_prop_set("const_repr_basic_bound_2")
       )
     )

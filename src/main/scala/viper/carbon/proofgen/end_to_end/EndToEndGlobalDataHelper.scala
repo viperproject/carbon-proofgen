@@ -301,6 +301,7 @@ object EndToEndGlobalDataHelper {
       )
       
     val axiomTacticInput = AxiomTacticInput(
+      vprProg = vprProgAccessor.origProgram,
       funInterpDef = funInterpVprBplInstDef,
       boogieConstRel = "assms(1)",
       fieldRel = "assms(2)",

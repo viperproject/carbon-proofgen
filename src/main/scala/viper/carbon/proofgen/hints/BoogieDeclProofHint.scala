@@ -3,6 +3,7 @@ package viper.carbon.proofgen.hints
 import isabelle.ast.{IsaUtil, MLUtil, ProofUtil, Term}
 import viper.carbon.boogie.{Axiom, CommentedDecl, Decl, Func}
 import viper.carbon.proofgen.BoogieFunId
+import viper.silver.{ast => sil}
 
 sealed trait BoogieDeclProofHint
 
@@ -31,7 +32,7 @@ case class BoogieAxiomProofHint(axiomName: String, private val tactic: AxiomTact
 
 }
 
-case class AxiomTacticInput(funInterpDef: String, boogieConstRel: String, fieldRel: String, lookupFieldLemmas: String, delThms: String)
+case class AxiomTacticInput(vprProg: sil.Program, funInterpDef: String, boogieConstRel: String, fieldRel: String, lookupFieldLemmas: String, delThms: String)
 
 object BoogieAxiomProofHint {
 
@@ -40,7 +41,14 @@ object BoogieAxiomProofHint {
       val funInterpDefLemmaML = MLUtil.isaToMLThm(IsaUtil.definitionLemmaFromName(axiomTacticInput.funInterpDef))
 
       val lookupConstLemmas = MLUtil.isaToMLThms(ProofUtil.OF("lookup_boogie_const_concrete_lemmas", axiomTacticInput.boogieConstRel))
-      val lookupFieldLemmas = MLUtil.isaToMLThms(ProofUtil.OF(axiomTacticInput.lookupFieldLemmas, axiomTacticInput.fieldRel))
+
+      val lookupFieldLemmas =
+        if(axiomTacticInput.vprProg.fields.isEmpty) {
+          MLUtil.createList(Seq())
+        } else {
+          MLUtil.isaToMLThms(ProofUtil.OF(axiomTacticInput.lookupFieldLemmas, axiomTacticInput.fieldRel))
+        }
+
       val axiomSatProofDel = MLUtil.isaToMLThms(axiomTacticInput.delThms)
 
       val initTacWithoutApply = Seq(

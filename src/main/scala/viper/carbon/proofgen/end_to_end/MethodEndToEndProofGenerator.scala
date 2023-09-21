@@ -204,11 +204,12 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodPostcondition).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
         // free variables in precondition must be argument variables
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodArgTypes).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
-        //argument and return variables are not modified by the body
+        //argument variables are not modified by the body
         methodAccessor.origMethod.body.fold(
           ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
-        )(_ => ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftDownSet))),
-        ProofUtil.simpTacOnly(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
+        )(_ => ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftDownSet), methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes)))),
+        //variable context equality
+        ProofUtil.simpTac(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
       )
 
     Proof(ProofUtil.mapApplyTac(methodsWithoutApply))
@@ -236,7 +237,8 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       //the method project lemmas are for the variable context
       ProofUtil.simpTacOnly(Seq(endToEndData.programTotalProgEqLemma, methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes))),
       ProofUtil.ruleTac(ProofUtil.simplified(relationalProofData.relationalLemmaName,
-        IsaUtil.definitionLemmaFromName(relationalProofData.varContextVprDef.id.toString))
+        //simplify vpr var context such that it matches
+        ProofUtil.simplified(IsaUtil.definitionLemmaFromName(relationalProofData.varContextVprDef.id.toString), Seq()))
       ),
       ProofUtil.simpTacOnly(IsaUtil.definitionLemmaFromName(relationalProofData.relationalLemmaAssumptionDefName)),
       ProofUtil.introTac("conjI"),
@@ -372,7 +374,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ProofUtil.simpTac(Seq(translationRecordDefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)),
       ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.injFieldRelLemma)),
       ProofUtil.simpTac(Seq(translationRecordDefLemma, IsaUtil.definitionLemmaFromName(boogieProgAccessor.globalDataAccessor.constDecls.id.toString))),
-      ProofUtil.simpTac(Seq(ViperBoogieRelationIsa.constReprBasicRangeLemmaName, endToEndData.ranFieldRelLemma)),
+      ProofUtil.simpTacOnly(Seq(ViperBoogieRelationIsa.constReprBasicRangeLemmaName, endToEndData.ranFieldRelLemma)),
       ProofUtil.fastforceTac,
       ProofUtil.cutTac(endToEndData.axiomSatLemma),
       ProofUtil.simpTac(ctxtBplDefLemmaName),
