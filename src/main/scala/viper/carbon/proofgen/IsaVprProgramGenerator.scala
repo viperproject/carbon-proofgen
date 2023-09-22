@@ -214,10 +214,13 @@ object IsaVprProgramGenerator {
       map.put(m.name, mAccessor)
     }
 
-    val associationList = TermList(map.toList.map(
-        { case (methodName, methodAccessor) => TermTuple(StringConst(methodName), methodAccessor.methodDecl) }
-      )
-    )
+    val methodOrder = p.methods
+
+    /** It is important that the association list reflects the order that is eventually specified by [[IsaViperAllMethodsAccessor.methodOrder]] */
+    val associationList = TermList(methodOrder.map( m => {
+      val (methodName, methodAccessor) = (m.name, map.get(m.name).get)
+      TermTuple(StringConst(methodName), methodAccessor.methodDecl)
+    }))
 
     val methodLookupDef = DefDecl("methodLookupFun", None, (Seq(), IsaTermUtil.mapOf(associationList)))
     outerDecls += methodLookupDef
@@ -241,6 +244,7 @@ object IsaVprProgramGenerator {
 
     val allMethodsAccessor = DefaultIsaViperAllMethodsAccessor(
       theoryName = theoryName,
+      methodOrder = methodOrder,
       methodLookupFun = TermIdent(methodLookupDef.name),
       methodAccessorMap = map.toMap
     )

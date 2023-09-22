@@ -10,6 +10,16 @@ object ProofUtil {
 
   def OF(thm: String, instThm: String) : String = thmWithAttributeSingleValue(thm, "OF", instThm)
   def OF(thm: String, instThms: Seq[String]) : String = thmWithAttributeMultipleValues(thm, "OF", instThms)
+  def multiAttributes(thm: String, attributesWithValues: Seq[(String, Seq[String])]) : String = {
+    val attributeWithValuesOutput =
+      attributesWithValues.map(
+        {
+          case (attributeName, attributeValues) => s"$attributeName ${attributeValues.mkString(" ")}"
+        }
+      ).mkString(",")
+
+    s"$thm[$attributeWithValuesOutput]"
+  }
 
   def simplified(thm: String, simpThm: String) : String = thmWithAttributeSingleValue(thm, "simplified", simpThm)
   def simplified(thm: String, simpThms: Seq[String]) : String = thmWithAttributeMultipleValues(thm, "simplified", simpThms)

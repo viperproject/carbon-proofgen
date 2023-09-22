@@ -50,6 +50,7 @@ trait IsaViperAllMethodsAccessor {
   def methodLookupFun : TermIdent
   def lookupLemmaName(methodName: String) : String
   def methodAccessor(methodName: String) : IsaViperMethodAccessor
+  def methodOrder : Seq[sil.Method] //defines the order in which methods are listed in definitions that contain information about all methods
 }
 
 sealed trait MethodDeclMember {
