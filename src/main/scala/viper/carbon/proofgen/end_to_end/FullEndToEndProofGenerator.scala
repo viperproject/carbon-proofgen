@@ -1,7 +1,7 @@
 package viper.carbon.proofgen.end_to_end
 
-import isabelle.ast.{ContextElem, IsaTermUtil, Lambda, LemmaDecl, OuterDecl, Proof, Term, TermApp, TermIdent, TermList, TermQuantifier, TermTuple, TermWithExplicitType, Theory}
-import viper.carbon.proofgen.{IsaViperGlobalDataAccessor, ViperBoogieRelationIsa, ViperMethodCorrectness, ViperTotalContext}
+import isabelle.ast.{ContextElem, IsaTermUtil, Lambda, LemmaDecl, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermTuple, TermWithExplicitType, Theory}
+import viper.carbon.proofgen.{IsaViperGlobalDataAccessor, ViperBoogieRelationIsa, ViperIsaTerm, ViperMethodCorrectness, ViperTotalContext}
 import viper.silver.{ast => sil}
 
 import scala.collection.mutable.ListBuffer
@@ -24,39 +24,32 @@ object FullEndToEndProofGenerator {
                                 viperProgAccessor: IsaViperGlobalDataAccessor) : Theory = {
     val endToEndProofDataSeq = endToEndProofData.toSeq //define an iteration order on the methods, since will need to iterate multiple times in the same order
 
-    val outerDecls = ListBuffer[OuterDecl]()
+    val outerDecls = generateAllMethodsCorrect("all_methods_correct", globalEndToEndData, endToEndProofDataSeq, viperProgAccessor)
 
-    val allMethodsCorrectPartialLemmaName = "all_methods_correct_partial"
-    val allMethodsCorrectLemmaName = "all_methods_correct"
-
-    outerDecls.addAll(generateAllMethodsPartialCorrect(allMethodsCorrectPartialLemmaName, globalEndToEndData, endToEndProofDataSeq, viperProgAccessor))
-    outerDecls.addAll(generateAllMethodsCorrect(allMethodsCorrectLemmaName, endToEndProofDataSeq, viperProgAccessor, allMethodsCorrectPartialLemmaName))
-
-    Theory(theoryName = theoryName, importTheories = methodEndToEndProofImports, decls = outerDecls.toSeq)
+    Theory(theoryName = theoryName, importTheories = methodEndToEndProofImports, decls = outerDecls)
   }
 
-  private def generateAllMethodsPartialCorrect(
+  private def generateAllMethodsCorrect(
                     lemmaName: String,
                     globalEndToEndData: IsaViperEndToEndGlobalData,
                     endToEndProofData: Seq[(sil.Method, MethodEndToEndProofData)],
                     viperProgAccessor: IsaViperGlobalDataAccessor) : Seq[OuterDecl] = {
 
-    val boogieProcedureCorrectnessAssms : ContextElem =
-      ContextElem.onlyAssumptionsNoLabels(
-        endToEndProofData.map(m => m._2.boogieProcCorrectAssumption)
-      )
+    val boogieProcedureCorrectnessAssms = endToEndProofData.map(m => m._2.boogieProcCorrectAssumption)
+
+    val vprContextType = ViperTotalContext.totalContextRecordType(globalEndToEndData.abstractValueType)
 
     val methodNameAndDeclTupleList = endToEndProofData.map( {
         case (method, _) =>
           val methodAccessor = viperProgAccessor.allMethodsAccessor.methodAccessor(method.name)
-          TermTuple(Seq(TermIdent(method.name), methodAccessor.methodDecl))
+          TermTuple(Seq(StringConst(method.name), methodAccessor.methodDecl))
       }
     )
 
-    val conclusion : Term =
+    val conclusionAux : Term =
       {
         val methodCorrectPartialTerm = TermApp(TermIdent(ViperMethodCorrectness.vprMethodCorrectPartialDefName),
-          Seq(TermWithExplicitType(globalEndToEndData.ctxtVpr, ViperTotalContext.totalContextRecordType(globalEndToEndData.abstractValueType)),
+          Seq(TermWithExplicitType(globalEndToEndData.ctxtVpr, vprContextType),
               ViperBoogieRelationIsa.trivialStateConsistency
           )
         )
@@ -67,19 +60,63 @@ object FullEndToEndProofGenerator {
         )
       }
 
-    val lemmaAux = LemmaDecl(
+    val proofMethodsAux = ProofUtil.mapApplyTac(
+      Seq(
+        ProofUtil.simp,
+        ProofUtil.introTac("conjI"),
+      ) ++
+        endToEndProofData.zipWithIndex.map({
+          case ((_,proofData), idx) =>
+            ProofUtil.ruleTac(ProofUtil.OF(proofData.endToEndLemma, s"assms(${idx+1})"))
+        })
+    )
+
+    val auxListAllPartialLemma = LemmaDecl(
+      lemmaName+"_list_all_aux",
+      ContextElem.onlyAssumptionsNoLabels(
+        boogieProcedureCorrectnessAssms
+      ),
+      conclusionAux,
+      Proof(proofMethodsAux :+ ProofUtil.doneTac)
+    )
+
+    val methodTerm = TermIdent("m")
+    val methodDeclTerm = TermIdent("mdecl")
+
+    val methodLookupAssumption = TermBinary.eq(
+      TermApp(
+        ViperIsaTerm.methodsOfProgramProjection(viperProgAccessor.vprProgram),
+        methodTerm
+      ),
+      IsaTermUtil.some(methodDeclTerm)
+    )
+
+    val mainLemmaContextElem = ContextElem.onlyAssumptionsNoLabels(
+      methodLookupAssumption +:
+        boogieProcedureCorrectnessAssms
+    )
+
+    val auxPartialLemma = LemmaDecl(
       lemmaName+"_aux",
-      boogieProcedureCorrectnessAssms,
-      conclusion,
+      mainLemmaContextElem,
+      ViperMethodCorrectness.correctPartial(
+        TermWithExplicitType(globalEndToEndData.ctxtVpr, vprContextType),
+        ViperBoogieRelationIsa.trivialStateConsistency,
+        methodDeclTerm),
       Proof(Seq("oops"))
     )
 
-    Seq(lemmaAux)
-  }
+    val endToEndLemma = LemmaDecl(
+      lemmaName,
+      mainLemmaContextElem,
+      ViperMethodCorrectness.correct(
+        TermWithExplicitType(globalEndToEndData.ctxtVpr, vprContextType),
+        ViperBoogieRelationIsa.trivialStateConsistency,
+        methodDeclTerm),
+      Proof(Seq("oops"))
+    )
 
-  private def generateAllMethodsCorrect(lemmaName: String, endToEndProofData: Seq[(sil.Method, MethodEndToEndProofData)],
-                                        viperProgAccessor: IsaViperGlobalDataAccessor, allMethodsCorrectPartialLemmaName: String) : Seq[OuterDecl] = {
-    Seq()
+    Seq(auxListAllPartialLemma, auxPartialLemma, endToEndLemma)
   }
 
 }

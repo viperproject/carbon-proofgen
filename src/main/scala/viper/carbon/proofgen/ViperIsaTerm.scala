@@ -173,8 +173,14 @@ object ViperMethodCorrectness {
 
   val vprMethodCorrectPartialDefName = "vpr_method_correct_total_partial"
 
+  val vprMethodCorrectDefName = "vpr_method_correct_total"
+
   def correctPartial(totalContext: Term, stateConsistency: Term, methodDecl: Term) : Term = {
     TermApp(TermIdent(vprMethodCorrectPartialDefName), Seq(totalContext, stateConsistency, methodDecl))
+  }
+
+  def correct(totalContext: Term, stateConsistency: Term, methodDecl: Term): Term = {
+    TermApp(TermIdent(vprMethodCorrectDefName), Seq(totalContext, stateConsistency, methodDecl))
   }
 
 }
