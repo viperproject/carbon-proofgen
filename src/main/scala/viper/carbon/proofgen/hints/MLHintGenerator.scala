@@ -100,8 +100,8 @@ object MLHintGenerator {
 
   def generateExhaleHintsInML(exhaleHint: ExhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
     exhaleHint match {
-      //TODO: support case where the body hint contains more than one element and where the heap is not havoced
-      case DefaultExhaleProofHint(Seq((bodyHint, includeWellDefChecks)), setupWellDefStateHint, Some(exhaleHeapVar)) =>
+      //TODO: support case where the body hint contains more than one element
+      case DefaultExhaleProofHint(Seq((bodyHint, includeWellDefChecks)), setupWellDefStateHint, exhaleHeapVarOpt) =>
         val exhaleBodyHint = generateExhaleBodyHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
 
         val basicInfo = "basic_info"
@@ -114,11 +114,12 @@ object MLHintGenerator {
 
         createExhaleRelCompleteHint(
           setupWellDefStateTac = setupWellDefTacticFull,
-          lookupDeclExhaleHeapThm = MLUtil.isaToMLThm(boogieProcAccessor.getLocalLookupDeclThm(exhaleHeapVar)),
+          lookupDeclExhaleHeapThm = exhaleHeapVarOpt.fold(MLUtil.none)(exhaleHeapVar => MLUtil.some(MLUtil.isaToMLThm(boogieProcAccessor.getLocalLookupDeclThm(exhaleHeapVar)))),
           exhaleStmtRelThm = MLUtil.isaToMLThm(ExhaleRelUtil.exhStmtRelThm(includeWellDefChecks)), //TODO: permit optimizations
           exhaleBodyRelHint = exhaleBodyHint
         )
-      case _ => sys.error("exhale proof hint has unexpected form")
+      case _ =>
+        sys.error("exhale proof hint has unexpected form")
     }
   }
 
