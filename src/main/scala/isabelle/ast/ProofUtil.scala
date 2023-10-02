@@ -89,6 +89,8 @@ object ProofUtil {
 
   def repeatTac(tac: String) = s"($tac)+"
 
+  def ifTacSucceedsTac(tac: String) = s"($tac)?"
+
   val assumeTac : String = "assumption"
 
   val reflTac : String = ruleTac("HOL.refl")

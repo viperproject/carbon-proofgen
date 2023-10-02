@@ -71,7 +71,8 @@ object FullEndToEndProofGenerator {
     val proofMethodsAux = ProofUtil.mapApplyTac(
       Seq(
         ProofUtil.simp,
-        ProofUtil.introTac("conjI"),
+        //only execute if tac succeeds, since if there is only one method, then intro conjI fails
+        ProofUtil.ifTacSucceedsTac(ProofUtil.introTac("conjI")),
       ) ++
         endToEndProofDataSeq.zipWithIndex.map({
           case (proofData, idx) =>
