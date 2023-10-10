@@ -154,13 +154,13 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         if (transformedExp.isPure) {
           // if e is pure, then assert and exhale are the same
           val (exhaleStmt, exhaleHint) = exhale(Seq((transformedExp, errors.AssertFailed(a), defErrorOpt)), statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt)
-          (exhaleStmt, AssertStmtComponentHint(exhaleHint))
+          (exhaleStmt, AssertStmtComponentHint(None, exhaleHint))
         } else {
           // we create a temporary state to ignore the side-effects
-          val (backup, snapshot) = freshTempState("Assert")._1
+          val ((backup, snapshot), setupAssertState) = freshTempState("Assert")
           val (exhaleStmt, exhaleHint) = exhale(Seq((transformedExp, errors.AssertFailed(a), defErrorOpt)), isAssert =  true, statesStackForPackageStmt = statesStack, insidePackageStmt = insidePackageStmt, havocHeap = false)
           replaceState(snapshot)
-          (backup :: exhaleStmt :: Nil, AssertStmtComponentHint(exhaleHint))
+          (backup :: exhaleStmt :: Nil, AssertStmtComponentHint(Some(setupAssertState), exhaleHint))
         }
       case mc@sil.MethodCall(methodName, args, targets) =>
         val method = verifier.program.findMethod(methodName)

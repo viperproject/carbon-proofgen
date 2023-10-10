@@ -8,7 +8,7 @@ case class IfComponentHint(thn: StmtProofHint, els: StmtProofHint) extends StmtC
 
 case class InhaleStmtComponentHint(inhaleHint: InhaleProofHint) extends StmtComponentProofHint
 case class ExhaleStmtComponentHint(exhaleHint: ExhaleProofHint) extends StmtComponentProofHint
-case class AssertStmtComponentHint(exhaleHint: ExhaleProofHint) extends StmtComponentProofHint
+case class AssertStmtComponentHint(setupAssertStateOpt: Option[Seq[StateProofHint]], exhaleHint: ExhaleProofHint) extends StmtComponentProofHint
 case class MethodCallStmtComponentHint(
                 calleeName: String,
                 targetVarsBpl: Seq[Var],

@@ -406,7 +406,8 @@ case class MethodRelationalProofGenerator(
 
         MLUtil.defineVal(auxVarDisjTac,
           //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
-          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmasName, "map_upd_set_dom", DeBruijnIsaUtil.ranShiftAndAddLemma)))
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), basicDisjointnessLemmasName,
+            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma)))
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
