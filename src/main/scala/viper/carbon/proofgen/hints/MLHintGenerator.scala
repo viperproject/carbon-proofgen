@@ -145,7 +145,13 @@ object MLHintGenerator {
             )
           }
           case None =>
-            sys.error("pure assert not yet supported")
+            createAssertRelCompleteHint(
+              setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
+              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst_2","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
+              initTac = "assert_rel_init_tac_pure",
+              exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
+              resetStateTac = "assert_rel_reset_state_tac_pure"
+            )
         }
       }
       case _ =>
