@@ -257,7 +257,7 @@ class PrettyPrinter(n: Node) extends BracketPrettyPrinter {
         text("type") <+> show(name) <> char (';')
       case TypeAlias(name, definition) =>
         text("type") <+> show(name) <+> "=" <+> show(definition) <> char (';')
-      case Func(name, args, typ, attributes) =>
+      case Func(name, args, typ, attributes, _) =>
         val typVars = (args map (_.typ)) ++ Seq(typ) flatMap (_.freeTypeVars)
         text("function") <+>
           showAttributes(attributes) <+>
@@ -268,7 +268,7 @@ class PrettyPrinter(n: Node) extends BracketPrettyPrinter {
           show(typ) <> char (';')
       case GlobalVarDecl(name, typ) =>
         text("var") <+> name <> char (':') <+> show(typ) <> char (';')
-      case Axiom(exp) =>
+      case Axiom(exp, _) =>
         text("axiom") <+> show(quantifyOverFreeTypeVars(exp)) <> char (';')
       case Procedure(name, ins, outs, body) =>
         // collect all where clauses
