@@ -138,7 +138,7 @@ object MLHintGenerator {
 
             createAssertRelCompleteHint(
               setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
-              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst_1","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
+              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
               initTac = MLUtil.app("assert_rel_init_tac_standard", MLUtil.createList(setupWellDefStateTactics)),
               exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
               resetStateTac = "assert_rel_reset_state_tac_standard"
@@ -147,7 +147,7 @@ object MLHintGenerator {
           case None =>
             createAssertRelCompleteHint(
               setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
-              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst_2","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
+              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
               initTac = "assert_rel_init_tac_pure",
               exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
               resetStateTac = "assert_rel_reset_state_tac_pure"
