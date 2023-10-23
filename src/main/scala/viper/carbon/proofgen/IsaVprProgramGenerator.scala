@@ -83,7 +83,7 @@ object IsaVprProgramGenerator {
 
     val methodProjThm = LemmaDecl(
       "methods_vpr_prog",
-      TermBinary.eq(ViperIsaTerm.methodsOfProgramProjection(TermIdent(programDef.name)), allMethodsAccessor.methodLookupFun),
+      TermBinary.eq(ViperProgramRecord.methods(TermIdent(programDef.name)), allMethodsAccessor.methodLookupFun),
       Proof(
         Seq(ProofUtil.byTac(ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(programDef.name), "ViperLang.program.defs(1)"))))
       ))

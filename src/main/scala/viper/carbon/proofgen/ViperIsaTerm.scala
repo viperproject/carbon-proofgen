@@ -145,7 +145,21 @@ object ViperIsaTerm {
   def convertAstToProgramPoint(procBody: Term) =
     TermApp(TermIdent("convert_ast_to_program_point"), procBody)
 
-  def methodsOfProgramProjection(prog: Term) = TermApp(TermIdent("program.methods"), prog)
+}
+
+object ViperProgramRecord {
+
+  val vprProgRecordName : String = "program"
+
+  def methods(vprProg: Term) : Term = TermApp(TermIdent(s"$vprProgRecordName.methods"), vprProg)
+
+  def fields(vprProg: Term) : Term = TermApp(TermIdent(s"$vprProgRecordName.declared_fields"), vprProg)
+
+  def functions(vprProg: Term) : Term = TermApp(TermIdent(s"$vprProgRecordName.funs"), vprProg)
+
+  def predicates(vprProg: Term) : Term = TermApp(TermIdent(s"$vprProgRecordName.predicates"), vprProg)
+
+  def domains(vprProg: Term) : Term = TermApp(TermIdent(s"$vprProgRecordName.domains"), vprProg)
 
 }
 

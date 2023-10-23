@@ -1,7 +1,7 @@
 package viper.carbon.proofgen.end_to_end
 
 import isabelle.ast.{ContextElem, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, OuterDecl, Proof, ProofUtil, StringConst, Term, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermTuple, TermWithExplicitType, Theory}
-import viper.carbon.proofgen.{IsaViperGlobalDataAccessor, ViperBoogieRelationIsa, ViperIsaTerm, ViperMethodCorrectness, ViperTotalContext}
+import viper.carbon.proofgen.{IsaViperGlobalDataAccessor, ViperBoogieRelationIsa, ViperIsaTerm, ViperMethodCorrectness, ViperProgramRecord, ViperTotalContext}
 import viper.silver.{ast => sil}
 
 import scala.collection.mutable.ListBuffer
@@ -94,7 +94,7 @@ object FullEndToEndProofGenerator {
 
     val methodLookupAssumption = TermBinary.eq(
       TermApp(
-        ViperIsaTerm.methodsOfProgramProjection(viperProgAccessor.vprProgram),
+        ViperProgramRecord.methods(viperProgAccessor.vprProgram),
         methodTerm
       ),
       IsaTermUtil.some(methodDeclTerm)
@@ -128,7 +128,7 @@ object FullEndToEndProofGenerator {
 
     val methodLookupAssumptionWithVprContext = TermBinary.eq(
       TermApp(
-        ViperIsaTerm.methodsOfProgramProjection(ViperTotalContext.programTotal(vprContextWithExplicitType)),
+        ViperProgramRecord.methods(ViperTotalContext.programTotal(vprContextWithExplicitType)),
         methodTerm
       ),
       IsaTermUtil.some(methodDeclTerm)

@@ -4,7 +4,8 @@ import isabelle.ast.{IsaUtil, TermIdent, TypeIsa}
 
 case class FunInterpInstantiationData(funInterpVprBpl: String, funInterpVprBplWfLemma: String, funInterpBplWfLemma: String)
 
-case class FieldRelInstantiationData(ranFieldRelLemma: String, injFieldRelLemma: String, fieldTrPropNoGlobalsLemma: String, fieldTrPropWithGlobalsLemma: String)
+case class FieldRelInstantiationData(ranFieldRelLemma: String, injFieldRelLemma: String, fieldTrPropNoGlobalsLemma: String,
+                                     fieldTrPropWithGlobalsLemma: String, declaredFieldsFieldRemDomEqLemma: String)
 
 case class ConstantsData(lookupConstantsNoGlobalsLemma: String, constantsLookupWithGlobalsLemma: String)
 
@@ -43,6 +44,7 @@ case class DefaultIsaViperEndToEndGlobalData(
 
   override def fieldPropWithGlobalsLemma: String = qualifyName(fieldRelInstData.fieldTrPropWithGlobalsLemma)
 
-  override def axiomSatLemma: String = qualifyName(axiomSatLemmaName)
+  override def declaredFieldsFieldRelDomEqLemma: String = qualifyName(fieldRelInstData.declaredFieldsFieldRemDomEqLemma)
 
+  override def axiomSatLemma: String = qualifyName(axiomSatLemmaName)
 }

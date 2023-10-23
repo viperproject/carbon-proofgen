@@ -15,6 +15,7 @@ case class IsaBoogieGlobalAccessor(theoryName: String, fields: Seq[sil.Field]) {
   val funDeclsWf: TermIdent = TermIdent(globalDataDecl("funcs_wf"))
 
   val constDecls : TermIdent = TermIdent(globalDataDecl("constants_vdecls"))
+  val uniqueConsts : TermIdent = TermIdent(globalDataDecl("unique_consts"))
   val globalDecls : TermIdent = TermIdent(globalDataDecl("globals_vdecls"))
   val axiomDecls : TermIdent = TermIdent(globalDataDecl("axioms"))
 

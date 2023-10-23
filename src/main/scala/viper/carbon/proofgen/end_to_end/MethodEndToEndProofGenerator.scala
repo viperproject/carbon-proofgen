@@ -145,6 +145,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
           typeInterp = TermApp(TermIdent(typeInterpBplName), ViperTotalContext.absvalInterpTotal(endToEndData.ctxtVpr)),
           functionDecls = boogieProgAccessor.globalDataAccessor.funDecls,
           constDecls = boogieProgAccessor.globalDataAccessor.constDecls,
+          uniqueConstNames = boogieProgAccessor.globalDataAccessor.uniqueConsts,
           globalVarDecls = boogieProgAccessor.globalDataAccessor.globalDecls,
           axiomDecls = boogieProgAccessor.globalDataAccessor.axiomDecls,
           proc = boogieProgAccessor.procDef,
@@ -305,7 +306,9 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         ) ++
         varRelPropertyProof() ++
         (ProofUtil.blastTac +: //state equality ++
-        axiomsProof())
+          (uniqueConstantsProof() ++
+          axiomsProof())
+        )
 
     Proof(initTac ++ ProofUtil.mapApplyTac(methodsWithoutApply) :+ ProofUtil.doneTac)
   }
@@ -361,6 +364,20 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ProofUtil.simpTac(translationRecordDefLemma)
   }
 
+  private def uniqueConstantsProof() : Seq[String] = {
+    val uniqueConstsDefLemma = IsaUtil.definitionLemmaFromName(boogieProgAccessor.globalDataAccessor.uniqueConsts.toString)
+
+    Seq(
+      ProofUtil.ruleTac("unique_constants_initial_global_state"),
+      disjointGlobalDeclarationsTac,
+      ProofUtil.simpTac(uniqueConstsDefLemma),
+      ProofUtil.ruleTac("unique_consts_field_prop"),
+      ProofUtil.simpTac(Seq(uniqueConstsDefLemma, endToEndData.ranFieldRelLemma, translationRecordDefLemma)),
+      ProofUtil.simpTac(translationRecordDefLemma),
+      ProofUtil.ruleTac(endToEndData.declaredFieldsFieldRelDomEqLemma)
+    )
+  }
+
   private def axiomsProof() : Seq[String] = {
     Seq(
       ProofUtil.ruleTac("boogie_axioms_state_restriction_aux"),
@@ -370,7 +387,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     ) ++
     fieldRelPropertyFullProof(false) ++
     Seq(
-      s"(disjoint_globals_aux_tac disj_prop_aux: ${ProofUtil.simplified("disjoint_property_aux", IsaUtil.definitionLemmaFromName("disj_vars_state_relation"))})",
+      disjointGlobalDeclarationsTac,
       ProofUtil.simpTac(Seq(translationRecordDefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)),
       ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.injFieldRelLemma)),
       ProofUtil.simpTac(Seq(translationRecordDefLemma, IsaUtil.definitionLemmaFromName(boogieProgAccessor.globalDataAccessor.constDecls.id.toString))),
@@ -382,5 +399,8 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.programTotalProgEqLemma)),
     )
   }
+
+  private val disjointGlobalDeclarationsTac: String =
+    s"(disjoint_globals_aux_tac disj_prop_aux: ${ProofUtil.simplified("disjoint_property_aux", IsaUtil.definitionLemmaFromName("disj_vars_state_relation"))})"
 
 }

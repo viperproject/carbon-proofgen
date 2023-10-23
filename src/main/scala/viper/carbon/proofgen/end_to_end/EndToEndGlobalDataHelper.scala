@@ -2,7 +2,7 @@ package viper.carbon.proofgen.end_to_end
 
 import isabelle.ast.{AbbrevDecl, ContextElem, DeclareDecl, DefDecl, IsaTermUtil, IsaThmUtil, IsaUtil, Lambda, LemmaDecl, NatConst, OuterDecl, Proof, ProofUtil, Term, TermApp, TermBinary, TermIdent, TermList, TermQuantifier, TermSet, TermTuple, Theory, VarType}
 import viper.carbon.proofgen.hints.{AxiomTacticInput, BoogieAxiomProofHint, BoogieDeclProofHint, BoogieFuncProofHint}
-import viper.carbon.proofgen.{BoogieConstGlobal, BoogieIsaTerm, EmptyFrameConst, FieldConst, FullPermConst, IsaBoogieGlobalAccessor, IsaViperGlobalDataAccessor, NoPermConst, NullConst, TypeRepresentation, ViperBoogieRelationIsa, ViperTotalContext, ZeroMaskConst, ZeroPMaskConst}
+import viper.carbon.proofgen.{BoogieConstGlobal, BoogieIsaTerm, EmptyFrameConst, FieldConst, FullPermConst, IsaBoogieGlobalAccessor, IsaViperGlobalDataAccessor, NoPermConst, NullConst, TypeRepresentation, ViperBoogieRelationIsa, ViperProgramRecord, ViperTotalContext, ZeroMaskConst, ZeroPMaskConst}
 
 import scala.collection.mutable.ListBuffer
 
@@ -35,7 +35,8 @@ object EndToEndGlobalDataHelper {
         ranFieldRelLemma = "field_rel_ran",
         injFieldRelLemma = "inj_field_rel",
         fieldTrPropNoGlobalsLemma = "field_prop_aux_no_globals",
-        fieldTrPropWithGlobalsLemma = "field_prop_aux_with_globals"
+        fieldTrPropWithGlobalsLemma = "field_prop_aux_with_globals",
+        declaredFieldsFieldRemDomEqLemma = "fields_dom_eq"
       ),
       axiomSatLemmaName = "axiom_sat"
     )
@@ -166,12 +167,16 @@ object EndToEndGlobalDataHelper {
 
     outerDecls.addAll(fieldPropNoGlobalsDecls)
 
-
     val fieldPropWithGlobalsLemmaName = endToEndData.fieldRelInstData.fieldTrPropWithGlobalsLemma
     val fieldPropWithGlobalsDecls = fieldPropListAll2Lemma(fieldPropWithGlobalsLemmaName, vprProgAccessor, programTotalEqLemma.name,
       vprContextTerm, IsaTermUtil.appendList(bplGlobalAccessor.constDecls, bplGlobalAccessor.globalDecls), bplGlobalAccessor.getGlobalMapOfThm)
 
     outerDecls.addAll(fieldPropWithGlobalsDecls)
+
+    val domEqLemmaName = endToEndData.fieldRelInstData.declaredFieldsFieldRemDomEqLemma
+    val domEqLemma = declaredFieldsFieldRelDomEqLemma(domEqLemmaName, vprProgAccessor, vprContextTerm, programTotalEqLemma.name)
+
+    outerDecls += domEqLemma
 
     val axiomsSatLemma = generateAxiomSatLemma(
       lemmaName = endToEndData.axiomSatLemmaName,
@@ -267,6 +272,20 @@ object EndToEndGlobalDataHelper {
       )
 
     Seq(helperLemma, mainLemma)
+  }
+
+  private def declaredFieldsFieldRelDomEqLemma(lemmaName: String, vprProgAccessor: IsaViperGlobalDataAccessor, vprcontextTerm: Term, programTotalEqLemma: String) : LemmaDecl = {
+    val statement = TermBinary.eq(IsaTermUtil.domainOfPartialFun(ViperProgramRecord.fields(ViperTotalContext.programTotal(vprcontextTerm))),
+                                  IsaTermUtil.domainOfPartialFun(IsaTermUtil.mapOf(vprProgAccessor.fieldRel)))
+
+    LemmaDecl(lemmaName, statement,
+      Proof(Seq(
+        ProofUtil.applyTac(ProofUtil.simpTac(Seq(programTotalEqLemma, IsaUtil.definitionLemmaFromName(vprProgAccessor.vprProgram.toString)))),
+        ProofUtil.byTac(
+          ProofUtil.simpTac(Seq("dom_map_of_2", IsaUtil.definitionLemmaFromName(vprProgAccessor.fields.toString), IsaUtil.definitionLemmaFromName(vprProgAccessor.fieldRel.toString)))
+        )
+      ))
+    )
   }
 
   private def generateFunInterpWfLemma(lemmaName: String, vprContextTerm: Term, bplGlobalAccessor: IsaBoogieGlobalAccessor, funInterpVprBplInstDef: String, hints: Seq[BoogieFuncProofHint]) : LemmaDecl = {

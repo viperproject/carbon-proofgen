@@ -90,6 +90,7 @@ object BoogieIsaTerm {
   def procIsCorrect( typeInterp: Term,
                      functionDecls: Term,
                      constDecls: Term,
+                     uniqueConstNames: Term,
                      globalVarDecls: Term,
                      axiomDecls: Term,
                      proc: Term,
@@ -97,7 +98,7 @@ object BoogieIsaTerm {
                    ): Term =
   {
     TermApp(TermIdent("proc_is_correct"),
-      Seq(typeInterp, functionDecls, constDecls, globalVarDecls, axiomDecls, proc,
+      Seq(typeInterp, functionDecls, constDecls, uniqueConstNames, globalVarDecls, axiomDecls, proc,
         TermWithExplicitType(
           TermIdent("Ast.proc_body_satisfies_spec"),
           DataType("proc_body_satisfies_spec_ty", Seq(ViperBoogieRelationIsa.viperBoogieAbstractValueType(vprDomainValueType), BoogieIsaType.astType))
