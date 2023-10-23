@@ -46,8 +46,14 @@ object MLHintGenerator {
 
   def generateInhaleHintsInML(inhaleHint: InhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
     inhaleHint match {
-      case InhaleProofHint(Seq(bodyHint), addWelldefinednessChecks) =>
-        val inhaleBodyHint = generateInhaleBodyHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+      case InhaleProofHint(bodyHints, addWelldefinednessChecks) =>
+        val inhaleBodyHint =
+          bodyHints match {
+            case Seq() => "TrivialInhHint"
+            case Seq(bodyHint) => generateInhaleBodyHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+            case _ => sys.error("inhale proof hint has unexpected form (more than one body hint)")
+          }
+
         createInhaleRelCompleteHint(MLUtil.isaToMLThm(InhaleRelUtil.inhStmtRelThm(addWelldefinednessChecks)), inhaleBodyHint)
     }
   }
@@ -99,7 +105,20 @@ object MLHintGenerator {
     }
   }
 
-  def generateExhaleHintsInML(exhaleHint: ExhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : ExhaleRelCompleteHint = {
+  def generateExhaleHintsInML(exhaleHint: ExhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
+    exhaleHint match {
+      case DefaultExhaleProofHint(bodyHints, _, _) =>
+        if(bodyHints.isEmpty) {
+          //trivial (true postcondition and no code emitted)
+          "TrivialExhCompleteHint"
+        } else {
+          val normalHint = generateNormalExhaleHintsInML(exhaleHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+          createCompleteExhaleHintFromNormalInML(normalHint.getRepresentation)
+        }
+    }
+  }
+
+  def generateNormalExhaleHintsInML(exhaleHint: ExhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : ExhaleRelCompleteHint = {
     exhaleHint match {
       //TODO: support case where the body hint contains more than one element
       case DefaultExhaleProofHint(Seq((bodyHint, includeWellDefChecks)), setupWellDefStateHint, exhaleHeapVarOpt) =>
@@ -113,7 +132,7 @@ object MLHintGenerator {
 
         val setupWellDefTacticFull = MLUtil.lambda(Seq(basicInfo, proofCtxt), ViperBoogieMLUtil.everyRedAstBplRelTransitiveReflTac(proofCtxt, setupWellDefStateTactics))
 
-        createExhaleRelCompleteHint(
+        createNormalExhaleRelCompleteHint(
           setupWellDefStateTac = setupWellDefTacticFull,
           lookupDeclExhaleHeapThm = exhaleHeapVarOpt.fold(MLUtil.none)(exhaleHeapVar => MLUtil.some(MLUtil.isaToMLThm(boogieProcAccessor.getLocalLookupDeclThm(exhaleHeapVar)))),
           exhaleStmtRelThm = MLUtil.isaToMLThm(ExhaleRelUtil.exhStmtRelThm(includeWellDefChecks)), //TODO: permit optimizations
@@ -124,35 +143,42 @@ object MLHintGenerator {
     }
   }
 
+  private def createCompleteExhaleHintFromNormalInML(normalExhaleHint: String) = {
+    MLUtil.app("NormalExhCompleteHint", normalExhaleHint)
+  }
+
   def generateAssertHintsInML(assertHint: AssertStmtComponentHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo: String, expRelInfo: String): String = {
     assertHint match {
       case AssertStmtComponentHint(setupAssertStateOpt, exhaleHint) => {
-        val exhaleCompleteHint = generateExhaleHintsInML(exhaleHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
+        val exhaleCompleteHint = generateNormalExhaleHintsInML(exhaleHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
 
-        setupAssertStateOpt match {
-          case Some(setupAssertState) => {
-            val setupWellDefStateTactics =
-              setupAssertState.map(stateHint =>
-                convertUpdStateHintToTactic(stateHint, StateProofHintTactics.captureDefEvalVarTactic, boogieProcAccessor, Seq())
+        val normalHint =
+          setupAssertStateOpt match {
+            case Some(setupAssertState) => {
+              val setupWellDefStateTactics =
+                setupAssertState.map(stateHint =>
+                  convertUpdStateHintToTactic(stateHint, StateProofHintTactics.captureDefEvalVarTactic, boogieProcAccessor, Seq())
+                )
+
+              createAssertRelCompleteHint(
+                setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
+                assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
+                initTac = MLUtil.app("assert_rel_init_tac_standard", MLUtil.createList(setupWellDefStateTactics)),
+                exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
+                resetStateTac = "assert_rel_reset_state_tac_standard"
               )
-
-            createAssertRelCompleteHint(
-              setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
-              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
-              initTac = MLUtil.app("assert_rel_init_tac_standard", MLUtil.createList(setupWellDefStateTactics)),
-              exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
-              resetStateTac = "assert_rel_reset_state_tac_standard"
-            )
+            }
+            case None =>
+              createAssertRelCompleteHint(
+                setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
+                assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
+                initTac = "assert_rel_init_tac_pure",
+                exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
+                resetStateTac = "assert_rel_reset_state_tac_pure"
+              )
           }
-          case None =>
-            createAssertRelCompleteHint(
-              setupWellDefStateTac = exhaleCompleteHint.setupWellDefStateTac,
-              assertStmtRelThm = MLUtil.isaToMLThm(ProofUtil.where("assert_stmt_rel_inst","Q", TermQuantifier(Lambda, Seq(Wildcard, Wildcard, Wildcard), BoolConst(true)).toString)),
-              initTac = "assert_rel_init_tac_pure",
-              exhaleBodyRelHint = exhaleCompleteHint.exhaleBodyRelHint,
-              resetStateTac = "assert_rel_reset_state_tac_pure"
-            )
-        }
+
+        normalHint
       }
       case _ =>
         sys.error("exhale proof hint has unexpected form")
@@ -172,7 +198,7 @@ object MLHintGenerator {
     }
   }
 
-  def createExhaleRelCompleteHint(setupWellDefStateTac: String, exhaleStmtRelThm: String, lookupDeclExhaleHeapThm: String, exhaleBodyRelHint: String): ExhaleRelCompleteHint = {
+  def createNormalExhaleRelCompleteHint(setupWellDefStateTac: String, exhaleStmtRelThm: String, lookupDeclExhaleHeapThm: String, exhaleBodyRelHint: String): ExhaleRelCompleteHint = {
     ExhaleRelCompleteHint(setupWellDefStateTac: String, exhaleStmtRelThm: String, lookupDeclExhaleHeapThm: String, exhaleBodyRelHint: String)
   }
 
@@ -219,11 +245,11 @@ object MLHintGenerator {
       case ExhaleStmtHint(componentHints) =>
         componentHints match {
           case Seq(ExhaleStmtComponentHint(exhaleHint)) =>
-            MLUtil.app("ExhaleHint", generateExhaleHintsInML(exhaleHint, boogieProcAccessor, expWfRelInfo, expRelInfo).getRepresentation)
+            MLUtil.app("ExhaleHint", generateExhaleHintsInML(exhaleHint, boogieProcAccessor, expWfRelInfo, expRelInfo))
           case _ => sys.error("exhale hint has unexpected form")
         }
       case AssertStmtHint(componentHints) =>
-        componentHints match { //TODO: fix, 
+        componentHints match { //TODO: fix,
           case Seq(a@AssertStmtComponentHint(setupAssertStateOpt, exhaleHint)) =>
             MLUtil.app("AssertHint", generateAssertHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
           case _ => sys.error("assert hint has unexpected form")
@@ -232,7 +258,7 @@ object MLHintGenerator {
         componentHints match {
           case Seq(MethodCallStmtComponentHint(calleeName, targetVarsBpl, exhalePreHint, inhalePostHint)) =>
             val targetVarThms = MLUtil.isaToMLThms(targetVarsBpl.map(v => boogieProcAccessor.getLocalLookupDeclThm(v.asInstanceOf[LocalVar])))
-            val exhalePreHintML = generateExhaleHintsInML(exhalePreHint, boogieProcAccessor, expWfRelInfo, expRelInfo).getRepresentation
+            val exhalePreHintML = generateExhaleHintsInML(exhalePreHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
             val inhalePostHintML = generateInhaleHintsInML(inhalePostHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
             MLUtil.app("MethodCallHint", MLUtil.createTuple(
               Seq(MLUtil.createString(calleeName),

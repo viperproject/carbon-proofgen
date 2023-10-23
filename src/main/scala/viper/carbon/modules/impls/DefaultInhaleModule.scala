@@ -43,7 +43,7 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
 
     val resultHint = InhaleProofHint(hints, addDefinednessChecks)
 
-   val stmt = mainStmt ++ assumeGoodState
+    val stmt = mainStmt ++ assumeGoodState
 
     if(insidePackageStmt && !addDefinednessChecks) {
          /* all the assumptions made during packaging a wand (except assumptions about the global state before the package statement)
