@@ -11,7 +11,7 @@ import viper.silver.{ast => sil}
 import viper.carbon.boogie._
 import viper.carbon.verifier.Verifier
 import viper.carbon.boogie.Implicits._
-import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, ImpInhaleHint, InhaleBodyProofHint, InhaleComponentProofHint, InhaleProofHint, NotSupportedAtomicInhaleHint, PureExpInhaleHint, StarInhaleHint}
+import viper.carbon.proofgen.hints.{AtomicInhaleHint, CondInhaleHint, FieldAccessPredicateInhaleHint, GoodStateAfterInhaleHint, ImpInhaleHint, InhaleBodyProofHint, InhaleComponentProofHint, InhaleProofHint, NotSupportedAtomicInhaleHint, PureExpInhaleHint, StarInhaleHint, TrivialInhaleHint}
 import viper.silver.verifier.PartialVerificationError
 
 /**
@@ -41,9 +41,15 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
     val (mainStmt, hints) =
         (exps map (e => inhaleConnective(e._1.whenInhaling, e._2, addDefinednessChecks = addDefinednessChecks, statesStackForPackageStmt, insidePackageStmt = insidePackageStmt))).unzip
 
-    val resultHint = InhaleProofHint(hints, addDefinednessChecks)
 
     val stmt = mainStmt ++ assumeGoodState
+
+    val resultHint =
+      if(hints.isEmpty) {
+        InhaleProofHint(GoodStateAfterInhaleHint(TrivialInhaleHint), addDefinednessChecks)
+      } else {
+        InhaleProofHint(GoodStateAfterInhaleHint(InhaleProofHint.combineBodyHintsIntoBodyHint(hints)), addDefinednessChecks)
+      }
 
     if(insidePackageStmt && !addDefinednessChecks) {
          /* all the assumptions made during packaging a wand (except assumptions about the global state before the package statement)

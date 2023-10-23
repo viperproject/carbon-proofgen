@@ -220,7 +220,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
             toUndefine map mainModule.env.undefine
             res
           }
-        (res, Seq(MethodCallStmtComponentHint(methodName, translatedTargets, exhalePreHint, inhalePostHint)))
+        (res, Seq(MethodCallStmtComponentHint(methodName, translatedTargets, exhalePreHint.conjoinBodyHints, inhalePostHint.conjoinBodyHints)))
       case sil.While(_, _, _) =>
         //handled by LoopModule
         (Nil, Seq())

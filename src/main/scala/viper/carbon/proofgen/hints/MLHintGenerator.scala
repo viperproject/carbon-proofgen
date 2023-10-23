@@ -40,6 +40,7 @@ object MLHintGenerator {
         val rightHintString = generateInhaleBodyHintsInML(right, boogieProcAccessor, expWfRelInfo, expRelInfo)
         MLUtil.app("ImpInhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, rightHintString)))
       case CondInhaleHint(cond, thn, els) => ???
+      case GoodStateAfterInhaleHint(hint) => MLUtil.app("GoodStateAfter", generateInhaleBodyHintsInML(hint, boogieProcAccessor, expWfRelInfo, expRelInfo))
       case a: AtomicInhaleHint => MLUtil.app("AtomicInhHint", generateAtomicInhaleHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
     }
   }

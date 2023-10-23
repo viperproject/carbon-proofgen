@@ -48,7 +48,7 @@ case class ImpExhaleHint(cond: sil.Exp, right: ExhaleBodyProofHint) extends Exha
 case class CondExhaleHint(cond: sil.Exp, thn: ExhaleBodyProofHint, els: ExhaleBodyProofHint) extends ExhaleBodyProofHint
 case class ForallExhaleHint(f: sil.Forall, bodyHint: ExhaleBodyProofHint) extends ExhaleBodyProofHint
 case class UnfoldingExhaleHint(u: sil.Unfolding, beforeUnfoldingHints: Seq[ExhaleComponentProofHint], bodyHint: ExhaleBodyProofHint, afterUnfoldingHints: Seq[ExhaleComponentProofHint]) extends ExhaleBodyProofHint
-case object NotSupportedExhaleHint extends ExhaleBodyProofHint
+case object TrivialExhaleHint extends ExhaleBodyProofHint
 
 sealed trait AtomicExhaleHint extends ExhaleBodyProofHint
 case class FieldAccessPredicateExhaleHint(fieldAccessPred: sil.FieldAccessPredicate, hintsBefore: Seq[ExhaleComponentProofHint], hintsAfter: Seq[ExhaleComponentProofHint]) extends AtomicExhaleHint
