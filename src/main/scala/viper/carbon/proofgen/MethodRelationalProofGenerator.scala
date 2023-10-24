@@ -274,14 +274,14 @@ case class MethodRelationalProofGenerator(
       if(methodAccessor.origMethod.pres.isEmpty) {
         None
       } else {
-        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.preconditionInhaleHint.conjoinBodyHints)))))
+        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.preconditionInhaleHint)))))
       }
 
     val stmtPostconditionFramingValue =
       if(methodAccessor.origMethod.posts.isEmpty) {
         None
       } else {
-        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.postconditionFramingHint._2.conjoinBodyHints)))))
+        Some(AtomicHint(InhaleStmtHint(Seq(InhaleStmtComponentHint(methodProofHint.postconditionFramingHint._2)))))
       }
 
     val stmtPostconditionHintValue =

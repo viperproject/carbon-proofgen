@@ -41,19 +41,15 @@ object MLHintGenerator {
         MLUtil.app("ImpInhHint", MLUtil.createTuple(Seq(expWfRelInfo, expRelInfo, rightHintString)))
       case CondInhaleHint(cond, thn, els) => ???
       case GoodStateAfterInhaleHint(hint) => MLUtil.app("GoodStateAfter", generateInhaleBodyHintsInML(hint, boogieProcAccessor, expWfRelInfo, expRelInfo))
+      case TrivialInhaleHint => "TrivialInhHint"
       case a: AtomicInhaleHint => MLUtil.app("AtomicInhHint", generateAtomicInhaleHintsInML(a, boogieProcAccessor, expWfRelInfo, expRelInfo))
     }
   }
 
   def generateInhaleHintsInML(inhaleHint: InhaleProofHint, boogieProcAccessor: IsaBoogieProcAccessor, expWfRelInfo:String, expRelInfo: String) : String = {
     inhaleHint match {
-      case InhaleProofHint(bodyHints, addWelldefinednessChecks) =>
-        val inhaleBodyHint =
-          bodyHints match {
-            case Seq() => "TrivialInhHint"
-            case Seq(bodyHint) => generateInhaleBodyHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
-            case _ => sys.error("inhale proof hint has unexpected form (more than one body hint)")
-          }
+      case InhaleProofHint(bodyHint, addWelldefinednessChecks) =>
+        val inhaleBodyHint = generateInhaleBodyHintsInML(bodyHint, boogieProcAccessor, expWfRelInfo, expRelInfo)
 
         createInhaleRelCompleteHint(MLUtil.isaToMLThm(InhaleRelUtil.inhStmtRelThm(addWelldefinednessChecks)), inhaleBodyHint)
     }

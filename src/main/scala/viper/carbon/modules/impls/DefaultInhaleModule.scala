@@ -149,8 +149,11 @@ class DefaultInhaleModule(val verifier: Verifier) extends InhaleModule with Stat
             freeAssms
           //(if (containsFunc(e)) assumeGoodState else Seq[Stmt]()) ++ stmt ++ (if (e.isPure) Seq[Stmt]() else assumeGoodState)
 
+          val atomicHint = constructAtomicHint(e, componentHints.flatten)
+          val resultHint = if(e.isPure) { atomicHint } else { GoodStateAfterInhaleHint(atomicHint) }
+
           // if we are inside package statement, then all assumptions should be replaced with conjinctions with ops.boolVar
-          (retStmt, constructAtomicHint(e, componentHints.flatten))
+          (retStmt, resultHint)
       }
     if(insidePackageStmt && addDefinednessChecks) {
       (If(wandModule.getCurOpsBoolvar(), resStmt, Statements.EmptyStmt), hint)

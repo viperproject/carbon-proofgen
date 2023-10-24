@@ -18,7 +18,7 @@ case class InhaleProofHint(bodyHint: InhaleBodyProofHint, addWelldefinednessChec
 }
  */
 
-//object NotSupportedInhaleHint extends InhaleProofHint(bodyHints = Seq(), addWelldefinednessChecks = true)
+object NotSupportedInhaleHint extends InhaleProofHint(bodyHint = NotSupportedAtomicInhaleHint, addWelldefinednessChecks = true)
 
 object InhaleProofHint {
 
@@ -34,7 +34,7 @@ object InhaleProofHint {
     IsaMethodSpecificationHelper.conjoinSpecInhaleHints(hints)
   }
 
-  //val empty = InhaleProofHint(Seq(), true)
+  val empty = InhaleProofHint(TrivialInhaleHint, true)
 
 }
 
