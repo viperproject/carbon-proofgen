@@ -208,7 +208,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         //argument variables are not modified by the body
         methodAccessor.origMethod.body.fold(
           ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
-        )(_ => ProofUtil.simpTac(Seq(IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftDownSet), methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes)))),
+        )(_ => ProofUtil.fastforceTacWithSimps(Seq(IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftDownSet), methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes)))),
         //variable context equality
         ProofUtil.simpTac(Seq(methodAccessor.methodDeclProjectionLemmaName(IsaMethodArgTypes), methodAccessor.methodDeclProjectionLemmaName(IsaMethodRetTypes)))
       )

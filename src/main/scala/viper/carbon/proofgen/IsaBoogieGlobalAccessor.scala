@@ -48,6 +48,12 @@ case class IsaBoogieGlobalAccessor(theoryName: String, fields: Seq[sil.Field]) {
       IsaBoogieGlobalAccessor.globalsOrderMap.size
   }
 
+  /**
+    * returns all predefined Boogie constants (does not include field constants)
+    * @return
+    */
+  def predefinedConstants : Seq[BoogieConstGlobal] = IsaBoogieGlobalAccessor.constantsOrder
+
 }
 
 case object IsaBoogieGlobalAccessor {

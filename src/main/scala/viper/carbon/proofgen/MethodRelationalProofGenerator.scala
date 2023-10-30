@@ -327,7 +327,8 @@ case class MethodRelationalProofGenerator(
             boogieProg.getGlobalLookupTyThm(MaskGlobalVar)
           ) ++
           boogieProg.getAllLocalVariables().map(l => boogieProg.getLocalLookupTyThm(l)).toSeq ++
-          methodAccessor.origProgram.fields.map(field => boogieProg.getGlobalLookupTyThm(FieldConst(field)))
+          methodAccessor.origProgram.fields.map(field => boogieProg.getGlobalLookupTyThm(FieldConst(field))) ++
+          boogieProg.globalDataAccessor.predefinedConstants.map(const => boogieProg.getGlobalLookupTyThm(const))
         )),
 
         MLUtil.defineVal(lookupFunBplThms, isaToMLThms(
@@ -416,7 +417,8 @@ case class MethodRelationalProofGenerator(
           trDefThm = isaToMLThm(definitionLemmaFromName(translationRecordName)),
           methodDataTableMLIdent = progAccessor.methodDataTableML,
           varRelTac = lookupVarRelTac,
-          varContextVprTac = "assm_full_simp_solved_with_thms_tac " + isaToMLThms(Seq(definitionLemmaFromName(varContextViperName))),
+          varContextVprTac = "assm_full_simp_solved_with_thms_tac " +
+            isaToMLThms(Seq(definitionLemmaFromName(varContextViperName), IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))),
           fieldRelSingleTac = fieldRelSingleTac,
           auxVarDisjTac = auxVarDisjTac,
           tyInterpEContextBplEq = MLUtil.isaToMLThm(tyInterpEqBpl)
