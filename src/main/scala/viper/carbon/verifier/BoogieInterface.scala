@@ -47,7 +47,9 @@ trait BoogieInterface {
 
   def reporter: Reporter
 
-  def defaultOptions = Seq("/vcsCores:" + java.lang.Runtime.getRuntime.availableProcessors,
+  def defaultOptions = Seq(
+    //"/vcsCores:" + java.lang.Runtime.getRuntime.availableProcessors,
+    "/vcsCores:" + 1, //TODO: make Boogie proof generation thread safe so that can use more than one vcsCore
     "/errorTrace:0",
     "/errorLimit:10000000",
     "/proverOpt:O:smt.AUTO_CONFIG=false",
