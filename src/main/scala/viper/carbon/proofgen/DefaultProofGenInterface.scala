@@ -92,16 +92,6 @@ class DefaultProofGenInterface(val proofDir: Path,
     sb.append(globalDataTheoryName).newLine
     sb.append(globalEndToEndProofName).newLine
 
-    /*
-    vprProg.methods.foreach(
-      method => {
-        val methodDir = methodProofDirName(method)
-        for (methodTheoryName <- Seq(methodProgTheory(method), methodRelationalProofName(method))) {
-          sb.appendInner(methodDir+"/"+methodTheoryName).newLine
-        }
-      }
-    )*/
-
     Files.write(proofDir.resolve("ROOT"), sb.toString().getBytes(StandardCharsets.UTF_8))
   }
 
