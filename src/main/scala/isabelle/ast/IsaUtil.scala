@@ -14,15 +14,18 @@ object IsaUtil {
     * @return valid Isabelle identifier that resembles the argument
     */
   def convertToValidIsabelleIdentifier(id: String) : String = {
-    if(id.isEmpty) {
-      "empty_id"
-    } else {
-      if(!id(0).isLetter) {
-        "a"+id
+    val newId =
+      if(id.isEmpty) {
+        "empty_id"
       } else {
-        id
+        if(!id(0).isLetter) {
+          "a"+id
+        } else {
+          id
+        }
       }
-    }
+
+    newId.replaceAll("-|\\$", "_")
   }
 
 }
