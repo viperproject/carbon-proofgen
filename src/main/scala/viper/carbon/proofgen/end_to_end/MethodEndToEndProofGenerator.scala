@@ -204,7 +204,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
         // constraints specs
         ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodPostcondition).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
         // free variables in precondition must be argument variables
-        ProofUtil.simpTac(Seq(IsaMethodPrecondition, IsaMethodArgTypes).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
+        ProofUtil.fastforceTacWithSimps(Seq(IsaMethodPrecondition, IsaMethodArgTypes).map(member => methodAccessor.methodDeclProjectionLemmaName(member))),
         //argument variables are not modified by the body
         methodAccessor.origMethod.body.fold(
           ProofUtil.simpTac(methodAccessor.methodDeclProjectionLemmaName(IsaMethodBody))
