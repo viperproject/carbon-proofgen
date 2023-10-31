@@ -1,3 +1,7 @@
 [submodule "silver"]
 	path = silver
 	url = https://github.com/viperproject/silver.git
+[submodule "boogie_proofgen"]
+	path = boogie_proofgen
+	url = https://github.com/gauravpartha/boogie_proofgen
+	branch = adjust_interface
