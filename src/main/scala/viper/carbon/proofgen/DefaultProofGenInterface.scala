@@ -90,7 +90,9 @@ class DefaultProofGenInterface(val proofDir: Path,
     sb.append("theories").newLine
 
     sb.append(globalDataTheoryName).newLine
+    sb.append(globalEndToEndProofName).newLine
 
+    /*
     vprProg.methods.foreach(
       method => {
         val methodDir = methodProofDirName(method)
@@ -98,7 +100,7 @@ class DefaultProofGenInterface(val proofDir: Path,
           sb.appendInner(methodDir+"/"+methodTheoryName).newLine
         }
       }
-    )
+    )*/
 
     Files.write(proofDir.resolve("ROOT"), sb.toString().getBytes(StandardCharsets.UTF_8))
   }
@@ -110,8 +112,6 @@ class DefaultProofGenInterface(val proofDir: Path,
   def methodProofDirName(m: sil.Method) : String =  s"method_proof_${m.name}"
   def methodProofPath(m: sil.Method) : Path =
     proofDir.resolve(methodProofDirName(m))
-
-  def methodProgTheory(m: sil.Method) : String = m.name+"_vpr_prog"
 
   def generateProofForMethod(m: sil.Method, procBpl: Procedure, procBplEnv: Environment, methodProofHint: MethodProofHint) : Unit = {
       val dir: Path = Files.createDirectory(methodProofPath(m))
@@ -167,6 +167,8 @@ class DefaultProofGenInterface(val proofDir: Path,
     StoreTheory.storeTheory(theory, proofDir)
   }
 
+  private val globalEndToEndProofName : String = "end_to_end_proof"
+
   override def generateEndToEndProof(): Unit = {
     import scala.jdk.CollectionConverters._
 
@@ -174,7 +176,7 @@ class DefaultProofGenInterface(val proofDir: Path,
 
     val theory =
       FullEndToEndProofGenerator.generateFullEndToEndProof(
-      "end_to_end_proof",
+      globalEndToEndProofName,
       endToEndGlobalData,
       methodProofDataMapImmutable,
       methodProofDataMapImmutable.map(m => methodProofDirName(m._1)+"/"+m._2.theoryName).toSeq,
