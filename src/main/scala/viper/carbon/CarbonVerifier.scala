@@ -300,7 +300,7 @@ case class CarbonVerifier(override val reporter: Reporter,
       unsupportedNodeOpt match {
         case Some(unsupportedNode) =>
           println("Failure: Proof generation does not support program because of node " + unsupportedNode.toString)
-          sys.exit(-2)
+          sys.exit(17)
         case None =>
       }
 
