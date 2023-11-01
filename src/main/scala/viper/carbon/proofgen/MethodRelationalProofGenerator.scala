@@ -305,7 +305,13 @@ case class MethodRelationalProofGenerator(
 
     val mlInitializationCode =
       Seq(
-        MLUtil.defineVal(lookupVarRelTac, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), definitionLemmaFromName(varRelationListName), definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))))),
+        MLUtil.defineVal(lookupVarRelTac,
+          MLUtil.lambda(Seq("ctxt"),
+            MLUtil.seqAllNewTac(
+              MLUtil.simpAsm(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName), definitionLemmaFromName(varRelationListName), definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))), "ctxt"),
+              MLUtil.fastforceTac("[]", "ctxt")
+            ))
+        ),
         MLUtil.defineVal(simpWithTrDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecordName))))),
         MLUtil.defineVal(simpWithTyReprDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(TypeRepresentation.tyReprBasicName))))),
         MLUtil.defineVal(typeSafetyThmMap, ViperBoogieMLUtil.genTypeSafetyThmMap(

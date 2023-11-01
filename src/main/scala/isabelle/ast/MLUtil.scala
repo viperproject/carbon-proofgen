@@ -37,20 +37,25 @@ object MLUtil {
   val contextAniquotation = "@{context}"
 
   def simpAsmSolved(thms: String, ctxt : String = "") : String =
-    s"assm_full_simp_solved_with_thms_tac $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt})
+    s"(assm_full_simp_solved_with_thms_tac $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt}) + ")"
 
   def simpAsm(thms: String, ctxt: String = "") : String =
-    s"simp_tac_with_thms $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt})
+    s"(simp_tac_with_thms $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt}) + ")"
 
   def simpOnly(thms: String, ctxt: String = "") : String =
-    s"simp_only_tac $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt})
+    s"(simp_only_tac $thms" + (if(ctxt.isEmpty) { "" } else { " " + ctxt})+ ")"
+
+  def fastforceTac(thms: String, ctxt: String) : String =
+    s"(fastforce_tac $ctxt $thms)"
 
   def resolveTac(ctxt: String, thms: String) : String=
-    s"resolve_tac $ctxt $thms"
+    s"(resolve_tac $ctxt $thms)"
 
-  def seqPrimeTac(tac1: String, tac2: String) : String = s"$tac1 THEN' $tac2"
+  def seqPrimeTac(tac1: String, tac2: String) : String = s"($tac1 THEN' $tac2)"
 
-  def tryPrimeTac(tac :String) : String = s"TRY_TAC' $tac"
+  def seqAllNewTac(tac1: String, tac2: String) : String = s"($tac1 THEN_ALL_NEW $tac2)"
+
+  def tryPrimeTac(tac :String) : String = s"(TRY_TAC' $tac)"
 
   def lambda(args: Seq[String], body: String) : String = {
     val argsLambdaPrefix =
