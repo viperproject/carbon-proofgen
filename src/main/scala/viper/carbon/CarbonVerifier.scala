@@ -359,7 +359,6 @@ case class CarbonVerifier(override val reporter: Reporter,
               case SourceQuantifiedPermissionAssertion(_, _) => node
               case _: sil.InhaleExhaleExp => node
               /** expressions */
-              case _: sil.CondExp => node
               case _: sil.CurrentPerm => node
               case _: sil.ExtensionExp => node
               case _: sil.Let => node

@@ -26,7 +26,15 @@ object ViperIsaTerm {
 
   def labelledOld(e: Term, lbl: String) = TermApp(TermApp(TermIdent("Old"), StringConst(lbl)), e)
 
+  /** This represents pure conditional expressions. See [[condAssertion]] for the case when the then- and else-branch are
+    * assertions.
+    */
   def condExp(cond: Term, thn: Term, els: Term) = TermApp(TermIdent("CondExp"), Seq(cond, thn, els))
+
+  /**
+    * This represents conditional assertions. See [[condExp]] for pure conditional expressions.
+    */
+  def condAssertion(cond: Term, thn: Term, els: Term) = TermApp(TermIdent("CondAssert"), Seq(cond, thn, els))
 
   def unaryMinus(arg: Term) : Term = {
     TermApp(TermIdent("Unop"), TermIdent("Minus"), arg)
