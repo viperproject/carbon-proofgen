@@ -114,9 +114,9 @@ object IsaVprProgramGenerator {
     )
   }
 
-  private def mapOfFieldLemmaName(f: sil.Field) : String = s"mfield_${f.name}"
+  private def mapOfFieldLemmaName(f: sil.Field) : String = s"mfield_${IsaUtil.convertToValidIsabelleIdentifier(f.name)}"
 
-  private def lookupFieldLemmaName(f: sil.Field) : String = s"lfield_${f.name}"
+  private def lookupFieldLemmaName(f: sil.Field) : String = s"lfield_${IsaUtil.convertToValidIsabelleIdentifier(f.name)}"
 
   private def generateFieldRelLookupLemmas(lookupLemmasName: String, vprProgramTerm: TermIdent, fields: Seq[sil.Field], fieldsListDef: TermIdent, fieldRelListDef: TermIdent, boogieGlobalAccessor: IsaBoogieGlobalAccessor) : Seq[OuterDecl] =
   {
