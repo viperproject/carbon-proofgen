@@ -120,11 +120,20 @@ case class CarbonVerifier(override val reporter: Reporter,
       false
     }
 
-  def onlyCheckProofGenSupport : Boolean =
+  def onlyCheckProofGenSupport : ProofGenSubsetCheckSetting =
     if(config != null) {
-      config.onlyCheckProofGenSupport.getOrElse(false)
+      val setting = config.onlyCheckProofGenSupport.getOrElse(0)
+      if(setting == 0) {
+        CheckAndGenerateProofs
+      } else if(setting == 1) {
+        OnlyCheckSubset(true)
+      } else if(setting == 2) {
+        OnlyCheckSubset(false)
+      }  else {
+        CheckAndGenerateProofs
+      }
     } else {
-      false
+      CheckAndGenerateProofs
     }
 
   def name: String = "carbon"
@@ -295,8 +304,14 @@ case class CarbonVerifier(override val reporter: Reporter,
   def proofGenInterface = _proofGenInterface
 
   private def proofGenInit(program: Program) : Unit = {
-    if(generateProofs || onlyCheckProofGenSupport) {
-      val unsupportedNodeOpt = proofGenSupportsProgram(program)
+    if(generateProofs || onlyCheckProofGenSupport.isInstanceOf[OnlyCheckSubset]) {
+
+      val strictCheck = onlyCheckProofGenSupport match {
+        case OnlyCheckSubset(b) => b
+        case CheckAndGenerateProofs => true
+      }
+
+      val unsupportedNodeOpt = proofGenSupportsProgram(program, strictCheck)
       unsupportedNodeOpt match {
         case Some(unsupportedNode) =>
           println("Failure: Proof generation does not support program because of node " + unsupportedNode.toString)
@@ -304,7 +319,7 @@ case class CarbonVerifier(override val reporter: Reporter,
         case None =>
       }
 
-      if(onlyCheckProofGenSupport) {
+      if(onlyCheckProofGenSupport.isInstanceOf[OnlyCheckSubset]) {
         //early exit if only proof generation support needs to be checked
         println("Success: Proof generation supports program.")
         sys.exit(0)
@@ -324,10 +339,11 @@ case class CarbonVerifier(override val reporter: Reporter,
   /***
     *
     * @param program
-    * @return None if proof generation supports program and otherwise Some(n) where n is the cause for why proof generation
-    *         does not support the program
+    * @param useBasicVersion
+    * @return None if proof generation supports program (or if [[useBasicVersion]] is false, then program could be rewritten to support it)
+    *         and otherwise Some(n) where node n is the cause for why proof generation does not support the program.
     */
-  private def proofGenSupportsProgram(program: Program) : Option[sil.Node] =
+  private def proofGenSupportsProgram(program: Program, useBasicVersion: Boolean) : Option[sil.Node] =
       Visitor.find(program, sil.utility.Nodes.subnodes)(
         {
           node =>
@@ -344,14 +360,15 @@ case class CarbonVerifier(override val reporter: Reporter,
               case _: sil.Function => node
               case _: sil.Domain => node
               /** statements (predicate and wand statements already excluded by [[sil.Predicate]] and [[sil.MagicWand]]) */
-              case _: sil.NewStmt => node
+              case _: sil.NewStmt if useBasicVersion => node
               case sil.Goto(_) => node
+              case _: sil.While if useBasicVersion => node
               case _: sil.ExtensionStmt => node
-              case _: sil.LabelledOld => node
-              case _: sil.Old => node
+              case _: sil.LabelledOld if useBasicVersion => node
+              case _: sil.Old if useBasicVersion => node
               case _: sil.Quasihavoc => node
               case _: sil.Quasihavocall => node
-              case _: sil.Label => node
+              case _: sil.Label if useBasicVersion => node
               /** assertions (predicates already excluded by [[sil.Predicate]] */
               case _: sil.ForPerm => node
               case _: sil.MagicWand => node
@@ -368,3 +385,7 @@ case class CarbonVerifier(override val reporter: Reporter,
         }
       )
 }
+
+sealed trait ProofGenSubsetCheckSetting
+case object CheckAndGenerateProofs extends ProofGenSubsetCheckSetting
+case class OnlyCheckSubset(strictCheck: Boolean) extends ProofGenSubsetCheckSetting

@@ -164,6 +164,12 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         }
       case mc@sil.MethodCall(methodName, args, targets) =>
         val method = verifier.program.findMethod(methodName)
+
+        if(generateProofs) {
+          if(!args.forall(e => e.isInstanceOf[sil.LocalVar])) {
+            sys.error("proof generation only supports local variables as arguments to method calls " + mc.toString())
+          }
+        }
         // save pre-call state
         val (preCallStateStmt, state) = stateModule.freshTempState("PreCall")._1
         val preCallState = stateModule.state

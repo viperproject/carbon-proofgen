@@ -106,16 +106,23 @@ class CarbonConfig(args: Seq[String]) extends SilFrontendConfig(args, "Carbon") 
     noshort = true
   )
 
-  val onlyCheckProofGenSupport = opt[Boolean]("onlyCheckProofGenSupport",
+  val onlyCheckProofGenSupport = opt[Int]("onlyCheckProofGenSupport",
     descr = "Only check whether proof generation is supported for program. That is, the program is not verified and proofs " +
-      "are not produced. (default: false).",
-    default = Some(false),
+      "are not produced. Settings are if this should be disabled (0), enabled and check if proof generation supports the program (1)," +
+      "enabled and check if program can be rewritten in a systematic way such that proof generation supports the program (2). (default: 0)",
+    default = Some(0),
     noshort = true
   )
 
   validateOpt(genProofs, desugarPolymorphicMaps, disableAllocEncoding) {
     case (Some(true), desugarPolyMapOption, disableAllocOption) if !desugarPolyMapOption.getOrElse(false) || !disableAllocOption.getOrElse(false) =>
       Left(s"Option ${genProofs.name} option requires options ${desugarPolymorphicMaps.name} and ${disableAllocEncoding.name}")
+    case _ => Right()
+  }
+
+  validateOpt(onlyCheckProofGenSupport) {
+    case (Some(i)) if i < 0 || i > 2 =>
+      Left(s"Option ${onlyCheckProofGenSupport.name} option must be 0,1,or 2")
     case _ => Right()
   }
 
