@@ -22,6 +22,8 @@ trait IsaViperGlobalDataAccessor extends IsaViperFieldsAccessor {
 
 }
 
+case class AllFieldLookupLemmas(fieldRelMapOfLemmas: String, fieldRelLookupLemmas:String)
+
 trait IsaViperFieldsAccessor {
 
   def fields : TermIdent
@@ -29,7 +31,7 @@ trait IsaViperFieldsAccessor {
   def fieldRelBoundedLemma : String
   def fieldIdent(f: sil.Field) : Term
   def fieldLookupLemma(fieldName: String) : String
-  def allFieldLookupLemmas : String
+  def allFieldLookupLemmas : AllFieldLookupLemmas
 
 }
 

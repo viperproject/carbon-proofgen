@@ -184,7 +184,7 @@ object EndToEndGlobalDataHelper {
       vprContextTerm = vprContextTerm,
       bplGlobalAccessor = bplGlobalAccessor,
       funInterpVprBplInstDef = funInterpVprBplInstDef.name,
-      lookupFieldLemmas = vprProgAccessor.allFieldLookupLemmas,
+      lookupFieldLemmas = vprProgAccessor.allFieldLookupLemmas.fieldRelLookupLemmas,
       hints = axiomDeclHints
     )
 

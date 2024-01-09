@@ -70,14 +70,18 @@ object IsaVprProgramGenerator {
 
     outerDecls += programDef
 
+    val fieldRelMapOfLemmasName = "field_rel_map_of_lemmas"
     val fieldRelLookupLemmasName = "field_rel_lookup_lemmas"
+    val allFieldLookupLemmas = AllFieldLookupLemmas(fieldRelMapOfLemmasName, fieldRelLookupLemmasName)
 
-    val fieldRelLookupDecls = generateFieldRelLookupLemmas(fieldRelLookupLemmasName,
+    val fieldRelLookupDecls = generateFieldRelLookupLemmas(
+      (fieldRelMapOfLemmasName, fieldRelLookupLemmasName),
       vprProgramTerm = TermIdent(programDef.name),
       fields = p.fields,
       fieldsListDef = TermIdent(fieldsListDef.name),
       fieldRelListDef = TermIdent(fieldRelationListDef.name),
-      boogieGlobalAccessor = boogieGlobalAccessor)
+      boogieGlobalAccessor = boogieGlobalAccessor
+    )
 
     outerDecls.addAll(fieldRelLookupDecls)
 
@@ -96,7 +100,7 @@ object IsaVprProgramGenerator {
 
     (
       //ViperBoogieTranslationInterface is required for the field lookup lemmas, could think about putting those in a separate theory
-      Theory(theoryName, Seq("Viper.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", "TotalViper.ViperBoogieTranslationInterface",  methodTheory.theoryName), outerDecls.toSeq),
+      Theory(theoryName, Seq("ViperCommon.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", "TotalViper.ViperBoogieTranslationInterface",  methodTheory.theoryName), outerDecls.toSeq),
       DefaultIsaViperGlobalDataAccessor(
         theoryName = theoryName,
         vprProgramIdent = programDef.name,
@@ -105,7 +109,7 @@ object IsaVprProgramGenerator {
         fieldToTerm = fieldToTerm,
         fieldRelIdent = fieldRelationListDef.name,
         fieldRelBoundedLemma = fieldRelationBoundedBy.name,
-        allFieldLookupLemmas = fieldRelLookupLemmasName,
+        allFieldLookupLemmas = allFieldLookupLemmas,
         methodsProgEqLemmaName = methodProjThm.name,
         allMethodsAccessor = allMethodsAccessor,
         methodDataTableML = methodDataName
@@ -118,7 +122,7 @@ object IsaVprProgramGenerator {
 
   private def lookupFieldLemmaName(f: sil.Field) : String = s"lfield_${IsaUtil.convertToValidIsabelleIdentifier(f.name)}"
 
-  private def generateFieldRelLookupLemmas(lookupLemmasName: String, vprProgramTerm: TermIdent, fields: Seq[sil.Field], fieldsListDef: TermIdent, fieldRelListDef: TermIdent, boogieGlobalAccessor: IsaBoogieGlobalAccessor) : Seq[OuterDecl] =
+  private def generateFieldRelLookupLemmas(mapOfAndlookupLemmasName: (String, String), vprProgramTerm: TermIdent, fields: Seq[sil.Field], fieldsListDef: TermIdent, fieldRelListDef: TermIdent, boogieGlobalAccessor: IsaBoogieGlobalAccessor) : Seq[OuterDecl] =
   {
     val varContextBpl = TermIdent("VarC")
     val normalState = TermIdent("ns")
@@ -156,7 +160,14 @@ object IsaVprProgramGenerator {
         Seq(mapOfLemma, lookupLemma)
       }
 
+
+    val (mapOfLemmasName, lookupLemmasName) =  mapOfAndlookupLemmasName
+
     decls.flatten :+
+      LemmasDecl(mapOfLemmasName,
+        //if there are no fields, then just add a placeholder lemma (need at least one lemma for the declaration to be valid)
+        if (fields.isEmpty) { Seq("HOL.refl") } else { fields.map(mapOfFieldLemmaName) }
+      ) :+
       LemmasDecl(lookupLemmasName,
         //if there are no fields, then just add a placeholder lemma (need at least one lemma for the declaration to be valid)
         if(fields.isEmpty) { Seq("HOL.refl") } else { fields.map(lookupFieldLemmaName) }
@@ -249,7 +260,7 @@ object IsaVprProgramGenerator {
       methodAccessorMap = map.toMap
     )
 
-    val theory = Theory(theoryName, Seq("Viper.ViperLang"), outerDecls.toSeq)
+    val theory = Theory(theoryName, Seq("ViperCommon.ViperLang"), outerDecls.toSeq)
     (theory, allMethodsAccessor)
   }
 

@@ -359,7 +359,8 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineFun(fieldRelTac, Seq("ctxt"),
           MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(
             definitionLemmaFromName(translationRecordName),
-            definitionLemmaFromName(progAccessor.fieldRel.toString)
+            //definitionLemmaFromName(progAccessor.fieldRel.toString)
+            progAccessor.allFieldLookupLemmas.fieldRelMapOfLemmas
             )),
             "ctxt"
           )
