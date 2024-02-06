@@ -215,7 +215,7 @@ object ViperToIsa {
 
           val stmtWithScopes =
             localVars.foldRight(stmtWithoutScopes){
-              (localVar, stmt) => ViperIsaTerm.scope(isa.TermList(Seq(ViperIsaType.translate(localVar.typ))), stmt)
+              (localVar, stmt) => ViperIsaTerm.scope(ViperIsaType.translate(localVar.typ), stmt)
             }
 
           stmtWithScopes

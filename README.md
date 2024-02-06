@@ -63,14 +63,14 @@ Isabelle ROOT session file is also generated at the top level.
 
 To check the generated proofs, you need to install Isabelle 2022 and install 
 Isabelle dependencies for the Boogie formalization and the Viper total heap 
-formalization. You can do so directly via the `viper-total-heaps` submodule 
+formalization. You can do so directly via the `viper-roots-dev` submodule 
 by running the following commands:
 
-`isabelle components -u viper-total-heaps/foundational_boogie/BoogieLang`
+`isabelle components -u viper-roots-dev/foundational_boogie/BoogieLang`
 
-`isabelle components -u viper-total-heaps/vipersemcommon`
+`isabelle components -u viper-roots-dev/vipersemcommon`
 
-`isabelle components -u viper-total-heaps`
+`isabelle components -u viper-roots-dev/viper-total-heaps`
 
 ### Scripts to run tool on multiple examples
 

@@ -147,8 +147,8 @@ object ViperIsaTerm {
   def seq(s1: Term, s2: Term) : Term =
     TermApp(TermIdent("Seq"), s1, s2)
 
-  def scope(tyList: Term, body: Term) : Term =
-    TermApp(TermIdent("Scope"), Seq(tyList, body))
+  def scope(ty: Term, body: Term) : Term =
+    TermApp(TermIdent("Scope"), Seq(ty, body))
 
   def convertAstToProgramPoint(procBody: Term) =
     TermApp(TermIdent("convert_ast_to_program_point"), procBody)

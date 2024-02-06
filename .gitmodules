@@ -5,6 +5,6 @@
 	path = boogie_proofgen
 	url = https://github.com/gauravpartha/boogie_proofgen
 	branch = adjust_interface
-[submodule "viper-total-heaps"]
-	path = viper-total-heaps
-	url = https://gitlab.inf.ethz.ch/gauravp/viper-total-heaps/
+[submodule "viper-roots-dev"]
+	path = viper-roots-dev
+	url = https://gitlab.inf.ethz.ch/gauravp/viper-roots-dev
