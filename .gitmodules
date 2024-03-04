@@ -8,3 +8,4 @@
 [submodule "viper-roots-dev"]
 	path = viper-roots-dev
 	url = https://gitlab.inf.ethz.ch/gauravp/viper-roots-dev
+	branch = artifact
