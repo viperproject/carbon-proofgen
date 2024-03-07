@@ -216,7 +216,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
           (args map (e => checkDefinedness(e, errors.CallFailed(mc), insidePackageStmt = insidePackageStmt))) ++
           (actualArgs map (_._2)) ++
           MaybeCommentBlock("Exhaling precondition", executeUnfoldings(pres, (pre => errors.PreconditionInCallFalse(mc).withReasonNodeTransformed(renamingArguments))) ++ exhalePreStmt) ++
-          MaybeCommentBlock("Havocing target variables", Havoc(translatedTargets)) ++ //CARBON_CHANGE: havoc between exhale and inhale instead of before exhale, since it is the more natural translation
+          MaybeCommentBlock("Havocing target variables", Havoc(translatedTargets)) ++
           {
             stateModule.replaceOldState(preCallState)
             val res = MaybeCommentBlock("Inhaling postcondition",
@@ -288,7 +288,7 @@ class DefaultStmtModule(val verifier: Verifier) extends StmtModule with SimpleSt
         locals map (v => mainModule.env.define(v.localVar)) // add local variables to environment
         val s =
           {
-            //CARBON_CHANGE: havoc of scoped variables should be merged into main Carbon repo
+            //CARBON_CHANGE: we havoc the scoped variables explicitly
             val havocLocalsVars = MaybeCommentBlock("Havoc scoped variables", locals map (lv => Havoc(mainModule.env.get(lv.localVar))))
             val assmsLocalVars =
               MaybeCommentBlock("Assumptions about local variables", locals map (a => mainModule.allAssumptionsAboutValue(a.typ, mainModule.translateLocalVarDecl(a), true)))
