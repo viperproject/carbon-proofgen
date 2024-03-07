@@ -218,15 +218,12 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
 
       val resStmt =
           NondetIf(
-            /*CARBON_CHANGE: the following statement is put before the if-statement in the Carbon repo, which is less
-                             natural since only the part inside the then-branch is relevant
-             */
             freshStateStmt ++
-          MaybeComment("Checked inhaling of postcondition to check definedness",
-            MaybeCommentBlock("Do welldefinedness check of the inhale part.",
-              NondetIf(onlyInhalePosts ++ Assume(FalseLit()))) ++
-              MaybeCommentBlock("Normally inhale the exhale part.",
-                onlyExhalePosts)
+            MaybeComment("Checked inhaling of postcondition to check definedness",
+              MaybeCommentBlock("Do welldefinedness check of the inhale part.",
+                NondetIf(onlyInhalePosts ++ Assume(FalseLit()))) ++
+                MaybeCommentBlock("Normally inhale the exhale part.",
+                  onlyExhalePosts)
           ) ++
             MaybeComment("Stop execution", Assume(FalseLit()))
       )

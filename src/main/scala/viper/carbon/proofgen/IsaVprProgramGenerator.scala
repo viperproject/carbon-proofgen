@@ -267,7 +267,6 @@ object IsaVprProgramGenerator {
   private def translateVarDecl(varTranslation: VarTranslation[sil.LocalVar], varDecl: sil.LocalVarDecl) : (Term, Term) = {
     varTranslation.translateVariableId(varDecl.localVar) match {
       case Some(id) =>
-        println(s"${varDecl.localVar.name},${id.toString}")
         (TermIdent(id.toString), ViperIsaType.translate(varDecl.typ))
       case None => sys.error(s"could not translate local variable ${varDecl.localVar.toString()}")
     }
