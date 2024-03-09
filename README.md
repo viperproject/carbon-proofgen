@@ -5,7 +5,7 @@ This repository contains a proof-producing instrumentation of the
 
 ## Installation
 Clone this repository *recursively* by running:  
-`git clone --recursive https://gitlab.inf.ethz.ch/gauravp/carbon-proof-generation`
+`git clone --recursive LINK_TO_REPO`
 
 ### Install Dependencies
 * sbt (Scala build tool): see the [main website](https://www.scala-sbt.org/) for the installation instructions
@@ -71,10 +71,3 @@ by running the following commands:
 `isabelle components -u viper-roots-dev/vipersemcommon`
 
 `isabelle components -u viper-roots-dev/viper-total-heaps`
-
-### Scripts to run tool on multiple examples
-
-Use the following [Python script](https://gitlab.inf.ethz.ch/gauravp/proofgen_tools/-/blob/master/carbon_proofgen_scripts/generate_proofs_cpg.py) to generate proofs for all Viper examples in a folder (recursively).
-
-Use the Python script located at `boogie_proofgen/tree/master/etc/scripts/check_proofs.py` to check all proofs in Isabelle
-in a folder (recursively).
