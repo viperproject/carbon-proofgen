@@ -130,7 +130,12 @@ class DefaultHeapModule(val verifier: Verifier)
       ConstDecl(nullName, refType) ++
       TypeDecl(fieldType) ++
       TypeDecl(normalFieldType) ++
-      ConstDecl(dummyHeapName, heapTyp) ++
+      (if(!verifier.generateProofs) {
+        ConstDecl(dummyHeapName, heapTyp)
+      } else {
+        //CARBON_CHANGE: proof generation does not support Viper functions yet
+        Nil
+      }) ++
       // Heap Type Definition :
       (if(verifier.usePolyMapsInEncoding) TypeAlias(heapTyp, MapType(Seq(refType, fieldType), TypeVar("B"), Seq(TypeVar("A"), TypeVar("B")))) else TypeDecl(heapTyp)) ++
       (if(enableAllocationEncoding) ConstDecl(allocName, NamedType(fieldTypeName, Seq(normalFieldType, Bool)), unique = true) ++
