@@ -170,14 +170,10 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val proc = Procedure(Identifier(name), ins, outs,
               Seq(init,
                 MaybeCommentBlock("Assumptions about method arguments", paramAssumptions),
-                inhalePre) ++
-                (if(!generateProofs) {
-                  Seq(MaybeCommentBlock(initOldStateComment, initOld))
-                } else {
-                  //TODO proof_gen: currently do not handle old expressions in proofs
-                  Nil
-                }) ++
-                Seq(checkPost, body, exhalePostWithComment)
+                inhalePre,
+				MaybeCommentBlock(initOldStateComment, initOld),
+				checkPost, body, exhalePostWithComment
+			  )
             )
 
             if(verifier.generateProofs) {
