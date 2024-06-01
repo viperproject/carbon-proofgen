@@ -174,9 +174,10 @@ object TranslationRecord {
                              funTranslation: Term,
                              varTranslation: Term,
                              constRepr: Term,
+                             labelHMTranslation: Term,
                              stateRelOptions: Term): Term =
     IsaTermUtil.makeRecord(translationRecordTypeName,
-      Seq(heapVar, maskVar, heapVarDef, maskVarDef, fieldTranslation, funTranslation, varTranslation, constRepr, stateRelOptions)
+      Seq(heapVar, maskVar, heapVarDef, maskVarDef, fieldTranslation, funTranslation, varTranslation, constRepr, labelHMTranslation, stateRelOptions)
     )
 
   def maskVar(translationRecord: Term) : Term = TermApp(TermIdent("mask_var"), translationRecord)
@@ -206,4 +207,3 @@ object BoogieExpressionContext {
     IsaTermUtil.makeRecord(exprContextRecordName, Seq(typeInterp, varContext, funInterp, rtypeInterp))
 
 }
-

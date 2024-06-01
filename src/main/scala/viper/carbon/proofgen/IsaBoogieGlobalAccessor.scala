@@ -71,7 +71,7 @@ case object IsaBoogieGlobalAccessor {
     constantsOrder.zipWithIndex.toMap
 
   private val globalsOrder :  Seq[BoogieConstGlobal] =
-    Seq(HeapGlobalVar, MaskGlobalVar)
+    Seq(HeapGlobalVar, MaskGlobalVar, OldHeapGlobalVar, OldMaskGlobalVar)
 
   private val globalsOrderMap : Map[BoogieConstGlobal, Int] =
     globalsOrder.zipWithIndex.toMap
@@ -91,3 +91,5 @@ case class FieldConst(field: sil.Field) extends BoogieConstGlobal
 
 case object HeapGlobalVar extends BoogieConstGlobal
 case object MaskGlobalVar extends BoogieConstGlobal
+case object OldHeapGlobalVar extends BoogieConstGlobal
+case object OldMaskGlobalVar extends BoogieConstGlobal
