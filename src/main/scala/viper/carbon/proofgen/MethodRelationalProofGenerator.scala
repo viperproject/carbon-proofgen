@@ -12,6 +12,7 @@ import viper.carbon.boogie.LocalVar
 import viper.carbon.modules.impls.{HeapStateComponent, PermissionStateComponent}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, IfHint, InhaleProofHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, ResetStateComponentHint, SeqnProofHint, StateProofHint, StmtProofHint, WhileHint}
+import viper.carbon.proofgen.ViperIsaTerm.localVarAssign
 
 
 case class MethodRelationalProofGenerator(
@@ -113,7 +114,6 @@ case class MethodRelationalProofGenerator(
       stateRelOptions = TermIdent("default_state_rel_options")
     )
 
-
     val translationRecord1 = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
       maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
@@ -128,11 +128,12 @@ case class MethodRelationalProofGenerator(
       labelHMTranslation = TermTuple(Seq(
         TermApp(
           TermIdent(SimpleIdentifier("map_of")),
-          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(globalBplData.getVarId(OldHeapGlobalVar))))))
+          // TODO make this based on actual local variable lookup rather than hardcoding
+          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(8)))))
         ),
         TermApp(
           TermIdent(SimpleIdentifier("map_of")),
-          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(globalBplData.getVarId(OldMaskGlobalVar))))))
+          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(7)))))
         )
       )),
       stateRelOptions = TermIdent("default_state_rel_options")
@@ -391,9 +392,7 @@ case class MethodRelationalProofGenerator(
             */
           Seq(
             boogieProg.getGlobalLookupTyThm(HeapGlobalVar),
-            boogieProg.getGlobalLookupTyThm(MaskGlobalVar),
-            boogieProg.getGlobalLookupTyThm(OldHeapGlobalVar),
-            boogieProg.getGlobalLookupTyThm(OldMaskGlobalVar)
+            boogieProg.getGlobalLookupTyThm(MaskGlobalVar)
           ) ++
           boogieProg.getAllLocalVariables().map(l => boogieProg.getLocalLookupTyThm(l)).toSeq ++
           methodAccessor.origProgram.fields.map(field => boogieProg.getGlobalLookupTyThm(FieldConst(field))) ++
@@ -478,7 +477,7 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineVal(auxVarDisjTac,
           //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
           MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), basicDisjointnessLemmasName,
-            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma)))
+            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma, "vars_label_hm_tr_def")))
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
@@ -591,6 +590,7 @@ case class MethodRelationalProofGenerator(
         ) ++
         initBoogieStateProof(bplCtxtWfLabel, IsaPrettyPrinter.prettyPrint(outputStateRel)) ++
         inhalePreconditionProof(ProofGenMLConstants.stmtRelInfo, stmtInhalePreconditionHints) ++
+        oldHeapOldMaskSetupProof() ++
         postconditionFramingProof(methodProofHint.postconditionFramingHint._1, ProofGenMLConstants.basicStmtRelInfo, ProofGenMLConstants.stmtRelInfo, stmtPostconditionFramingHints) ++
         methodBodyAndPostconditionProof(ProofGenMLConstants.stmtRelInfo, stmtRelHints, stmtExhalePostconditionHints) ++
         Seq(doneTac)
@@ -619,6 +619,51 @@ case class MethodRelationalProofGenerator(
           applyTac(ViperBoogieRelationIsa.progressRedBplRelTac(MLUtil.contextAniquotation)),
         )
       }
+    )
+  }
+
+  private def oldHeapOldMaskSetupProof() : Seq[String] = {
+    Seq(
+      applyTac(introTac("exI")),
+      applyTac(introTac("conjI")),
+      // TODO rephrase this with a 'where' method call and a term
+      applyTac(ruleTac("rel_propagate_post[where ?R1.0 = \"λω ns. (state_rel_well_def_same ectxt vpr_prog (λ_. True) (ty_repr_basic (absval_interp_total ctxt_vpr)) tr_vpr_bpl_0 Map.empty ω ns) ∧ get_trace_total ω = [old_label ↦ get_total_full ω]\"]")),
+      applyTac(ruleTac("rel_general_success_refl_2")),
+      applyTac(simpTac),
+      applyTac(ruleTac("state_rel_can_add_trace")),
+      applyTac(simpTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
+      applyTac(blastTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
+      // TODO rephrase this with a 'where' method call and a term
+      applyTac(ruleTac("red_ast_bpl_rel_transitive_4[where ?Q = \"λ ω. get_trace_total ω = [old_label ↦ get_total_full ω]\"]")),
+      applyTac(simpTac),
+      applyTac(ruleTac("red_ast_bpl_relI")),
+      applyTac(ruleTac("setup_oldm")),
+      applyTac(blastTac),
+      applyTac(simpTac),
+      applyTac(simpTac),
+      // Is there a better way to do this one?
+      applyTac("tactic ‹aux_var_disj_tac @{context} 1›"),
+      applyTac(fastforceTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
+      applyTac(simpTac(Seq("ty_repr_basic_def", "lvar7"))),
+      applyTac(simpTac),
+      applyTac(simpTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
+      applyTac(ruleTac("red_ast_bpl_relI")),
+      applyTac(ruleTac("setup_oldh")),
+      applyTac(blastTac),
+      applyTac(simpTac),
+      applyTac(simpTac),
+      // Is there a better way to do this one?
+      applyTac("tactic ‹aux_var_disj_tac @{context} 1›"),
+      applyTac(fastforceTac),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
+      applyTac(simpTac(Seq("ty_repr_basic_def", "lvar8"))),
+      applyTac(simpTac),
+      applyTac(simpTac(Seq(IsaUtil.definitionLemmaFromName(translationRecord0Name), IsaUtil.definitionLemmaFromName(translationRecord1Name)))),
+      applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name)))
     )
   }
 

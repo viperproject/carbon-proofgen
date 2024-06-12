@@ -35,6 +35,7 @@ class IsaBoogieProcAccessor(
     getVarId(procEnv.get(varVpr))
   }
 
+  // Find code that generates boogie local variables -> old mask, old heap
   def getVarId(varBpl: LocalVar) : Int = {
     procVarMapping.get(varBpl) match {
       case Some(idBpl) =>
@@ -83,4 +84,3 @@ class IsaBoogieProcAccessor(
   val preconditionDef : TermIdent = TermIdent(procDataDecl("pres"))
 
 }
-
