@@ -53,6 +53,7 @@ object ViperBoogieRelationIsa {
 
   def methodRel( stateRelEnter: Term,
                stateRelExit: Term,
+               stateRelOld: Term,
                totalContextVpr: Term,
                stateConsistency: Term,
                varContextVpr: Term,
@@ -61,7 +62,7 @@ object ViperBoogieRelationIsa {
                methodDecl: Term,
                configBplEnter: Term) : Term =
     TermApp(TermIdent(methodRelName),
-      Seq(stateRelEnter, stateRelExit, totalContextVpr, stateConsistency, varContextVpr, programVpr, expressionContextBpl, methodDecl, configBplEnter)
+      Seq(stateRelEnter, stateRelExit, stateRelOld, totalContextVpr, stateConsistency, varContextVpr, programVpr, expressionContextBpl, methodDecl, configBplEnter)
     )
 
   val methodRelName : String = "method_rel"

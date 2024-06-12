@@ -32,9 +32,13 @@ case class MethodRelationalProofGenerator(
   val varRelationListName = "var_relation_list_1"
   val varRelationBoundedByName = "var_relation_list_1_bound"
   val translationRecord0Name = "tr_vpr_bpl_0"
+
+  // A translation record that includes labeled boogie variables in the label_hm_translation
   // TODO investigate when to use this
   val translationRecord1Name = "tr_vpr_bpl_1"
   val stateRelInitialName = "state_rel_initial"
+
+  val stateRelWithHMTranslationName = "state_rel_tr_vpr_bpl_1"
 
   val funReprConcrete = TermIdent(ViperBoogieRelationIsa.funReprConcreteName)
 
@@ -174,6 +178,26 @@ case class MethodRelationalProofGenerator(
       )
 
     outerDecls += stateRelInitialAbbrev
+
+    val stateRelWithHMTranslation: AbbrevDecl =
+      AbbrevDecl(
+        stateRelWithHMTranslationName,
+        None,
+        (Seq(TermIdent("A"), TermIdent("Pr"), TermIdent("ctxt"), TermIdent("w"), TermIdent("ns")),
+          ViperBoogieRelationIsa.stateRelationDefSame(
+            TermIdent("Pr"),
+            ViperBoogieRelationIsa.trivialStateConsistency,
+            TypeRepresentation.makeBasicTypeRepresentation(TermIdent("A")),
+            TermIdent(translationRecord1Def.name),
+            IsaTermUtil.emptyMap,
+            TermIdent("ctxt"),
+            TermIdent("w"),
+            TermIdent("ns")
+          )
+        )
+      )
+    
+    outerDecls += stateRelWithHMTranslation
 
     outerDecls += BoogieIsaTerm.typeInterpBplAbbrev(typeInterpBplName)
 
@@ -543,11 +567,14 @@ case class MethodRelationalProofGenerator(
 
     val outputStateRel = TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, progAccessor.vprProgram, exprContextBpl))
 
+    val stateRelOld = TermApp(TermIdent(stateRelWithHMTranslationName), Seq(absvalInterpVpr, progAccessor.vprProgram, exprContextBpl))
+
     val mainTheorem = LemmaDecl("method_rel_proof",
       ContextElem.empty(),
       ViperBoogieRelationIsa.methodRel(
         stateRelEnter=ViperBoogieRelationIsa.stateRelEmpty(TermApp(TermIdent(stateRelInitialName), Seq(absvalInterpVpr, progAccessor.vprProgram, exprContextBpl))),
         stateRelExit=outputStateRel,
+        stateRelOld=stateRelOld,
         totalContextVpr=totalContextVpr,
         stateConsistency=ViperBoogieRelationIsa.trivialStateConsistency,
         varContextVpr=TermIdent(varContextViperName),
