@@ -368,7 +368,6 @@ case class CarbonVerifier(override val reporter: Reporter,
               case _: sil.While if useBasicVersion => node
               case _: sil.ExtensionStmt => node
               case _: sil.LabelledOld if useBasicVersion => node
-              case _: sil.Old if useBasicVersion => node
               case _: sil.Quasihavoc => node
               case _: sil.Quasihavocall => node
               case _: sil.Label if useBasicVersion => node
