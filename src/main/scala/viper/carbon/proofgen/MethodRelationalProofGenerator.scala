@@ -725,8 +725,9 @@ case class MethodRelationalProofGenerator(
       applyTac(blastTac),
       applyTac(simpTac),
       applyTac(simpTac),
-      // Is there a better way to do this one?
-      applyTac("tactic ‹aux_var_disj_tac @{context} 1›"),
+      applyTac(MLUtil.mlTacticToIsa(
+        MLUtil.app("aux_var_disj_tac", Seq(MLUtil.contextAniquotation, "1"))
+      )),
       applyTac(fastforceTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
       applyTac(simpTac(Seq("ty_repr_basic_def", "lvar7"))),
@@ -738,8 +739,9 @@ case class MethodRelationalProofGenerator(
       applyTac(blastTac),
       applyTac(simpTac),
       applyTac(simpTac),
-      // Is there a better way to do this one?
-      applyTac("tactic ‹aux_var_disj_tac @{context} 1›"),
+      applyTac(MLUtil.mlTacticToIsa(
+        MLUtil.app("aux_var_disj_tac", Seq(MLUtil.contextAniquotation, "1"))
+      )),
       applyTac(fastforceTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
       applyTac(simpTac(Seq("ty_repr_basic_def", "lvar8"))),
