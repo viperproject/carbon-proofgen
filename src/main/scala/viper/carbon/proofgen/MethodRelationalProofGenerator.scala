@@ -700,8 +700,25 @@ case class MethodRelationalProofGenerator(
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
       applyTac(blastTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
-      // TODO rephrase this with a 'where' method call and a term
-      applyTac(ruleTac("red_ast_bpl_rel_transitive_4[where ?Q = \"λ ω. get_trace_total ω = [old_label ↦ get_total_full ω]\"]")),
+      applyTac(ruleTac(where(
+        "red_ast_bpl_rel_transitive_4",
+        "Q",
+        TermQuantifier(
+          Lambda,
+          Seq(
+            SimpleIdentifier("\\<omega>")
+          ),
+          TermBinary.eq(
+            TermApp(
+              TermIdent(SimpleIdentifier("get_trace_total")),
+              TermIdent(SimpleIdentifier("\\<omega>"))
+            ),
+            TermMap(Seq(
+              (TermIdent(SimpleIdentifier("old_label")), TermApp(TermIdent(SimpleIdentifier("get_total_full")), TermIdent(SimpleIdentifier("\\<omega>"))))
+            ))
+          )
+        )
+      ))),
       applyTac(simpTac),
       applyTac(ruleTac("red_ast_bpl_relI")),
       applyTac(ruleTac("setup_oldm")),
