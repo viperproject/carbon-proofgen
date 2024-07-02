@@ -13,6 +13,7 @@ import viper.carbon.modules.impls.{HeapStateComponent, PermissionStateComponent}
 import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, IfHint, InhaleProofHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, ResetStateComponentHint, SeqnProofHint, StateProofHint, StmtProofHint, WhileHint}
 import viper.carbon.proofgen.ViperIsaTerm.localVarAssign
+import viper.carbon.proofgen.hints.UpdateStateComponentHint
 
 
 case class MethodRelationalProofGenerator(
@@ -46,13 +47,26 @@ case class MethodRelationalProofGenerator(
 
   val basicDisjointnessLemmasName = "basic_disjointness_lemmas"
 
-    // TODO store this some other way?
-  val setupOldMaskHint: StateProofHint = methodProofHint.setupOldStateHint(0);
-  val setupOldHeapHint: StateProofHint = methodProofHint.setupOldStateHint(1);
+  val (setupOldHeapHint, setupOldMaskHint) : (UpdateStateComponentHint, UpdateStateComponentHint) =
+    methodProofHint.setupOldStateHint match {
+      case Seq(
+        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
+        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask),
+      ) => (
+        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
+        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask)
+      )
+      case Seq(
+        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask),
+        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
+      ) => (
+        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
+        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask)
+      )
+      case _ => sys.error("Could not find old heap and old mask setup hints")
+    }
 
   def generateRelationalProof() : (Theory, DefaultRelationalProofData) = {
-    println(setupOldMaskHint)
-    println(setupOldHeapHint)
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
     val viperVarContextDef = DefDecl(
@@ -119,6 +133,9 @@ case class MethodRelationalProofGenerator(
       stateRelOptions = TermIdent("default_state_rel_options")
     )
 
+    val localHeapVar = setupOldHeapHint.newStateComponent(0).asInstanceOf[LocalVar]
+    val localMaskVar = setupOldMaskHint.newStateComponent(0).asInstanceOf[LocalVar]
+
     val translationRecord1 = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
       maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
@@ -134,11 +151,11 @@ case class MethodRelationalProofGenerator(
         TermApp(
           TermIdent(SimpleIdentifier("map_of")),
           // TODO make this based on actual local variable lookup rather than hardcoding
-          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(8)))))
+          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(boogieProg.getVarId(localHeapVar))))))
         ),
         TermApp(
           TermIdent(SimpleIdentifier("map_of")),
-          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(7)))))
+          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(boogieProg.getVarId(localMaskVar))))))
         )
       )),
       stateRelOptions = TermIdent("default_state_rel_options")
