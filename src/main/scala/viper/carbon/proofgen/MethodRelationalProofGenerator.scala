@@ -730,7 +730,7 @@ case class MethodRelationalProofGenerator(
       )),
       applyTac(fastforceTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
-      applyTac(simpTac(Seq("ty_repr_basic_def", "lvar7"))),
+      applyTac(simpTac(Seq("ty_repr_basic_def", boogieProg.getLocalLookupTyThm(localMaskVar)))),
       applyTac(simpTac),
       applyTac(simpTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
@@ -744,7 +744,7 @@ case class MethodRelationalProofGenerator(
       )),
       applyTac(fastforceTac),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name))),
-      applyTac(simpTac(Seq("ty_repr_basic_def", "lvar8"))),
+      applyTac(simpTac(Seq("ty_repr_basic_def", boogieProg.getLocalLookupTyThm(localHeapVar)))),
       applyTac(simpTac),
       applyTac(simpTac(Seq(IsaUtil.definitionLemmaFromName(translationRecord0Name), IsaUtil.definitionLemmaFromName(translationRecord1Name)))),
       applyTac(simpTac(IsaUtil.definitionLemmaFromName(translationRecord0Name)))
