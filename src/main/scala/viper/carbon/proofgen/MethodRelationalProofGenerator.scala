@@ -146,15 +146,18 @@ case class MethodRelationalProofGenerator(
       constRepr = ViperBoogieRelationIsa.constReprBasic,
       // TODO correct term here
       labelHMTranslation = TermTuple(Seq(
-        TermApp(
-          TermIdent(SimpleIdentifier("map_of")),
-          // TODO make this based on actual local variable lookup rather than hardcoding
-          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(boogieProg.getVarId(localHeapVar))))))
-        ),
-        TermApp(
-          TermIdent(SimpleIdentifier("map_of")),
-          TermList(Seq(TermTuple(Seq(TermIdent(SimpleIdentifier("old_label")), NatConst(boogieProg.getVarId(localMaskVar))))))
-        )
+        TermMap(Seq(
+          (
+            TermIdent(SimpleIdentifier("old_label")),
+            NatConst(boogieProg.getVarId(localHeapVar))
+          )
+        )),
+        TermMap(Seq(
+          (
+            TermIdent(SimpleIdentifier("old_label")),
+            NatConst(boogieProg.getVarId(localMaskVar))
+          )
+        ))
       )),
       stateRelOptions = TermIdent("default_state_rel_options")
     )
@@ -257,7 +260,6 @@ case class MethodRelationalProofGenerator(
           "TotalViper.StmtRelML",
           "TotalViper.ViperBoogieEndToEndML",
           "Boogie_Lang.TypingML",
-          "HOL.Map", // Used for map_of inside second translation record
           "../"+progAccessor.theoryName,
           boogieProg.procTheoryPath
         ),
