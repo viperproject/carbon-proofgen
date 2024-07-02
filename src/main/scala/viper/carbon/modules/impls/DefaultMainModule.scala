@@ -155,7 +155,8 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val ins: Seq[LocalVarDecl] = formalArgs map translateLocalVarDecl
             val outs: Seq[LocalVarDecl] = formalReturns map translateLocalVarDecl
             val init = MaybeCommentBlock("Initializing the state", stateModule.initBoogieState ++ assumeAllFunctionDefinitions ++ stmtModule.initStmt(method.bodyOrAssumeFalse))
-            val initOld = MaybeCommentBlock("Initializing the old state", stateModule.initOldState)
+            val stateModuleInitOldState = stateModule.initOldState
+            val initOld = MaybeCommentBlock("Initializing the old state", stateModuleInitOldState._1)
             val paramAssumptions = mWithLoopInfo.formalArgs map (a => allAssumptionsAboutValue(a.typ, translateLocalVarDecl(a), true))
             val (inhalePre, inhalePreHints) = translateMethodDeclPre(pres)
             val (checkPost: Stmt, postFramingHint) = if (posts.nonEmpty) {
@@ -177,7 +178,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             )
 
             if(verifier.generateProofs) {
-              val methodProofHint = MethodProofHint(inhalePreHints, postFramingHint, bodyProofHint, exhalePostHint)
+              val methodProofHint = MethodProofHint(inhalePreHints, postFramingHint, stateModuleInitOldState._2, bodyProofHint, exhalePostHint)
               verifier.proofGenInterface.generateProofForMethod(m, proc, env, methodProofHint)
             }
 

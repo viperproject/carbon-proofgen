@@ -35,7 +35,6 @@ case class MethodRelationalProofGenerator(
   val translationRecord0Name = "tr_vpr_bpl_0"
 
   // A translation record that includes labeled boogie variables in the label_hm_translation
-  // TODO investigate when to use this
   val translationRecord1Name = "tr_vpr_bpl_1"
   val stateRelInitialName = "state_rel_initial"
 
@@ -47,7 +46,13 @@ case class MethodRelationalProofGenerator(
 
   val basicDisjointnessLemmasName = "basic_disjointness_lemmas"
 
+    // TODO store this some other way?
+  val setupOldMaskHint: StateProofHint = methodProofHint.setupOldStateHint(0);
+  val setupOldHeapHint: StateProofHint = methodProofHint.setupOldStateHint(1);
+
   def generateRelationalProof() : (Theory, DefaultRelationalProofData) = {
+    println(setupOldMaskHint)
+    println(setupOldHeapHint)
     val outerDecls : ListBuffer[OuterDecl] = ListBuffer.empty
 
     val viperVarContextDef = DefDecl(

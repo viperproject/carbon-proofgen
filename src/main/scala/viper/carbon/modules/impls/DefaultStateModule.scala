@@ -89,10 +89,10 @@ class DefaultStateModule(val verifier: Verifier) extends StateModule {
     firstStmt ++ assumeGoodState // assumeGoodState should come after the state vars have been updated
   }
 
-  def initOldState: Stmt = {
+  def initOldState: (Stmt, Seq[StateProofHint]) = {
     val freshSnapshot = freshTempStateKeepCurrentAux("old", true)
     curOldState = freshSnapshot._1
-    initToCurrentStmt(freshSnapshot)._1
+    initToCurrentStmt(freshSnapshot)
   }
 
 

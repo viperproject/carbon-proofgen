@@ -53,7 +53,7 @@ trait StateModule extends Module with ComponentRegistry[CarbonStateComponent] wi
   /**
    * The statements necessary to initialize old(state).
    */
-  def initOldState: Stmt
+  def initOldState: (Stmt, Seq[StateProofHint])
 
   /**
    * The name and type of the static contribution of the state components registered with this module to the state. The returned value should remain the
