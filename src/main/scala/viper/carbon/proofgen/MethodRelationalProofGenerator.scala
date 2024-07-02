@@ -47,21 +47,22 @@ case class MethodRelationalProofGenerator(
 
   val basicDisjointnessLemmasName = "basic_disjointness_lemmas"
 
-  val (setupOldHeapHint, setupOldMaskHint) : (UpdateStateComponentHint, UpdateStateComponentHint) =
+  // Pull out the Boogie variables corresponding to local heap and mask
+  val (localHeapVar, localMaskVar) : (LocalVar, LocalVar) =
     methodProofHint.setupOldStateHint match {
       case Seq(
-        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
-        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask),
+        UpdateStateComponentHint(HeapStateComponent, oldHeap, _),
+        UpdateStateComponentHint(PermissionStateComponent, oldMask, _),
       ) => (
-        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
-        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask)
+        oldHeap(0).asInstanceOf[LocalVar],
+        oldMask(0).asInstanceOf[LocalVar]
       )
       case Seq(
-        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask),
-        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
+        UpdateStateComponentHint(PermissionStateComponent, oldMask, _),
+        UpdateStateComponentHint(HeapStateComponent, oldHeap, _),
       ) => (
-        UpdateStateComponentHint(HeapStateComponent, oldHeap, heap),
-        UpdateStateComponentHint(PermissionStateComponent, oldMask, mask)
+        oldHeap(0).asInstanceOf[LocalVar],
+        oldMask(0).asInstanceOf[LocalVar]
       )
       case _ => sys.error("Could not find old heap and old mask setup hints")
     }
@@ -132,9 +133,6 @@ case class MethodRelationalProofGenerator(
       )),
       stateRelOptions = TermIdent("default_state_rel_options")
     )
-
-    val localHeapVar = setupOldHeapHint.newStateComponent(0).asInstanceOf[LocalVar]
-    val localMaskVar = setupOldMaskHint.newStateComponent(0).asInstanceOf[LocalVar]
 
     val translationRecord1 = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
