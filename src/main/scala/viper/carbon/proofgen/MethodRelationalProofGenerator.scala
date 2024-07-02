@@ -505,7 +505,7 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
           ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
           vprProgramContextEqThm = isaToMLThm(vprProgramTotal),
-          trDefThm = isaToMLThm(definitionLemmaFromName(translationRecord0Name)),
+          trDefThms = isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name))),
           methodDataTableMLIdent = progAccessor.methodDataTableML,
           varRelTac = lookupVarRelTac,
           varContextVprTac = "assm_full_simp_solved_with_thms_tac " +
@@ -879,7 +879,10 @@ case class MethodRelationalProofGenerator(
       applyTac(BoogieIsaTerm.redAstBplRelOneSimpleCmdTac),
       applyTac(ruleTac("exI")),
       applyTac(ruleTac("conjI")),
-      applyTac(ViperBoogieRelationIsa.redAssumeGoodStateTac(IsaUtil.definitionLemmaFromName(translationRecord0Name),
+      applyTac(ViperBoogieRelationIsa.redAssumeGoodStateTac(
+        Seq(
+          IsaUtil.definitionLemmaFromName(translationRecord0Name)
+        ),
         MLUtil.isaToMLThm(ctxtBplWfThm)
         )),
       applyTac(assumeTac)

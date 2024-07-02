@@ -85,10 +85,10 @@ object ViperBoogieRelationIsa {
   val zeroMaskRelThm = "zero_mask_rel_2"
   val boogieConstValSimpsThm = "boogie_const_val.simps"
 
-  def redAssumeGoodStateTac(translationRecordDefThm: String, ctxtBplWfThm: String) = {
+  def redAssumeGoodStateTac(translationRecordDefThms: Seq[String], ctxtBplWfThm: String) = {
     MLUtil.mlTacticToIsa(
       MLUtil.app("red_assume_good_state_tac",
-        Seq(MLUtil.contextAniquotation, ctxtBplWfThm, MLUtil.isaToMLThm(translationRecordDefThm), "1")
+        Seq(MLUtil.contextAniquotation, ctxtBplWfThm, MLUtil.isaToMLThms(translationRecordDefThms), "1")
       )
     )
   }
