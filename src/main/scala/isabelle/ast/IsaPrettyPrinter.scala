@@ -45,6 +45,8 @@ object IsaPrettyPrinter {
     case TermApp(f, arg) => "("+prettyPrint(f) + " " + (arg map prettyPrint).mkString(" ")  +")"
     case TermWithExplicitType(t, ty) => "(" + prettyPrint(t) + "::" + prettyPrint(ty) + ")"
     case TermList(xs) => "[" + xs.mkString(",") + "]"
+    case TermMap(mappings) =>
+      "[" + (mappings map { case (k: Term, v: Term) => prettyPrint(k) + " \\<mapsto> " + prettyPrint(v)}).mkString(", ") + "]"
     case TermSet(xs) => "{" + xs.mkString(",") + "}"
     case TermTuple(xs) => "(" + xs.mkString(",") + ")"
     case TermQuantifier(qkind, boundVars, body) =>
@@ -176,4 +178,3 @@ object IsaPrettyPrinter {
   }
 
 }
-

@@ -679,11 +679,18 @@ case class MethodRelationalProofGenerator(
                 TermIdent(SimpleIdentifier("ns"))
               )
             ),
-            BoolConst(true)
+            TermBinary.eq(
+              TermApp(
+                TermIdent(SimpleIdentifier("get_trace_total")),
+                TermIdent(SimpleIdentifier("\\<omega>"))
+              ),
+              TermMap(Seq(
+                (TermIdent(SimpleIdentifier("old_label")), TermApp(TermIdent(SimpleIdentifier("get_total_full")), TermIdent(SimpleIdentifier("\\<omega>"))))
+              ))
+            )
           )
         )
       ))),
-      // applyTac(ruleTac("rel_propagate_post[where ?R1.0 = \"λω ns. (state_rel_well_def_same ectxt vpr_prog (λ_. True) (ty_repr_basic (absval_interp_total ctxt_vpr)) tr_vpr_bpl_0 Map.empty ω ns) ∧ get_trace_total ω = [old_label ↦ get_total_full ω]\"]")),
       applyTac(ruleTac("rel_general_success_refl_2")),
       applyTac(simpTac),
       applyTac(ruleTac("state_rel_can_add_trace")),
