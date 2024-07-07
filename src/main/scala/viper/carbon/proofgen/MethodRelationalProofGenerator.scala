@@ -14,6 +14,7 @@ import viper.carbon.proofgen.functions.FunctionProofGenInterface
 import viper.carbon.proofgen.hints.{AtomicHint, ExhaleStmtComponentHint, ExhaleStmtHint, IfHint, InhaleProofHint, InhaleStmtComponentHint, InhaleStmtHint, LocalVarAssignHint, MLHintGenerator, MethodProofHint, ResetStateComponentHint, SeqnProofHint, StateProofHint, StmtProofHint, WhileHint}
 import viper.carbon.proofgen.ViperIsaTerm.localVarAssign
 import viper.carbon.proofgen.hints.UpdateStateComponentHint
+import viper.silver.verifier.ModelParser.definition
 
 
 case class MethodRelationalProofGenerator(
@@ -392,11 +393,11 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineVal(lookupVarRelTac,
           MLUtil.lambda(Seq("ctxt"),
             MLUtil.seqAllNewTac(
-              MLUtil.simpAsm(isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(varRelationListName), definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))), "ctxt"),
+              MLUtil.simpAsm(isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(translationRecord1Name), definitionLemmaFromName(varRelationListName), definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))), "ctxt"),
               MLUtil.fastforceTac("[]", "ctxt")
             ))
         ),
-        MLUtil.defineVal(simpWithTrDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name))))),
+        MLUtil.defineVal(simpWithTrDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(translationRecord1Name))))),
         MLUtil.defineVal(simpWithTyReprDef, MLUtil.simpAsmSolved(isaToMLThms(Seq(definitionLemmaFromName(TypeRepresentation.tyReprBasicName))))),
         MLUtil.defineVal(typeSafetyThmMap, ViperBoogieMLUtil.genTypeSafetyThmMap(
           isaToMLThm(funInterpWfBpl),
@@ -427,7 +428,7 @@ case class MethodRelationalProofGenerator(
 
         MLUtil.defineFun(heapReadWfTac, Seq("ctxt"),
           MLUtil.seqPrimeTac(
-            MLUtil.app(MLUtil.simpAsm(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name)))), "ctxt"),
+            MLUtil.app(MLUtil.simpAsm(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(translationRecord1Name)))), "ctxt"),
             MLUtil.resolveTac("ctxt", MLUtil.isaToMLThms(Seq("heap_wf_concrete[OF CtxtWf wf_ty_repr_basic]")))
           )
         ),
@@ -435,6 +436,7 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineFun(heapReadMatchTac, Seq("ctxt"),
             MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(
               definitionLemmaFromName(translationRecord0Name),
+              definitionLemmaFromName(translationRecord1Name),
               definitionLemmaFromName(TypeRepresentation.tyReprBasicName),
               definitionLemmaFromName("read_heap_concrete"))
             ), "ctxt"),
@@ -443,6 +445,7 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineFun(fieldRelTac, Seq("ctxt"),
           MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(
             definitionLemmaFromName(translationRecord0Name),
+            definitionLemmaFromName(translationRecord1Name),
             //definitionLemmaFromName(progAccessor.fieldRel.toString)
             progAccessor.allFieldLookupLemmas.fieldRelMapOfLemmas
             )),
@@ -464,14 +467,14 @@ case class MethodRelationalProofGenerator(
 
         MLUtil.defineVal(auxVarDisjTac,
           //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
-          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), basicDisjointnessLemmasName,
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(translationRecord1Name), basicDisjointnessLemmasName,
             "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma, "vars_label_hm_tr_def")))
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
           ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
           vprProgramContextEqThm = isaToMLThm(vprProgramTotal),
-          trDefThms = isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name))),
+          trDefThms = isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(translationRecord1Name))),
           methodDataTableMLIdent = progAccessor.methodDataTableML,
           varRelTac = lookupVarRelTac,
           varContextVprTac = "assm_full_simp_solved_with_thms_tac " +
