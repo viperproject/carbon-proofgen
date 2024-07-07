@@ -100,7 +100,7 @@ object IsaVprProgramGenerator {
 
     (
       //ViperBoogieTranslationInterface is required for the field lookup lemmas, could think about putting those in a separate theory
-      Theory(theoryName, Seq("ViperCommon.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", "TotalViper.ViperBoogieTranslationInterface",  methodTheory.theoryName), outerDecls.toSeq),
+      Theory(theoryName, Seq("ViperCommon.ViperLang", "TotalViper.TotalViperUtil", "TotalViper.TotalViperHelperML", "TotalViper.ViperBoogieTranslationInterface", "TotalViper.MLTypeDeclarations", methodTheory.theoryName), outerDecls.toSeq),
       DefaultIsaViperGlobalDataAccessor(
         theoryName = theoryName,
         vprProgramIdent = programDef.name,
@@ -372,4 +372,3 @@ object IsaVprProgramGenerator {
   }
 
 }
-
