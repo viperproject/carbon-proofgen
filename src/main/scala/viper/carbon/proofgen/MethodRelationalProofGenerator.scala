@@ -462,7 +462,28 @@ case class MethodRelationalProofGenerator(
           MLUtil.app("field_rel_single_inst_tac", Seq(fieldRelTac, fieldLookupTac))
         ),
 
+        MLUtil.defineVal(auxVarDisjTac,
+          //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
+          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), basicDisjointnessLemmasName,
+            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma, "vars_label_hm_tr_def")))
+        ),
+
+        MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
+          ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
+          vprProgramContextEqThm = isaToMLThm(vprProgramTotal),
+          trDefThms = isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name))),
+          methodDataTableMLIdent = progAccessor.methodDataTableML,
+          varRelTac = lookupVarRelTac,
+          varContextVprTac = "assm_full_simp_solved_with_thms_tac " +
+            isaToMLThms(Seq(definitionLemmaFromName(varContextViperName), IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))),
+          fieldRelSingleTac = fieldRelSingleTac,
+          auxVarDisjTac = auxVarDisjTac,
+          tyInterpEContextBplEq = MLUtil.isaToMLThm(tyInterpEqBpl)
+          )
+        ),
+
         MLUtil.defineVal(ProofGenMLConstants.expRelInfo, ViperBoogieMLUtil.createExpRelInfo(
+          ProofGenMLConstants.basicStmtRelInfo,
           typeSafetyThmMap,
           lookupVarRelTac,
           simpWithTrDef,
@@ -493,26 +514,9 @@ case class MethodRelationalProofGenerator(
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.expWfRelInfo,
-          ViperBoogieMLUtil.createExpWfRelInfo(fieldAccessWfRelTacAuxInst)
-        ),
-
-        MLUtil.defineVal(auxVarDisjTac,
-          //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
-          MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), basicDisjointnessLemmasName,
-            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma, "vars_label_hm_tr_def")))
-        ),
-
-        MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(
-          ctxtWfThm = isaToMLThm(bplCtxtWfLabel),
-          vprProgramContextEqThm = isaToMLThm(vprProgramTotal),
-          trDefThms = isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name))),
-          methodDataTableMLIdent = progAccessor.methodDataTableML,
-          varRelTac = lookupVarRelTac,
-          varContextVprTac = "assm_full_simp_solved_with_thms_tac " +
-            isaToMLThms(Seq(definitionLemmaFromName(varContextViperName), IsaUtil.definitionLemmaFromName(DeBruijnIsaUtil.shiftAndAddId))),
-          fieldRelSingleTac = fieldRelSingleTac,
-          auxVarDisjTac = auxVarDisjTac,
-          tyInterpEContextBplEq = MLUtil.isaToMLThm(tyInterpEqBpl)
+          ViperBoogieMLUtil.createExpWfRelInfo(
+            ProofGenMLConstants.basicStmtRelInfo,
+            fieldAccessWfRelTacAuxInst
           )
         ),
 

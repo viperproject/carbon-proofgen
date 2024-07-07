@@ -8,9 +8,10 @@ object ViperBoogieMLUtil {
     MLUtil.app("gen_type_safety_thm_map", Seq(funInterpWf, funDeclsWf, varContextWf, stateWf))
   }
 
-  def createExpRelInfo(typeSafetyThmMap: String, lookupVarRelTac: String, vprLitBplExpRelTac: String, lookupVarThms: String, lookupFunBplThms: String, simplifyRtypeInterpTac: String, fieldAccessRelPreTac: String) : String =
+  def createExpRelInfo(basicStmtRelInfo: String, typeSafetyThmMap: String, lookupVarRelTac: String, vprLitBplExpRelTac: String, lookupVarThms: String, lookupFunBplThms: String, simplifyRtypeInterpTac: String, fieldAccessRelPreTac: String) : String =
     MLUtil.createRecord(
       Seq(
+        ("basic_stmt_rel_info", basicStmtRelInfo),
         ("type_safety_thm_map", typeSafetyThmMap),
         ("lookup_var_rel_tac", lookupVarRelTac),
         ("vpr_lit_bpl_exp_rel_tac", vprLitBplExpRelTac),
@@ -21,8 +22,11 @@ object ViperBoogieMLUtil {
       )
     )
 
-  def createExpWfRelInfo(fieldAccessWfRelSynTac: String) : String =
-    MLUtil.createRecord(Seq(("field_access_wf_rel_syn_tac", fieldAccessWfRelSynTac)))
+  def createExpWfRelInfo(basicStmtRelInfo: String, fieldAccessWfRelSynTac: String) : String =
+    MLUtil.createRecord(Seq(
+      ("basic_stmt_rel_info", basicStmtRelInfo),
+      ("field_access_wf_rel_syn_tac", fieldAccessWfRelSynTac)
+    ))
 
   def fieldAccessRelPreTac(heapReadWfTac: String, heapReadMatchTac: String, fieldRelSingleTac: String) : String =
     MLUtil.app("field_access_rel_pre_tac_aux", Seq(heapReadWfTac, heapReadMatchTac, fieldRelSingleTac))
