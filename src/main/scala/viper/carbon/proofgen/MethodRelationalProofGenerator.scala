@@ -270,7 +270,8 @@ case class MethodRelationalProofGenerator(
     val relationalProofData = DefaultRelationalProofData(
       theoryName = theoryName,
       relationalLemmaData = RelationalLemmaData(IsaUtil.qualifyName(relationalProofLocaleDecl.name, relationalProofLemmaName), relationalProofLocaleDecl.name),
-      translationRecordDefName = translationRecord0Name,
+      translationRecord0DefName = translationRecord0Name,
+      translationRecord1DefName = translationRecord1Name,
       varRelationListDefName = varRelationListName,
       varRelationBoundsLemmaName = varRelationBoundedBy.name,
       basicDisjointnessLemmaName = basicDisjointnessLemmasName,
@@ -468,7 +469,7 @@ case class MethodRelationalProofGenerator(
         MLUtil.defineVal(auxVarDisjTac,
           //map_upd_set_dom for the method call case, shift_and_add is required when scoped variables are introduced
           MLUtil.simpAsmSolved(MLUtil.isaToMLThms(Seq(definitionLemmaFromName(translationRecord0Name), definitionLemmaFromName(translationRecord1Name), basicDisjointnessLemmasName,
-            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma, "vars_label_hm_tr_def")))
+            "map_upd_set_dom", "aux_pred_capture_state_dom", DeBruijnIsaUtil.ranShiftAndAddLemma, "vars_label_hm_tr_def", "active_labels_hm_tr_def")))
         ),
 
         MLUtil.defineVal(ProofGenMLConstants.basicStmtRelInfo, ViperBoogieMLUtil.createBasicStmtRelInfo(

@@ -13,7 +13,9 @@ trait RelationalProofData {
 
   def relationalLemmaAssumptionDefName: String
 
-  def translationRecordDef: TermIdent
+  def translationRecord0Def: TermIdent
+
+  def translationRecord1Def: TermIdent
 
   def varRelationListDef: TermIdent
 

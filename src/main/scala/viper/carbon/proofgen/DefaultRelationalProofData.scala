@@ -2,7 +2,7 @@ package viper.carbon.proofgen
 
 import isabelle.ast.{IsaUtil, TermIdent}
 
-case class DefaultRelationalProofData(override val theoryName: String, relationalLemmaData: RelationalLemmaData, translationRecordDefName: String, varRelationListDefName: String, varRelationBoundsLemmaName: String, basicDisjointnessLemmaName: String, varContextVprDefName: String, varContextBplDefName: String)
+case class DefaultRelationalProofData(override val theoryName: String, relationalLemmaData: RelationalLemmaData, translationRecord0DefName: String, translationRecord1DefName: String, varRelationListDefName: String, varRelationBoundsLemmaName: String, basicDisjointnessLemmaName: String, varContextVprDefName: String, varContextBplDefName: String)
   extends RelationalProofData {
 
   def qualifyName(name: String) : String = IsaUtil.qualifyName(theoryName, name)
@@ -11,7 +11,9 @@ case class DefaultRelationalProofData(override val theoryName: String, relationa
 
   override def relationalLemmaAssumptionDefName: String = qualifyName(relationalLemmaData.relationalLemmaAssmDefName)
 
-  override val translationRecordDef: TermIdent = TermIdent(qualifyName(translationRecordDefName))
+  override val translationRecord0Def: TermIdent = TermIdent(qualifyName(translationRecord0DefName))
+
+  override val translationRecord1Def: TermIdent = TermIdent(qualifyName(translationRecord1DefName))
 
   override def varRelationListDef: TermIdent = TermIdent(qualifyName(varRelationListDefName))
 
