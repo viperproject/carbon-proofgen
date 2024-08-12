@@ -285,7 +285,8 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       globalsLocalsDisjointProof() ++
       Seq(
         ProofUtil.simpTac(translationRecordDefLemma), // heap var and heap var def same
-        ProofUtil.simpTac(translationRecordDefLemma) // mask var and mask var def same
+        ProofUtil.simpTac(translationRecordDefLemma), // mask var and mask var def same
+        ProofUtil.simpTac(translationRecordDefLemma) // label_hm_translation empty
       ) ++
       fieldRelInjectiveProof() ++
       Seq(
