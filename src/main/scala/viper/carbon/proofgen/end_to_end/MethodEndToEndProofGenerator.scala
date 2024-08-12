@@ -36,9 +36,11 @@ case class MethodEndToEndProofGenerator( theoryName: String,
                                          relationalProofData: RelationalProofData,
                                          boogieProgAccessor: IsaBoogieProcAccessor) {
 
-  private val translationRecord0DefLemma = IsaUtil.definitionLemmaFromName(relationalProofData.translationRecord0Def.id.toString)
+  private val translationRecord0Name = relationalProofData.translationRecord0Def.id.toString
+  private val translationRecord0DefLemma = IsaUtil.definitionLemmaFromName(translationRecord0Name)
 
-  private val translationRecord1DefLemma = IsaUtil.definitionLemmaFromName(relationalProofData.translationRecord1Def.id.toString)
+  private val translationRecord1Name = relationalProofData.translationRecord1Def.id.toString
+  private val translationRecord1DefLemma = IsaUtil.definitionLemmaFromName(translationRecord1Name)
 
   private val ctxtBplName = "ctxt_bpl"
   private val ctxtBplDefLemmaName = IsaUtil.definitionLemmaFromName("ctxt_bpl")
@@ -116,7 +118,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     outerDecls += intersectionBoundLemmas
 
     val disjVarsStateRel = LemmaDecl("disjoint_property_aux",
-      TermApp(TermIdent("disjoint_list"), TermApp(TermIdent("state_rel0_disj_list"), Seq(TermIdent(translationRecord0DefLemma), TermIdent("Map.empty")))),
+      TermApp(TermIdent("disjoint_list"), TermApp(TermIdent("state_rel0_disj_list"), Seq(TermIdent(translationRecord0Name), TermIdent("Map.empty")))),
       Proof(Seq(
         ProofUtil.applyTac(ProofUtil.ruleTac("disj_vars_state_relation_initialI")),
         ProofUtil.applyTac(ProofUtil.simpTac(translationRecord0DefLemma)),
