@@ -1,0 +1,11 @@
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
+field f: Int
+
+method test(x: Ref)
+  requires acc(x.f) && acc(x.f)
+{
+  /* Has to hold */
+  assert false
+}
