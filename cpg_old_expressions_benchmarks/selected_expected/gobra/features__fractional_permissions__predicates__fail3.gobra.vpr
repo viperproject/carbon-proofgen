@@ -1,0 +1,47 @@
+field Intint$$$$_E_$$$: Int
+
+predicate myPred_bda1d7d_F(x_V0: Ref) {
+  acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+}
+
+method zeroDividend1_bda1d7d_F(x_V0: Ref)
+  requires acc(myPred_bda1d7d_F(x_V0), 1 / 0)
+{
+  
+  
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    
+    inhale x_V0_CN0 == null
+    
+    
+    x_V0_CN0 := x_V0
+    
+    
+    
+  }
+}
+
+method zeroDividend2_bda1d7d_F(x_V0: Ref)
+  requires acc(myPred_bda1d7d_F(x_V0), 1 / 0)
+{
+  
+  
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    
+    inhale x_V0_CN0 == null
+    
+    
+    x_V0_CN0 := x_V0
+    
+    
+    
+  }
+}

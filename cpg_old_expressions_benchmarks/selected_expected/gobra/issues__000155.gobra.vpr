@@ -1,0 +1,79 @@
+field Intint$$$$_E_$$$: Int
+
+method ex1_bda1d7d_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var i_V0: Ref
+      var x_V0: Int
+      var N0: Int
+      
+      
+      inhale acc(i_V0.Intint$$$$_E_$$$, write) &&
+        (i_V0.Intint$$$$_E_$$$ == 0 && !(i_V0 == null))
+      
+      
+      i_V0.Intint$$$$_E_$$$ := 5
+      
+      
+      inhale x_V0 == 0
+      
+      
+      x_V0 := 1
+      
+      
+      N0 := i_V0.Intint$$$$_E_$$$
+    }
+  }
+}
+
+method ex2_bda1d7d_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var i_V0: Ref
+      var x_V0: Int
+      var N0: Int
+      var N1: Int
+      var N2: Int
+      var N3: Int
+      
+      
+      inhale acc(i_V0.Intint$$$$_E_$$$, write) &&
+        (i_V0.Intint$$$$_E_$$$ == 0 && !(i_V0 == null))
+      
+      
+      i_V0.Intint$$$$_E_$$$ := 5
+      
+      
+      inhale x_V0 == 0
+      
+      
+      x_V0 := 0
+      
+      
+      N0 := 1
+      
+      
+      N1 := i_V0.Intint$$$$_E_$$$
+      
+      
+      x_V0 := N0
+      
+      
+      N3 := N1
+    }
+  }
+}

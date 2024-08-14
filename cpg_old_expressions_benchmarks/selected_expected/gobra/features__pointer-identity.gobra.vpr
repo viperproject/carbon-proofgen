@@ -1,0 +1,62 @@
+field Intint$$$$_E_$$$: Int
+
+field PointerIntint$$$_S_$$$$$$$_E_$$$: Ref
+
+method test_bda1d7d_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var v_V0: Ref
+      var ar_V0: Ref
+      var br_V0: Ref
+      var arr_V0: Ref
+      var brr_V0: Ref
+      
+      
+      inhale acc(v_V0.Intint$$$$_E_$$$, write) &&
+        (v_V0.Intint$$$$_E_$$$ == 0 && !(v_V0 == null))
+      
+      
+      v_V0.Intint$$$$_E_$$$ := 42
+      
+      
+      inhale acc(ar_V0.PointerIntint$$$_S_$$$$$$$_E_$$$, write) &&
+        (ar_V0.PointerIntint$$$_S_$$$$$$$_E_$$$ == null && !(ar_V0 == null))
+      
+      
+      inhale acc(br_V0.PointerIntint$$$_S_$$$$$$$_E_$$$, write) &&
+        (br_V0.PointerIntint$$$_S_$$$$$$$_E_$$$ == null && !(br_V0 == null))
+      
+      
+      ar_V0.PointerIntint$$$_S_$$$$$$$_E_$$$ := v_V0
+      
+      
+      br_V0.PointerIntint$$$_S_$$$$$$$_E_$$$ := v_V0
+      
+      
+      inhale arr_V0 == null
+      
+      
+      inhale brr_V0 == null
+      
+      
+      arr_V0 := ar_V0
+      
+      
+      brr_V0 := br_V0
+      
+      
+      assert ar_V0.PointerIntint$$$_S_$$$$$$$_E_$$$ ==
+        br_V0.PointerIntint$$$_S_$$$$$$$_E_$$$
+      
+      
+      assert arr_V0 == brr_V0
+    }
+  }
+}

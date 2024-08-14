@@ -1,0 +1,102 @@
+
+
+
+field G: Int
+
+field F: Int
+
+
+
+
+method check_sat_SwapInteger()
+{
+  assert false
+}
+
+
+method check_sat_n(this: Ref)
+  requires this != null
+  requires acc(this.F, 1 * write)
+  requires acc(this.G, 1 * write)
+{
+  assert false
+}
+
+method n(this: Ref, tid: Int) returns (res: Int)
+  requires this != null
+  requires acc(this.F, 1 * write)
+  requires acc(this.G, 1 * write)
+  ensures acc(this.F, 1 * write)
+  ensures acc(this.G, 1 * write)
+  ensures this.F == old(this.G)
+  ensures this.G == old(this.F)
+{
+  var exc: Ref
+  var return: Int
+  var tmp: Int
+  var flatten: Int
+  var flatten1: Int
+  var flatten2: Ref
+  var flatten3: Int
+  var flatten4: Ref
+  exc := null
+  flatten := 0
+  tmp := flatten
+  flatten1 := this.F
+  tmp := flatten1
+  flatten2 := this
+  flatten3 := this.G
+  flatten2.F := flatten3
+  flatten4 := this
+  flatten4.G := tmp
+  res := return
+  assert exc == null
+}
+
+method check_sat_twice(this: Ref)
+  requires this != null
+  requires acc(this.F, 1 * write)
+  requires acc(this.G, 1 * write)
+{
+  assert false
+}
+
+method twice(this: Ref, tid: Int) returns (res: Int)
+  requires this != null
+  requires acc(this.F, 1 * write)
+  requires acc(this.G, 1 * write)
+  ensures acc(this.F, 1 * write)
+  ensures acc(this.G, 1 * write)
+  ensures this.F == old(this.F)
+  ensures this.G == old(this.G)
+{
+  var exc: Ref
+  var return: Int
+  var res1: Int
+  var res2: Int
+  exc := null
+  res1 := n(this, tid)
+  res2 := n(this, tid)
+  res := return
+  assert exc == null
+}
+
+method check_sat_Object()
+{
+  assert false
+}
+
+
+method check_sat_type()
+{
+  assert false
+}
+
+method check_sat_subtype(subtype1: Int, subtype2: Int)
+  requires subtype1 >= 0
+  requires subtype1 <= 2
+  requires subtype2 >= 0
+  requires subtype2 <= 2
+{
+  assert false
+}

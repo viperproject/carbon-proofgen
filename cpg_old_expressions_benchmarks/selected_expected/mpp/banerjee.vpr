@@ -1,0 +1,427 @@
+field hiv: Ref
+
+field hiv1: Ref
+
+field name: Ref
+
+field name1: Ref
+
+method main_fixed(p0_6: Bool, p1_6: Bool)
+  requires p0_6 == p1_6
+{
+  var lbuf: Ref
+  var hbuf: Ref
+  var lp: Ref
+  var xp: Ref
+  var tmpHiv: Ref
+  var _cond0: Bool
+  var lbuf_1: Ref
+  var hbuf_1: Ref
+  var lp_1: Ref
+  var xp_1: Ref
+  var tmpHiv_1: Ref
+  var _cond0_5: Bool
+  if (p0_6) {
+    _cond0 := false
+  }
+  if (p1_6) {
+    _cond0_5 := false
+  }
+  if (p0_6) {
+    lbuf := null
+  }
+  if (p1_6) {
+    lbuf_1 := null
+  }
+  if (p0_6) {
+    hbuf := null
+  }
+  if (p1_6) {
+    hbuf_1 := null
+  }
+  var tmp0_13: Ref
+  var tmp1_13: Ref
+  tmp0_13, tmp1_13 := readFile(p0_6, p1_6)
+  if (p0_6) {
+    lp := tmp0_13
+  }
+  if (p1_6) {
+    lp_1 := tmp1_13
+  }
+  var tmp_0: Ref
+  tmp_0 := new(name, hiv, name1, hiv1)
+  if (p0_6) {
+    xp := tmp_0
+  }
+  if (p1_6) {
+    xp_1 := tmp_0
+  }
+  var tmp0_14: Ref
+  var tmp1_14: Ref
+  var tmp0_15: Ref
+  var tmp1_15: Ref
+  if (p0_6) {
+    tmp0_14 := lp
+  }
+  if (p1_6) {
+    tmp1_14 := lp_1
+  }
+  tmp0_15, tmp1_15 := getName(p0_6, p1_6, tmp0_14, tmp1_14)
+  if (p0_6) {
+    lbuf := tmp0_15
+  }
+  if (p1_6) {
+    lbuf_1 := tmp1_15
+  }
+  var tmp0_16: Ref
+  var tmp1_16: Ref
+  var tmp0_17: Ref
+  var tmp1_17: Ref
+  if (p0_6) {
+    tmp0_16 := lp
+  }
+  if (p1_6) {
+    tmp1_16 := lp_1
+  }
+  tmp0_17, tmp1_17 := getName(p0_6, p1_6, tmp0_16, tmp1_16)
+  if (p0_6) {
+    hbuf := tmp0_17
+  }
+  if (p1_6) {
+    hbuf_1 := tmp1_17
+  }
+  var tmp0_18: Ref
+  var tmp1_18: Ref
+  var tmp0_19: Ref
+  var tmp1_19: Ref
+  if (p0_6) {
+    tmp0_18 := xp
+  }
+  if (p1_6) {
+    tmp1_18 := xp_1
+  }
+  if (p0_6) {
+    tmp0_19 := lbuf
+  }
+  if (p1_6) {
+    tmp1_19 := lbuf_1
+  }
+  setName(p0_6, p1_6, tmp0_18, tmp1_18, tmp0_19, tmp1_19)
+  var tmp0_20: Ref
+  var tmp1_20: Ref
+  tmp0_20, tmp1_20 := readFromTrustedChan(p0_6, p1_6)
+  if (p0_6) {
+    hbuf := tmp0_20
+  }
+  if (p1_6) {
+    hbuf_1 := tmp1_20
+  }
+  var tmp0_21: Ref
+  var tmp1_21: Ref
+  var tmp0_22: Ref
+  var tmp1_22: Ref
+  if (p0_6) {
+    tmp0_21 := xp
+  }
+  if (p1_6) {
+    tmp1_21 := xp_1
+  }
+  if (p0_6) {
+    tmp0_22 := hbuf
+  }
+  if (p1_6) {
+    tmp1_22 := hbuf_1
+  }
+  setHIV(p0_6, p1_6, tmp0_21, tmp1_21, tmp0_22, tmp1_22)
+  var tmp0_23: Ref
+  var tmp1_23: Ref
+  var tmp0_24: Ref
+  var tmp1_24: Ref
+  if (p0_6) {
+    tmp0_23 := xp
+  }
+  if (p1_6) {
+    tmp1_23 := xp_1
+  }
+  tmp0_24, tmp1_24 := getHiv(p0_6, p1_6, tmp0_23, tmp1_23)
+  if (p0_6) {
+    tmpHiv := tmp0_24
+  }
+  if (p1_6) {
+    tmpHiv_1 := tmp1_24
+  }
+  inhale p0_6 && p1_6 ==> tmpHiv == tmpHiv_1
+  var tmp0_25: Ref
+  var tmp1_25: Ref
+  var tmp0_26: Ref
+  var tmp1_26: Ref
+  if (p0_6) {
+    tmp0_25 := lp
+  }
+  if (p1_6) {
+    tmp1_25 := lp_1
+  }
+  if (p0_6) {
+    tmp0_26 := tmpHiv
+  }
+  if (p1_6) {
+    tmp1_26 := tmpHiv_1
+  }
+  setName(p0_6, p1_6, tmp0_25, tmp1_25, tmp0_26, tmp1_26)
+}
+
+method main(p0_5: Bool, p1_5: Bool)
+  requires p0_5 == p1_5
+{
+  var lbuf: Ref
+  var hbuf: Ref
+  var lp: Ref
+  var xp: Ref
+  var tmpHiv: Ref
+  var _cond0: Bool
+  var lbuf_0: Ref
+  var hbuf_0: Ref
+  var lp_0: Ref
+  var xp_0: Ref
+  var tmpHiv_0: Ref
+  var _cond0_4: Bool
+  if (p0_5) {
+    _cond0 := false
+  }
+  if (p1_5) {
+    _cond0_4 := false
+  }
+  if (p0_5) {
+    lbuf := null
+  }
+  if (p1_5) {
+    lbuf_0 := null
+  }
+  if (p0_5) {
+    hbuf := null
+  }
+  if (p1_5) {
+    hbuf_0 := null
+  }
+  var tmp0: Ref
+  var tmp1: Ref
+  tmp0, tmp1 := readFile(p0_5, p1_5)
+  if (p0_5) {
+    lp := tmp0
+  }
+  if (p1_5) {
+    lp_0 := tmp1
+  }
+  var tmp: Ref
+  tmp := new(name, hiv, name1, hiv1)
+  if (p0_5) {
+    xp := tmp
+  }
+  if (p1_5) {
+    xp_0 := tmp
+  }
+  var tmp0_0: Ref
+  var tmp1_0: Ref
+  var tmp0_1: Ref
+  var tmp1_1: Ref
+  if (p0_5) {
+    tmp0_0 := lp
+  }
+  if (p1_5) {
+    tmp1_0 := lp_0
+  }
+  tmp0_1, tmp1_1 := getName(p0_5, p1_5, tmp0_0, tmp1_0)
+  if (p0_5) {
+    lbuf := tmp0_1
+  }
+  if (p1_5) {
+    lbuf_0 := tmp1_1
+  }
+  var tmp0_2: Ref
+  var tmp1_2: Ref
+  var tmp0_3: Ref
+  var tmp1_3: Ref
+  if (p0_5) {
+    tmp0_2 := lp
+  }
+  if (p1_5) {
+    tmp1_2 := lp_0
+  }
+  tmp0_3, tmp1_3 := getName(p0_5, p1_5, tmp0_2, tmp1_2)
+  if (p0_5) {
+    hbuf := tmp0_3
+  }
+  if (p1_5) {
+    hbuf_0 := tmp1_3
+  }
+  var tmp0_4: Ref
+  var tmp1_4: Ref
+  var tmp0_5: Ref
+  var tmp1_5: Ref
+  if (p0_5) {
+    tmp0_4 := xp
+  }
+  if (p1_5) {
+    tmp1_4 := xp_0
+  }
+  if (p0_5) {
+    tmp0_5 := lbuf
+  }
+  if (p1_5) {
+    tmp1_5 := lbuf_0
+  }
+  setName(p0_5, p1_5, tmp0_4, tmp1_4, tmp0_5, tmp1_5)
+  var tmp0_6: Ref
+  var tmp1_6: Ref
+  tmp0_6, tmp1_6 := readFromTrustedChan(p0_5, p1_5)
+  if (p0_5) {
+    hbuf := tmp0_6
+  }
+  if (p1_5) {
+    hbuf_0 := tmp1_6
+  }
+  var tmp0_7: Ref
+  var tmp1_7: Ref
+  var tmp0_8: Ref
+  var tmp1_8: Ref
+  if (p0_5) {
+    tmp0_7 := xp
+  }
+  if (p1_5) {
+    tmp1_7 := xp_0
+  }
+  if (p0_5) {
+    tmp0_8 := hbuf
+  }
+  if (p1_5) {
+    tmp1_8 := hbuf_0
+  }
+  setHIV(p0_5, p1_5, tmp0_7, tmp1_7, tmp0_8, tmp1_8)
+  var tmp0_9: Ref
+  var tmp1_9: Ref
+  var tmp0_10: Ref
+  var tmp1_10: Ref
+  if (p0_5) {
+    tmp0_9 := xp
+  }
+  if (p1_5) {
+    tmp1_9 := xp_0
+  }
+  tmp0_10, tmp1_10 := getHiv(p0_5, p1_5, tmp0_9, tmp1_9)
+  if (p0_5) {
+    tmpHiv := tmp0_10
+  }
+  if (p1_5) {
+    tmpHiv_0 := tmp1_10
+  }
+  var tmp0_11: Ref
+  var tmp1_11: Ref
+  var tmp0_12: Ref
+  var tmp1_12: Ref
+  if (p0_5) {
+    tmp0_11 := lp
+  }
+  if (p1_5) {
+    tmp1_11 := lp_0
+  }
+  if (p0_5) {
+    tmp0_12 := tmpHiv
+  }
+  if (p1_5) {
+    tmp1_12 := tmpHiv_0
+  }
+  setName(p0_5, p1_5, tmp0_11, tmp1_11, tmp0_12, tmp1_12)
+}
+
+method readFromTrustedChan(p0_4: Bool, p1_4: Bool) returns (res: Ref, res_3: Ref)
+
+
+method readFile(p0_3: Bool, p1_3: Bool) returns (res: Ref, res_2: Ref)
+  ensures (p0_3 ==> p0_3 && p1_3 ==> res == res_2) && (p1_3 ==> true)
+  ensures (p0_3 ==> acc(res.name, write)) && (p1_3 ==> acc(res_2.name1, write))
+  ensures (p0_3 ==> p0_3 && p1_3 ==> res.name == res_2.name1) && (p1_3 ==> true)
+
+
+method setHIV(p0_2: Bool, p1_2: Bool, this: Ref, this_3: Ref, s: Ref, s_0: Ref)
+  requires (p0_2 ==> acc(this.hiv, write)) && (p1_2 ==> acc(this_3.hiv1, write))
+  ensures (p0_2 ==> acc(this.hiv, write)) && (p1_2 ==> acc(this_3.hiv1, write))
+{
+  var _cond0: Bool
+  var _cond0_3: Bool
+  if (p0_2) {
+    _cond0 := false
+  }
+  if (p1_2) {
+    _cond0_3 := false
+  }
+  if (p0_2) {
+    this.hiv := s
+  }
+  if (p1_2) {
+    this_3.hiv1 := s_0
+  }
+}
+
+method getHiv(p0_1: Bool, p1_1: Bool, this: Ref, this_2: Ref) returns (res: Ref, res_1: Ref)
+  requires (p0_1 ==> acc(this.hiv, 1 / 4)) && (p1_1 ==> acc(this_2.hiv1, 1 / 4))
+  ensures (p0_1 ==> acc(this.hiv, 1 / 4)) && (p1_1 ==> acc(this_2.hiv1, 1 / 4))
+  ensures (p0_1 ==> res == this.hiv) && (p1_1 ==> res_1 == this_2.hiv1)
+{
+  var _cond0: Bool
+  var _cond0_2: Bool
+  if (p0_1) {
+    _cond0 := false
+  }
+  if (p1_1) {
+    _cond0_2 := false
+  }
+  if (p0_1) {
+    res := this.hiv
+  }
+  if (p1_1) {
+    res_1 := this_2.hiv1
+  }
+}
+
+method setName(p0_0: Bool, p1_0: Bool, this: Ref, this_1: Ref, n: Ref, n_0: Ref)
+  requires (p0_0 ==> acc(this.name, write)) && (p1_0 ==> acc(this_1.name1, write))
+  requires (p0_0 ==> p0_0 && p1_0 ==> n == n_0) && (p1_0 ==> true)
+  ensures (p0_0 ==> acc(this.name, write)) && (p1_0 ==> acc(this_1.name1, write))
+  ensures (p0_0 ==> p0_0 && p1_0 ==> this.name == this_1.name1) && (p1_0 ==> true)
+{
+  var _cond0: Bool
+  var _cond0_1: Bool
+  if (p0_0) {
+    _cond0 := false
+  }
+  if (p1_0) {
+    _cond0_1 := false
+  }
+  if (p0_0) {
+    this.name := n
+  }
+  if (p1_0) {
+    this_1.name1 := n_0
+  }
+}
+
+method getName(p0: Bool, p1: Bool, this: Ref, this_0: Ref) returns (res: Ref, res_0: Ref)
+  requires (p0 ==> acc(this.name, 1 / 4)) && (p1 ==> acc(this_0.name1, 1 / 4))
+  ensures (p0 ==> acc(this.name, 1 / 4)) && (p1 ==> acc(this_0.name1, 1 / 4))
+  ensures (p0 ==> res == this.name) && (p1 ==> res_0 == this_0.name1)
+{
+  var _cond0: Bool
+  var _cond0_0: Bool
+  if (p0) {
+    _cond0 := false
+  }
+  if (p1) {
+    _cond0_0 := false
+  }
+  if (p0) {
+    res := this.name
+  }
+  if (p1) {
+    res_0 := this_0.name1
+  }
+}

@@ -1,0 +1,62 @@
+
+
+
+field x: Int
+
+
+
+
+method check_sat_err()
+{
+  assert false
+}
+
+method err(tid: Int) returns (res: Ref)
+  ensures acc(res.x, write)
+{
+  var exc: Ref
+  var return: Ref
+  var err1: Ref
+  var flatten: Ref
+  exc := null
+  flatten := new(x)
+  inhale type(flatten) == 1
+  err1 := flatten
+  return := err1
+  res := return
+  assert exc == null
+}
+
+method check_sat_frame_error(this: Ref)
+  requires this != null
+  requires this.x == 1
+  requires acc(this.x, 1 * write)
+{
+  assert false
+}
+
+method frame_error(this: Ref, tid: Int) returns (res: Int)
+  requires this != null
+  requires this.x == 1
+  requires acc(this.x, 1 * write)
+{
+  var exc: Ref
+  var return: Int
+  exc := null
+  res := return
+  assert exc == null
+}
+
+method check_sat_type()
+{
+  assert false
+}
+
+method check_sat_subtype(subtype1: Int, subtype2: Int)
+  requires subtype1 >= 0
+  requires subtype1 <= 1
+  requires subtype2 >= 0
+  requires subtype2 <= 1
+{
+  assert false
+}

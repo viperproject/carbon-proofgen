@@ -1,0 +1,372 @@
+field Intint$$$$_E_$$$: Int
+
+function getPerm_4b5075e4_F(): Perm
+{
+  3 / 4
+}
+
+method test10_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var m5_V0: Perm
+      
+      
+      inhale m5_V0 == none
+      
+      
+      m5_V0 := 1 / 2
+      
+      
+      assert m5_V0 + 1 / 2 == 1 / 2
+    }
+  }
+}
+
+method test11_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    
+    
+    assert !(getPerm_4b5075e4_F() == 3 / 4)
+  }
+}
+
+method test12_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    
+    
+    assert !(getPerm_4b5075e4_F() == 3 / 4)
+  }
+}
+
+method test13_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    
+    
+    assert getPerm_4b5075e4_F() == none
+  }
+}
+
+method test14_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    
+    
+    assert getPerm_4b5075e4_F() == write
+  }
+}
+
+method test15_4b5075e4_F(i_V0: Ref)
+  requires acc(i_V0.Intint$$$$_E_$$$, 1 / 2 / 2)
+  ensures acc(i_V0.Intint$$$$_E_$$$, 1 / 4)
+{
+  
+  
+  {
+    var i_V0_CN0: Ref
+    
+    
+    
+    
+    inhale i_V0_CN0 == null
+    
+    
+    i_V0_CN0 := i_V0
+    
+    
+    
+  }
+}
+
+method test1_4b5075e4_F(i_V0: Ref)
+  requires acc(i_V0.Intint$$$$_E_$$$, 1 / 2)
+  requires acc(i_V0.Intint$$$$_E_$$$, 1 / 4)
+  ensures acc(i_V0.Intint$$$$_E_$$$, 1 / 1)
+{
+  
+  
+  {
+    var i_V0_CN0: Ref
+    
+    
+    
+    
+    inhale i_V0_CN0 == null
+    
+    
+    i_V0_CN0 := i_V0
+    
+    
+    
+    
+  }
+}
+
+method test2_4b5075e4_F(i_V0: Ref, p_V0: Perm) returns (P0_PO0: Int)
+  requires p_V0 >= 0 / 1
+  requires acc(i_V0.Intint$$$$_E_$$$, p_V0)
+  ensures acc(i_V0.Intint$$$$_E_$$$, p_V0)
+{
+  inhale P0_PO0 == 0
+  
+  
+  {
+    var i_V0_CN0: Ref
+    var p_V0_CN1: Perm
+    
+    
+    
+    
+    inhale i_V0_CN0 == null
+    
+    
+    inhale p_V0_CN1 == none
+    
+    
+    i_V0_CN0 := i_V0
+    
+    
+    p_V0_CN1 := p_V0
+    
+    
+    
+    
+    P0_PO0 := i_V0_CN0.Intint$$$$_E_$$$
+    
+    
+  }
+}
+
+method test3_4b5075e4_F(i_V0: Ref, p_V0: Perm) returns (P0_PO0: Int)
+  requires 0 / 1 <= p_V0 && p_V0 < 1 / 2
+  requires acc(i_V0.Intint$$$$_E_$$$, p_V0)
+  ensures acc(i_V0.Intint$$$$_E_$$$, 1 / 2)
+{
+  inhale P0_PO0 == 0
+  
+  
+  {
+    var i_V0_CN0: Ref
+    var p_V0_CN1: Perm
+    
+    
+    
+    
+    inhale i_V0_CN0 == null
+    
+    
+    inhale p_V0_CN1 == none
+    
+    
+    i_V0_CN0 := i_V0
+    
+    
+    p_V0_CN1 := p_V0
+    
+    
+    
+    
+    P0_PO0 := i_V0_CN0.Intint$$$$_E_$$$
+    
+    
+  }
+}
+
+method test4_4b5075e4_F(i_V0: Ref, v_V0: Int, p_V0: Perm)
+  requires p_V0 == 0 / 1
+  requires acc(i_V0.Intint$$$$_E_$$$, p_V0)
+  ensures acc(i_V0.Intint$$$$_E_$$$, p_V0)
+{
+  
+  
+  {
+    var i_V0_CN0: Ref
+    var v_V0_CN1: Int
+    var p_V0_CN2: Perm
+    
+    
+    
+    
+    inhale i_V0_CN0 == null
+    
+    
+    inhale v_V0_CN1 == 0
+    
+    
+    inhale p_V0_CN2 == none
+    
+    
+    i_V0_CN0 := i_V0
+    
+    
+    v_V0_CN1 := v_V0
+    
+    
+    p_V0_CN2 := p_V0
+    
+    
+    
+    
+    i_V0_CN0.Intint$$$$_E_$$$ := v_V0_CN1
+  }
+}
+
+method test5_4b5075e4_F(i_V0: Ref, v_V0: Int)
+  requires acc(i_V0.Intint$$$$_E_$$$, none)
+  ensures acc(i_V0.Intint$$$$_E_$$$, none)
+{
+  
+  
+  {
+    var i_V0_CN0: Ref
+    var v_V0_CN1: Int
+    
+    
+    
+    
+    inhale i_V0_CN0 == null
+    
+    
+    inhale v_V0_CN1 == 0
+    
+    
+    i_V0_CN0 := i_V0
+    
+    
+    v_V0_CN1 := v_V0
+    
+    
+    
+    
+    i_V0_CN0.Intint$$$$_E_$$$ := v_V0_CN1
+  }
+}
+
+method test6_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var m1_V0: Int
+      
+      
+      inhale m1_V0 == 0
+      
+      
+      m1_V0 := 1 / 2 + 1 / 2
+      
+      
+      assert m1_V0 / 1 == write
+    }
+  }
+}
+
+method test7_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var m2_V0: Perm
+      
+      
+      inhale m2_V0 == none
+      
+      
+      m2_V0 := 1 / 2 + 1 / 2
+      
+      
+      assert m2_V0 == none
+    }
+  }
+}
+
+method test8_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var m3_V0: Perm
+      
+      
+      inhale m3_V0 == none
+      
+      
+      m3_V0 := 1 / 2 + 1 / 2
+      
+      
+      assert m3_V0 == 1 / 2
+    }
+  }
+}
+
+method test9_4b5075e4_F()
+{
+  
+  
+  {
+    
+    
+    
+    
+    {
+      var m4_V0: Int
+      
+      
+      inhale m4_V0 == 0
+      
+      
+      m4_V0 := 1 / 2 + 1 / 2
+      
+      
+      assert m4_V0 / 1 == write
+    }
+  }
+}

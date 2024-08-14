@@ -1,0 +1,119 @@
+field a: Int
+
+field a1: Int
+
+field _result: Int
+
+field _result1: Int
+
+method bar(p0_1: Bool, p1_1: Bool, secret: Int, secret_2: Int)
+
+
+method foo(p0_0: Bool, p1_0: Bool, global: Ref, global_1: Ref, secret: Int, secret_1: Int) returns (res: Int, res_0: Int)
+  requires (p0_0 ==> acc(global.a, 1 / 4)) && (p1_0 ==> acc(global_1.a1, 1 / 4))
+  ensures (p0_0 ==> acc(global.a, 1 / 4)) && (p1_0 ==> acc(global_1.a1, 1 / 4))
+  ensures (p0_0 ==> true) && (p1_0 ==> true)
+{
+  var b: Int
+  var _cond0: Bool
+  var b_1: Int
+  var _cond0_1: Bool
+  if (p0_0) {
+    _cond0 := false
+  }
+  if (p1_0) {
+    _cond0_1 := false
+  }
+  if (p0_0) {
+    b := global.a
+  }
+  if (p1_0) {
+    b_1 := global_1.a1
+  }
+  var pt0: Bool
+  var pt1: Bool
+  var pf0: Bool
+  var pf1: Bool
+  pt0 := p0_0 && secret == 0
+  pt1 := p1_0 && secret_1 == 0
+  pf0 := p0_0 && !(secret == 0)
+  pf1 := p1_0 && !(secret_1 == 0)
+  if (pt0) {
+    b := b + secret
+  }
+  if (pt1) {
+    b_1 := b_1 + secret_1
+  }
+  if (p0_0) {
+    res := b
+  }
+  if (p1_0) {
+    res_0 := b_1
+  }
+}
+
+method main(p0: Bool, p1: Bool, global: Ref, global_0: Ref, secret: Int, secret_0: Int)
+  requires (p0 ==> acc(global.a, write)) && (p1 ==> acc(global_0.a1, write))
+  requires (p0 ==> acc(global._result, write)) && (p1 ==> acc(global_0._result1, write))
+  requires (p0 ==> p0 && p1 ==> global._result == global_0._result1) && (p1 ==> true)
+  ensures (p0 ==> acc(global.a, write)) && (p1 ==> acc(global_0.a1, write))
+  ensures (p0 ==> acc(global._result, write)) && (p1 ==> acc(global_0._result1, write))
+  ensures (p0 ==> p0 && p1 ==> global._result == global_0._result1) && (p1 ==> true)
+{
+  var b: Int
+  var _cond0: Bool
+  var b_0: Int
+  var _cond0_0: Bool
+  if (p0) {
+    _cond0 := false
+  }
+  if (p1) {
+    _cond0_0 := false
+  }
+  if (p0) {
+    global.a := 42
+  }
+  if (p1) {
+    global_0.a1 := 42
+  }
+  var tmp0: Int
+  var tmp1: Int
+  if (p0) {
+    tmp0 := secret
+  }
+  if (p1) {
+    tmp1 := secret_0
+  }
+  bar(p0, p1, tmp0, tmp1)
+  var tmp0_0: Ref
+  var tmp1_0: Ref
+  var tmp0_1: Int
+  var tmp1_1: Int
+  var tmp0_2: Int
+  var tmp1_2: Int
+  if (p0) {
+    tmp0_0 := global
+  }
+  if (p1) {
+    tmp1_0 := global_0
+  }
+  if (p0) {
+    tmp0_1 := secret
+  }
+  if (p1) {
+    tmp1_1 := secret_0
+  }
+  tmp0_2, tmp1_2 := foo(p0, p1, tmp0_0, tmp1_0, tmp0_1, tmp1_1)
+  if (p0) {
+    b := tmp0_2
+  }
+  if (p1) {
+    b_0 := tmp1_2
+  }
+  if (p0) {
+    global._result := b
+  }
+  if (p1) {
+    global_0._result1 := b_0
+  }
+}
