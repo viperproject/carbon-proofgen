@@ -1,0 +1,69 @@
+field count: Int
+
+method check_sat_Counter()
+{
+  assert false
+}
+
+method check_sat_incr(this: Ref)
+  requires this != null
+  requires acc(this.count, 1 * write)
+{
+  assert false
+}
+
+method incr(this: Ref, tid: Int, n: Int) returns (res: Int)
+  requires this != null
+  requires acc(this.count, 1 * write)
+  ensures acc(this.count, 1 * write / 2)
+  //ensures this.count == old(this.count) + n
+{
+  var exc: Ref
+  var return: Int
+  var flatten: Ref
+  var flatten1: Int
+  exc := null
+  flatten := this
+  flatten1 := this.count + n
+  flatten.count := flatten1
+  res := return
+  assert exc == null
+}
+
+method check_sat_incr2(this: Ref)
+  requires this != null
+  requires acc(this.count, 1 * write)
+{
+  assert false
+}
+
+method incr2(this: Ref, tid: Int, n: Int) returns (res: Int)
+  requires this != null
+  requires acc(this.count, 1 * write)
+  ensures acc(this.count, 1 * write / 2)
+  //ensures this.count == old(this.count) + 2 * n
+{
+  var exc: Ref
+  var return: Int
+  var res1: Int
+  var res2: Int
+  exc := null
+  res1 := incr(this, tid, n)
+  res2 := incr(this, tid, n)
+  res := return
+  assert exc == null
+}
+
+method check_sat_type()
+{
+  assert false
+}
+
+method check_sat_subtype(subtype1: Int, subtype2: Int)
+  requires subtype1 >= 0
+  requires subtype1 <= 1
+  requires subtype2 >= 0
+  requires subtype2 <= 1
+{
+  assert false
+}
