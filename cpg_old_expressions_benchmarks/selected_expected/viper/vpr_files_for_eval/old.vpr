@@ -28,7 +28,8 @@ method t2b(this: Ref) returns ()
 method t3(this: Ref) returns ()
 {
     var r: Ref
-    r := new()
+    // REWRITTEN
+    // r := new()
     //:: ExpectedOutput(exhale.failed:insufficient.permission)
     exhale (old(r.f) > 0)
 }

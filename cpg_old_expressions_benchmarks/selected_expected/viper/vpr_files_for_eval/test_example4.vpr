@@ -41,7 +41,8 @@ method parameters__parameters(current_thread_id: Int) returns (sys__result: Ref)
   ensures sys__result != null
 {
   var diz: Ref
-  diz := new()
+  // REWRITTEN
+  // diz := new()
   sys__result := diz
   assert sys__result != null
   inhale false
@@ -69,7 +70,9 @@ method Counter__Counter(current_thread_id: Int) returns (sys__result: Ref)
   var diz: Ref
   var __flatten_6: Int
   var __flatten_12: Int
-  diz := new(Counter__x)
+  // REWRITTEN
+  // diz := new(Counter__x)
+  inhale(acc(diz.Counter__x))
   __flatten_6 := 0
   __flatten_12 := __flatten_6
   diz.Counter__x := __flatten_12

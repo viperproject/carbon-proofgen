@@ -49,7 +49,12 @@ method main_fixed(p0_6: Bool, p1_6: Bool)
     lp_1 := tmp1_13
   }
   var tmp_0: Ref
-  tmp_0 := new(name, hiv, name1, hiv1)
+  // REWRITTEN
+  // tmp_0 := new(name, hiv, name1, hiv1)
+  inhale(acc(tmp_0.name))
+  inhale(acc(tmp_0.hiv))
+  inhale(acc(tmp_0.name1))
+  inhale(acc(tmp_0.hiv1))
   if (p0_6) {
     xp := tmp_0
   }
@@ -213,7 +218,11 @@ method main(p0_5: Bool, p1_5: Bool)
     lp_0 := tmp1
   }
   var tmp: Ref
-  tmp := new(name, hiv, name1, hiv1)
+  // tmp := new(name, hiv, name1, hiv1)
+  inhale(acc(tmp.name))
+  inhale(acc(tmp.hiv))
+  inhale(acc(tmp.name1))
+  inhale(acc(tmp.hiv1))
   if (p0_5) {
     xp := tmp
   }

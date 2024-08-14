@@ -19,7 +19,8 @@ method err(tid: Int) returns (res: Ref)
   var err1: Ref
   var flatten: Ref
   exc := null
-  flatten := new(x)
+  // flatten := new(x)
+  inhale acc(flatten.x)
   inhale type(flatten) == 1
   err1 := flatten
   return := err1

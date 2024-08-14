@@ -180,7 +180,10 @@ method Ref__Ref() returns (sys__result: Ref)
 {
   var diz: Ref
   var __flatten_92: Ref
-  __flatten_92 := new(Ref__x, Ref__x_old, Ref__Integer_value)
+  // __flatten_92 := new(Ref__x, Ref__x_old, Ref__Integer_value)
+  inhale(acc(__flatten_92.Ref__x))
+  inhale(acc(__flatten_92.Ref__x_old))
+  inhale(acc(__flatten_92.Ref__Integer_value))
   diz := __flatten_92
   diz.Ref__x := 0
   sys__result := diz

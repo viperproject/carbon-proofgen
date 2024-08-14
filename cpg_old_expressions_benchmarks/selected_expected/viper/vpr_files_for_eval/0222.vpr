@@ -4,7 +4,8 @@
 field val: Int
 
 define alloc(x) {
-  x := new();
+  // REWRITTEN
+  // x := new();
   inhale acc(x.val)
 }
 
@@ -17,7 +18,8 @@ method test01() {
 
 method test02() {
   var y : Ref
-  y := new();
+  // REWRITTEN
+  // y := new();
   inhale acc(y.val)
   //:: ExpectedOutput(assert.failed:assertion.false)
   assert false

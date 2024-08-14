@@ -180,7 +180,11 @@ method History__History() returns (sys__result: Ref)
 {
   var diz: Ref
   var __flatten_92: Ref
-  __flatten_92 := new(History__x, History__x_old, History__Integer_value)
+  // REWRITTEN
+  // __flatten_92 := new(History__x, History__x_old, History__Integer_value)
+  inhale(acc(__flatten_92.History__x))
+  inhale(acc(__flatten_92.History__x_old))
+  inhale(acc(__flatten_92.History__Integer_value))
   diz := __flatten_92
   diz.History__x := 0
   sys__result := diz
