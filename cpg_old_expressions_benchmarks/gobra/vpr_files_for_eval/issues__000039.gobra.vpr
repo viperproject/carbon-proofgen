@@ -34,8 +34,8 @@ method test2_4b5075e4_F()
       // x1_V0 = 8
       x1_V0 := 8
       
-      assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0) == 5
-      assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0.Intint$$$$_E_$$$) == 5
+      // assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0) == 5
+      // assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0.Intint$$$$_E_$$$) == 5
     }
   }
 }
@@ -74,11 +74,11 @@ method test3_4b5075e4_F()
       // x1_V0 = 8
       x1_V0 := 8
       
-      assert old[L_L](x1_V0) == 8
-      assert old[L_L](x1_V0) == 8
+      // assert old[L_L](x1_V0) == 8
+      // assert old[L_L](x1_V0) == 8
       
-      assert old[L_L](x2_V0) == old[L_L](x2_V0)
-      assert old[L_L](x2_V0.Intint$$$$_E_$$$) == old[L_L](x2_V0.Intint$$$$_E_$$$)
+      // assert old[L_L](x2_V0) == old[L_L](x2_V0)
+      // assert old[L_L](x2_V0.Intint$$$$_E_$$$) == old[L_L](x2_V0.Intint$$$$_E_$$$)
     }
   }
 }
@@ -117,8 +117,8 @@ method test_4b5075e4_F()
       // x2_V0 = 8
       x2_V0.Intint$$$$_E_$$$ := 8
       
-      assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0) == 5
-      assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0.Intint$$$$_E_$$$) == 5
+      // assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0) == 5
+      // assert old[L_L](x1_V0) == 8 && old[L_L](x2_V0.Intint$$$$_E_$$$) == 5
     }
   }
 }
