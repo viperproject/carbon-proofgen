@@ -22,8 +22,8 @@ method n(this: Ref, tid: Int) returns (res: Int)
   requires acc(this.G, 1 * write)
   ensures acc(this.F, 1 * write)
   ensures acc(this.G, 1 * write)
-  //ensures this.F == old(this.G)
-  //ensures this.G == old(this.F)
+  ensures this.F == old(this.G)
+  ensures this.G == old(this.F)
 {
   var exc: Ref
   var return: Int
@@ -61,8 +61,8 @@ method wrong(this: Ref, tid: Int) returns (res: Int)
   requires acc(this.G, 1 * write)
   ensures acc(this.F, 1 * write)
   ensures acc(this.G, 1 * write)
-  //ensures this.F == old(this.F)
-  //ensures this.G == old(this.G)
+  ensures this.F == old(this.F)
+  ensures this.G == old(this.G)
 {
   var exc: Ref
   var return: Int

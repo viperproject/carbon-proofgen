@@ -8,7 +8,7 @@ method History__incr(diz: Ref, current_thread_id: Int)
   requires current_thread_id >= 0
   requires acc(diz.History__x, write)
   ensures acc(diz.History__x, write)
-  // ensures diz.History__x == old(diz.History__x) + 1 REWRITTEN
+  ensures diz.History__x == old(diz.History__x) + 1
 {
   inhale false
 }
@@ -19,7 +19,7 @@ method History__single(diz: Ref, current_thread_id: Int, n: Int)
   requires acc(diz.History__x, write)
   requires n >= 0
   ensures acc(diz.History__x, write)
-  // ensures diz.History__x == old(diz.History__x) + n REWRITTEN
+  ensures diz.History__x == old(diz.History__x) + n
 {
   var if_any_bool: Bool
   if (n > 0) {
@@ -35,7 +35,7 @@ method History__dual(diz: Ref, current_thread_id: Int, n: Int, m: Int)
   requires acc(diz.History__x, write)
   requires (n >= 0) && (m >= 0)
   ensures acc(diz.History__x, write)
-  // ensures diz.History__x == old(diz.History__x) + n + m REWRITTEN
+  ensures diz.History__x == old(diz.History__x) + n + m
 {
   var if_any_bool: Bool
   var __flatten_3: Bool

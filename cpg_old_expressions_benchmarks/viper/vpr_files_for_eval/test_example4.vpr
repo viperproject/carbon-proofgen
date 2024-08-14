@@ -54,7 +54,7 @@ method Counter__incr(diz: Ref, current_thread_id: Int)
   requires current_thread_id >= 0
   requires acc(diz.Counter__x, write)
   ensures acc(diz.Counter__x, write)
-  //ensures diz.Counter__x == old(diz.Counter__x) + 1 REWRITTEN
+  ensures diz.Counter__x == old(diz.Counter__x) + 1 
 {
   var __flatten_5: Int
   var __flatten_11: Int

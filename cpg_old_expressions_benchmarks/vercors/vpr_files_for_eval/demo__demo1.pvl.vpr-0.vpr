@@ -16,7 +16,7 @@ method incr(this: Ref, tid: Int, n: Int) returns (res: Int)
   requires this != null
   requires acc(this.count, 1 * write)
   ensures acc(this.count, 1 * write / 2)
-  //ensures this.count == old(this.count) + n
+  ensures this.count == old(this.count) + n
 {
   var exc: Ref
   var return: Int
@@ -41,7 +41,7 @@ method incr2(this: Ref, tid: Int, n: Int) returns (res: Int)
   requires this != null
   requires acc(this.count, 1 * write)
   ensures acc(this.count, 1 * write / 2)
-  //ensures this.count == old(this.count) + 2 * n
+  ensures this.count == old(this.count) + 2 * n
 {
   var exc: Ref
   var return: Int

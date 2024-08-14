@@ -6,13 +6,13 @@ field f: Int
 
 method t1(this: Ref) returns ()
     requires acc(this.f, write)
-    ensures acc(this.f, write) //&& (this.f == old(this.f)) REWRITTEN
+    ensures acc(this.f, write) && (this.f == old(this.f)) REWRITTEN
 {
 }
 
 method t2(this: Ref) returns ()
     requires acc(this.f, write)
-    ensures acc(this.f, write) //&& this.f == (old(this.f) + 1) REWRITTEN
+    ensures acc(this.f, write) && this.f == (old(this.f) + 1) REWRITTEN
 {
     this.f := this.f+1
 }
@@ -20,7 +20,7 @@ method t2(this: Ref) returns ()
 method t2b(this: Ref) returns ()
     requires acc(this.f, write)
     //:: ExpectedOutput(postcondition.violated:assertion.false)
-    ensures acc(this.f, write) //&& this.f == (old(this.f) + 2) REWRITTEN
+    ensures acc(this.f, write) && this.f == (old(this.f) + 2) REWRITTEN
 {
     this.f := this.f+1
 }
@@ -31,7 +31,7 @@ method t3(this: Ref) returns ()
     //r := new()
     assume r != null //REWRITTEN
     //:: ExpectedOutput(exhale.failed:insufficient.permission)
-    //exhale (old(r.f) > 0) REWRITTEN
+    exhale (old(r.f) > 0) 
 }
 
 method t4(r: Ref) returns ()
@@ -41,7 +41,7 @@ method t4(r: Ref) returns ()
     exhale acc(r.f, write)
 
     // we hold no permission to r.f any longer, but old(r.f) is still ok
-    //exhale (old(r.f) > 0) REWRITTEN
+    exhale (old(r.f) > 0) 
     //:: ExpectedOutput(exhale.failed:insufficient.permission)
     exhale (r.f) > 0
 }

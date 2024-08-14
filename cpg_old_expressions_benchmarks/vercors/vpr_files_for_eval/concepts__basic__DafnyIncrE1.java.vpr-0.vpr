@@ -18,7 +18,7 @@ method check_sat_incr2(this: Ref)
 
 method incr(this: Ref, tid: Int, x: Int) returns (res: Int)
   requires this != null
-  //ensures res == old(x) + 1
+  ensures res == old(x) + 1
 {
   var exc: Ref
   var return: Int
@@ -38,7 +38,7 @@ method check_sat_incry(this: Ref)
 
 method incry(this: Ref, tid: Int) returns (res: Int)
   requires this != null
-  //ensures this.y == old(this.y) + 1
+  ensures this.y == old(this.y) + 1
 {
   var exc: Ref
   var return: Int

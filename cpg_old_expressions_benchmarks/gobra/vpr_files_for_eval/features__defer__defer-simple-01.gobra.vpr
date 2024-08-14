@@ -5,8 +5,8 @@ field Intint$$$$_E_$$$: Int
 
 method add_4b5075e4_F(x_V0: Ref, n_V0: Int)
   requires acc(x_V0.Intint$$$$_E_$$$, write)
-  ensures acc(x_V0.Intint$$$$_E_$$$, write) // &&
-    //x_V0.Intint$$$$_E_$$$ == old(x_V0.Intint$$$$_E_$$$) + n_V0
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) &&
+    x_V0.Intint$$$$_E_$$$ == old(x_V0.Intint$$$$_E_$$$) + n_V0
 {
   
   // decl x_V0_CN0: *int@°°, n_V0_CN1: int°°
@@ -39,8 +39,8 @@ method add_4b5075e4_F(x_V0: Ref, n_V0: Int)
 
 method mult_4b5075e4_F(x_V0: Ref, n_V0: Int)
   requires acc(x_V0.Intint$$$$_E_$$$, write)
-  ensures acc(x_V0.Intint$$$$_E_$$$, write) //&&
-    //x_V0.Intint$$$$_E_$$$ == old(x_V0.Intint$$$$_E_$$$) * n_V0
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) &&
+    x_V0.Intint$$$$_E_$$$ == old(x_V0.Intint$$$$_E_$$$) * n_V0
 {
   
   // decl x_V0_CN0: *int@°°, n_V0_CN1: int°°
@@ -172,9 +172,9 @@ method test2_4b5075e4_F(x_V0: Ref)
 
 method test5_4b5075e4_F(x_V0: Ref)
   requires acc(x_V0.Intint$$$$_E_$$$, write)
-  ensures acc(x_V0.Intint$$$$_E_$$$, write) //&&
-    //((old(x_V0.Intint$$$$_E_$$$) <= 0 ==> x_V0.Intint$$$$_E_$$$ == 6) &&
-    //(!(old(x_V0.Intint$$$$_E_$$$) <= 0) ==> x_V0.Intint$$$$_E_$$$ == 5))
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) &&
+    ((old(x_V0.Intint$$$$_E_$$$) <= 0 ==> x_V0.Intint$$$$_E_$$$ == 6) &&
+    (!(old(x_V0.Intint$$$$_E_$$$) <= 0) ==> x_V0.Intint$$$$_E_$$$ == 5))
 {
   
   // decl x_V0_CN0: *int@°°
