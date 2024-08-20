@@ -34,11 +34,32 @@ method Ref__single(diz: Ref, n: Int)
 {
   var if_any_bool: Bool
   if (n > 0) {
-    Ref__incr(diz)
+    // REWRITTEN
+    // Ref__incr(diz)
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
+
     var temp : Int := n-1 //REWRITTEN
-    Ref__single(diz, temp)
+    // REWRITTEN
+    // Ref__single(diz, temp)
+    // Save old values
+    oldDizRefX := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write) && temp >= 0
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp 
   } else {
-    Ref__empty(diz)
+    // REWRITTEN
+    // Ref__empty(diz)
+    // Save old values
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
   }
 }
 
@@ -57,20 +78,74 @@ method Ref__dual(diz: Ref, n: Int, m: Int)
   if_any_bool := __flatten_4
   if (if_any_bool) {
     if (n > 0) {
-      Ref__incr(diz)
+      // REWRITTEN
+      // Ref__incr(diz)
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
       var temp : Int := n-1 //REWRITTEN
-      Ref__dual(diz, temp, m)
+      // REWRITTEN
+      // Ref__dual(diz, temp, m)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (m >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + m 
     } else {
-      Ref__empty(diz)
-      Ref__single(diz, m)
+      // REWRITTEN
+      // Ref__empty(diz)
+      // Save old values
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+      // REWRITTEN
+      // Ref__single(diz, m)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && m >= 0
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + m
     }
   } elseif (m > 0) {
-    Ref__incr(diz)
+    // REWRITTEN
+    // Ref__incr(diz)
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
     var temp : Int := m-1 //REWRITTEN
-    Ref__dual(diz, temp, n)
+    // REWRITTEN
+    // Ref__dual(diz, temp, n)
+    // Save old values
+    oldDizRefX := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (n >= 0)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + n 
   } else {
-    Ref__empty(diz)
-    Ref__single(diz, n)
+    // REWRITTEN
+    // Ref__empty(diz)
+    // Save old values
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+    // REWRITTEN
+    // Ref__single(diz, n)
+    // Save old values
+    oldDizRefX := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write) && n >= 0
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + n
   }
 }
 
@@ -95,28 +170,109 @@ method Ref__triple21(diz: Ref, n: Int, m: Int, k: Int)
     if_any_bool := __flatten_16
     if (if_any_bool) {
       if (n > 0) {
-        Ref__incr(diz)
+        // REWRITTEN
+        // Ref__incr(diz)
+        var oldDizRefX: Int := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
         var temp : Int := n-1 //REWRITTEN
-        Ref__triple21(diz, temp, m, k)
+        // REWRITTEN
+        // Ref__triple21(diz, temp, m, k)
+        // Save old values
+        oldDizRefX := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (m >= 0) && (k >= 0)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + m + k 
       } else {
-        Ref__empty(diz)
-        Ref__dual(diz, m, k)
+        // REWRITTEN
+        // Ref__empty(diz)
+        // Save old values
+        var oldDizRefX: Int := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+        // REWRITTEN
+        // Ref__dual(diz, m, k)
+        // Save old values
+        oldDizRefX := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write) && (m >= 0) && (k >= 0)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + m + k
       }
     } elseif (m > 0) {
-      Ref__incr(diz)
+      // REWRITTEN
+      // Ref__incr(diz)
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
       var temp : Int := m-1 //REWRITTEN
-      Ref__triple21(diz, temp, n, k)
+      // REWRITTEN
+      // Ref__triple21(diz, temp, n, k)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (n >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + n + k 
     } else {
-      Ref__empty(diz)
-      Ref__dual(diz, n, k)
+      // REWRITTEN
+      // Ref__empty(diz)
+      // Save old values
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+      // REWRITTEN
+      // Ref__dual(diz, n, k)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (n >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + n + k
     }
   } elseif (k > 0) {
-    Ref__incr(diz)
+    // REWRITTEN
+    // Ref__incr(diz)
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
     var temp : Int := k-1 //REWRITTEN
-    Ref__triple12(diz, temp, n, m)
+    // REWRITTEN
+    // Ref__triple12(diz, temp, n, m)
+    // Save old values
+    oldDizRefX := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (n >= 0) && (m >= 0)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + n + m
   } else {
-    Ref__empty(diz)
-    Ref__dual(diz, n, m)
+    // REWRITTEN
+    // Ref__empty(diz)
+    // Save old values
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+    // REWRITTEN
+    // Ref__dual(diz, n, m)
+    // Save old values
+    oldDizRefX := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write) && (n >= 0) && (m >= 0)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + n + m
   }
 }
 
@@ -137,12 +293,39 @@ method Ref__triple12(diz: Ref, n: Int, m: Int, k: Int)
   if_any_bool := __flatten_30
   if (if_any_bool) {
     if (n > 0) {
-      Ref__incr(diz)
+      // REWRITTEN
+      // Ref__incr(diz)
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
       var temp : Int := n-1 // REWRITTEN
-      Ref__triple12(diz, temp, m, k)
+      // REWRITTEN
+      // Ref__triple12(diz, temp, m, k)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (m >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + m + k
     } else {
-      Ref__empty(diz)
-      Ref__dual(diz, m, k)
+      // REWRITTEN
+      // Ref__empty(diz)
+      // Save old values
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+      // REWRITTEN
+      // Ref__dual(diz, m, k)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (m >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + m + k
     }
   } else {
     __flatten_37 := Ref__if_any_random(diz)
@@ -150,20 +333,74 @@ method Ref__triple12(diz: Ref, n: Int, m: Int, k: Int)
     if_any_bool := __flatten_36
     if (if_any_bool) {
       if (m > 0) {
-        Ref__incr(diz)
+        // REWRITTEN
+        // Ref__incr(diz)
+        var oldDizRefX: Int := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
         var temp : Int := m-1
-        Ref__triple21(diz, temp, k, n)
+        // REWRITTEN
+        // Ref__triple21(diz, temp, k, n)
+        // Save old values
+        oldDizRefX := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (k >= 0) && (n >= 0)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + k + n
       } else {
-        Ref__empty(diz)
-        Ref__dual(diz, k, n)
+        // REWRITTEN
+        // Ref__empty(diz)
+        // Save old values
+        var oldDizRefX: Int := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+        // REWRITTEN
+        // Ref__dual(diz, k, n)
+        // Save old values
+        oldDizRefX := diz.Ref__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.Ref__x, write) && (k >= 0) && (n >= 0)
+        // Inhale postconditions
+        inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + k + n
       }
     } elseif (k > 0) {
-      Ref__incr(diz)
+      // REWRITTEN
+      // Ref__incr(diz)
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
       var temp : Int := k-1
-      Ref__triple21(diz, temp, m, n)
+      // REWRITTEN
+      // Ref__triple21(diz, temp, m, n)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (temp >= 0) && (m >= 0) && (n >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp + m + n
     } else {
-      Ref__empty(diz)
-      Ref__dual(diz, m, n)
+      // REWRITTEN
+      // Ref__empty(diz)
+      // Save old values
+      var oldDizRefX: Int := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
+      // REWRITTEN
+      // Ref__dual(diz, m, n)
+      // Save old values
+      oldDizRefX := diz.Ref__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.Ref__x, write) && (m >= 0) && (n >= 0)
+      // Inhale postconditions
+      inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + m + n
     }
   }
 }
@@ -176,11 +413,31 @@ method Ref__destroy_check(diz: Ref)
 {
   var if_any_bool: Bool
   if (1 > 0) {
-    Ref__incr(diz)
+    // REWRITTEN
+    // Ref__incr(diz)
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + 1 
     var temp : Int := 1-1 //REWRITTEN
-    Ref__single(diz, temp)
+    // REWRITTEN
+    // Ref__single(diz, temp)
+    // Save old values
+    oldDizRefX := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write) && temp >= 0
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX + temp
   } else {
-    Ref__empty(diz)
+    // REWRITTEN
+    // Ref__empty(diz)
+    // Save old values
+    var oldDizRefX: Int := diz.Ref__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.Ref__x, write)
+    // Inhale postconditions
+    inhale acc(diz.Ref__x, write) && diz.Ref__x == oldDizRefX
   }
 }
 

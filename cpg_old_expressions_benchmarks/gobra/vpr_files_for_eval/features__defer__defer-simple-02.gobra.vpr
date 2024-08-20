@@ -100,7 +100,15 @@ method test1_4b5075e4_F() returns (x_V0: Int)
       if (fn$$0_activation) {
         
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     
@@ -146,7 +154,15 @@ method test2_4b5075e4_F() returns (x_V0: Int)
       if (fn$$0_activation) {
         
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old value
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     
@@ -187,9 +203,16 @@ method test3_4b5075e4_F() returns (x_V0: Int)
       
       // return
       if (fn$$0_activation) {
-        
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old value
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     
@@ -242,13 +265,28 @@ method test4_4b5075e4_F() returns (x_V0: Int)
         if (fn$$1_activation) {
           
           // mult_4b5075e4_F(fn$$1_0, fn$$1_1)
-          mult_4b5075e4_F(fn$$1_0, fn$$1_1)
+          // REWRITTEN
+          // mult_4b5075e4_F(fn$$1_0, fn$$1_1)
+          // Save old field value
+          var oldFn1_0Intint: Int := fn$$1_0.Intint$$$$_E_$$$
+          // Exhale preconditions
+          exhale acc(fn$$1_0.Intint$$$$_E_$$$, write)
+          // Inhale postconditions
+          inhale acc(fn$$1_0.Intint$$$$_E_$$$, write) &&
+            fn$$1_0.Intint$$$$_E_$$$ == oldFn1_0Intint * fn$$1_1
         }
       }
       if (fn$$0_activation) {
-        
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old value
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     
@@ -287,9 +325,16 @@ method test5_4b5075e4_F() returns (x_V0: Int)
       // x_V0_CN0 = 5
       x_V0_CN0.Intint$$$$_E_$$$ := 5
       if (fn$$0_activation) {
-        
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     
@@ -333,9 +378,16 @@ method test6_4b5075e4_F() returns (x_V0: Int)
       
       // return
       if (fn$$0_activation) {
-        
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     
@@ -376,9 +428,16 @@ method test7_4b5075e4_F() returns (x_V0: Int)
       
       // return
       if (fn$$0_activation) {
-        
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldFn0_0Intint: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) &&
+          fn$$0_0.Intint$$$$_E_$$$ == oldFn0_0Intint + fn$$0_1
       }
     }
     

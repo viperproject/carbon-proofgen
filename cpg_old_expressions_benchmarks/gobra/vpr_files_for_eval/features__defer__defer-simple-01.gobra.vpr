@@ -104,8 +104,14 @@ method test1_4b5075e4_F(x_V0: Ref)
       x_V0_CN0.Intint$$$$_E_$$$ := 5
       if (fn$$0_activation) {
         
+        // REWRITTEN
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
       }
     }
   }
@@ -155,13 +161,27 @@ method test2_4b5075e4_F(x_V0: Ref)
         if (fn$$1_activation) {
           
           // mult_4b5075e4_F(fn$$1_0, fn$$1_1)
-          mult_4b5075e4_F(fn$$1_0, fn$$1_1)
+          // REWRITTEN
+          // mult_4b5075e4_F(fn$$1_0, fn$$1_1)
+          // Save old values
+          var oldFn1_0IntintE: Int := fn$$1_0.Intint$$$$_E_$$$
+          // Exhale preconditions
+          exhale acc(fn$$1_0.Intint$$$$_E_$$$, write)
+          // Inhale postconditions
+          inhale acc(fn$$1_0.Intint$$$$_E_$$$, write) && fn$$1_0.Intint$$$$_E_$$$ == oldFn1_0IntintE * fn$$1_1
         }
       }
       if (fn$$0_activation) {
         
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
       }
     }
   }
@@ -212,7 +232,14 @@ method test5_4b5075e4_F(x_V0: Ref)
       if (fn$$0_activation) {
         
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
       }
     }
   }
@@ -267,7 +294,14 @@ method test6_4b5075e4_F(x_V0: Ref)
       if (fn$$0_activation) {
         
         // add_4b5075e4_F(fn$$0_0, fn$$0_1)
-        add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
       }
     }
   }

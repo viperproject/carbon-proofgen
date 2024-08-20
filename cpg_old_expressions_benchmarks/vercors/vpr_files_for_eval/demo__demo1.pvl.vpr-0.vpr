@@ -48,8 +48,22 @@ method incr2(this: Ref, tid: Int, n: Int) returns (res: Int)
   var res1: Int
   var res2: Int
   exc := null
-  res1 := incr(this, tid, n)
-  res2 := incr(this, tid, n)
+  // REWRITTEN
+  // res1 := incr(this, tid, n)
+  // Save old values
+  var oldThisCount: Int := this.count
+  // Exhale preconditions
+  exhale this != null && acc(this.count, 1 * write)
+  // Inhale postconditions
+  inhale acc(this.count, 1 * write / 2) && this.count == oldThisCount + n
+  // REWRITTEN
+  // res2 := incr(this, tid, n)
+  // Save old values
+  oldThisCount := this.count
+  // Exhale preconditions
+  exhale this != null && acc(this.count, 1 * write)
+  // Inhale postconditions
+  inhale acc(this.count, 1 * write / 2) && this.count == oldThisCount + n
   res := return
   assert exc == null
 }

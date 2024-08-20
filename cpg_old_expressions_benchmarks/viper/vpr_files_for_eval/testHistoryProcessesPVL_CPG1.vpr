@@ -23,9 +23,23 @@ method History__single(diz: Ref, current_thread_id: Int, n: Int)
 {
   var if_any_bool: Bool
   if (n > 0) {
-    History__incr(diz, current_thread_id)
+    // REWRITTEN
+    // History__incr(diz, current_thread_id)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
     var temp : Int := n-1
-    History__single(diz, current_thread_id, temp)
+    // REWRITTEN
+    // History__single(diz, current_thread_id, temp)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && temp >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp
   }
 }
 
@@ -43,18 +57,60 @@ method History__dual(diz: Ref, current_thread_id: Int, n: Int, m: Int)
   if_any_bool := __flatten_3
   if (if_any_bool) {
     if (n > 0) {
-      History__incr(diz, current_thread_id)
+      // REWRITTEN
+      // History__incr(diz, current_thread_id)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
       var temp : Int := n-1
-      History__dual(diz, current_thread_id, temp, m)
+      // REWRITTEN
+      // History__dual(diz, current_thread_id, temp, m)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && (temp >= 0) && (m >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + m 
     } else {
-      History__single(diz, current_thread_id, m)
+      // REWRITTEN
+      // History__single(diz, current_thread_id, m)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && m >= 0
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + m
     }
   } elseif (m > 0) {
-    History__incr(diz, current_thread_id)
+    // REWRITTEN
+    // History__incr(diz, current_thread_id)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
     var temp : Int := m-1 //REWRITTEN
-    History__dual(diz, current_thread_id, temp, n)
+    // REWRITTEN
+    // History__dual(diz, current_thread_id, temp, n)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && (temp >= 0) && (n >= 0)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + n
   } else {
-    History__single(diz, current_thread_id, n)
+    // REWRITTEN
+    // History__single(diz, current_thread_id, n)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && n >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + n
   }
 }
 

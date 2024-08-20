@@ -69,8 +69,24 @@ method twice(this: Ref, tid: Int) returns (res: Int)
   var res1: Int
   var res2: Int
   exc := null
-  res1 := n(this, tid)
-  res2 := n(this, tid)
+  // REWRITTEN
+  // res1 := n(this, tid)
+  // Save values
+  var oldThisF: Int := this.F
+  var oldThisG: Int := this.G
+  // Exhale preconditions
+  exhale this != null && acc(this.F, 1 * write) && acc(this.G, 1 * write)
+  // Inhale postconditions
+  inhale acc(this.F, 1 * write) && acc(this.G, 1 * write) && this.F == oldThisG && this.G == oldThisF
+  // REWRITTEN
+  // res2 := n(this, tid)
+  // Save values
+  oldThisF := this.F
+  oldThisG := this.G
+  // Exhale preconditions
+  exhale this != null && acc(this.F, 1 * write) && acc(this.G, 1 * write)
+  // Inhale postconditions
+  inhale acc(this.F, 1 * write) && acc(this.G, 1 * write) && this.F == oldThisG && this.G == oldThisF
   res := return
   assert exc == null
 }
@@ -93,3 +109,5 @@ method check_sat_subtype(subtype1: Int, subtype2: Int)
 {
   assert false
 }
+
+method unconstrainedInt() returns (i: Int)

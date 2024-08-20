@@ -34,12 +34,33 @@ method History__single(diz: Ref, n: Int)
 {
   var if_any_bool: Bool
   if (n > 0) {
-    History__incr(diz)
+    // REWRITTEN
+    // History__incr(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
     var temp: Int // REWRITTEN
     temp := n-1
-    History__single(diz, temp)
+    // REWRITTEN
+    // History__single(diz, temp)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write) && temp >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp
   } else {
-    History__empty(diz)
+    // REWRITTEN
+    // History__empty(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postcondition
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
   }
 }
 
@@ -58,20 +79,76 @@ method History__dual(diz: Ref, n: Int, m: Int)
   if_any_bool := __flatten_4
   if (if_any_bool) {
     if (n > 0) {
-      History__incr(diz)
+      // REWRITTEN
+      // History__incr(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
       var temp : Int := n-1 //REWRITTEN
-      History__dual(diz, temp, m)
+      // REWRITTEN
+      // History__dual(diz, temp, m)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (m >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + m 
     } else {
-      History__empty(diz)
-      History__single(diz, m)
+      // REWRITTEN
+      // History__empty(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postcondition
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+      // REWRITTEN
+      // History__single(diz, m)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && m >= 0
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + m
     }
   } elseif (m > 0) {
-    History__incr(diz)
+    // REWRITTEN
+    // History__incr(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
     var temp : Int := m-1 // REWRITTEN
-    History__dual(diz, temp, n)
+    // REWRITTEN
+    // History__dual(diz, temp, n)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (n >= 0)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + n
   } else {
-    History__empty(diz)
-    History__single(diz, n)
+    // REWRITTEN
+    // History__empty(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postcondition
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+    // REWRITTEN
+    // History__single(diz, n)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write) && n >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + n
   }
 }
 
@@ -96,28 +173,112 @@ method History__triple21(diz: Ref, n: Int, m: Int, k: Int)
     if_any_bool := __flatten_16
     if (if_any_bool) {
       if (n > 0) {
-        History__incr(diz)
+        // REWRITTEN
+        // History__incr(diz)
+        // Save old values
+        var oldDizHistoryX: Int := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write)
+        // Inhale postconditions
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
         var temp : Int := n-1 //REWRITTEN
-        History__triple21(diz, temp, m, k)
+        // REWRITTEN
+        // History__triple21(diz, temp, m, k)
+        // Save old values
+        oldDizHistoryX := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (m >= 0) && (k >= 0)
+        // Inhale postconditions
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + m + k 
       } else {
-        History__empty(diz)
-        History__dual(diz, m, k)
+        // REWRITTEN
+        // History__empty(diz)
+        // Save old values
+        var oldDizHistoryX: Int := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write)
+        // Inhale postcondition
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+        // REWRITTEN
+        // History__dual(diz, m, k)
+        // Save old values
+        oldDizHistoryX := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write) && (m >= 0) && (k >= 0)
+        // Inhale postconditions
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + m + k
       }
     } elseif (m > 0) {
-      History__incr(diz)
+      // REWRITTEN
+      // History__incr(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
       var temp : Int := m-1
-      History__triple21(diz, temp, n, k)
+      // REWRITTEN
+      // History__triple21(diz, temp, n, k)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (n >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + n + k 
     } else {
-      History__empty(diz)
-      History__dual(diz, n, k)
+      // REWRITTEN
+      // History__empty(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postcondition
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+      // REWRITTEN
+      // History__dual(diz, n, k)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (n >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + n + k
     }
   } elseif (k > 0) {
-    History__incr(diz)
+    // REWRITTEN
+    // History__incr(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
     var temp : Int := k-1
-    History__triple12(diz, temp, n, m)
+    // REWRITTEN
+    // History__triple12(diz, temp, n, m)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (n >= 0) && (m >= 0)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + n + m 
   } else {
-    History__empty(diz)
-    History__dual(diz, n, m)
+    // REWRITTEN
+    // History__empty(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postcondition
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+    // REWRITTEN
+    // History__dual(diz, n, m)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write) && (n >= 0) && (m >= 0)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + n + m
   }
 }
 
@@ -138,12 +299,40 @@ method History__triple12(diz: Ref, n: Int, m: Int, k: Int)
   if_any_bool := __flatten_30
   if (if_any_bool) {
     if (n > 0) {
-      History__incr(diz)
+      // REWRITTEN
+      // History__incr(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
       var temp: Int := n-1 //REWRITTEN
-      History__triple12(diz, temp, m, k)
+      // REWRITTEN
+      // History__triple12(diz, temp, m, k)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (m >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + m + k 
     } else {
-      History__empty(diz)
-      History__dual(diz, m, k)
+      // REWRITTEN
+      // History__empty(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postcondition
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+      // REWRITTEN
+      // History__dual(diz, m, k)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (m >= 0) && (k >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + m + k
     }
   } else {
     __flatten_37 := History__if_any_random(diz)
@@ -151,20 +340,76 @@ method History__triple12(diz: Ref, n: Int, m: Int, k: Int)
     if_any_bool := __flatten_36
     if (if_any_bool) {
       if (m > 0) {
-        History__incr(diz)
+        // REWRITTEN
+        // History__incr(diz)
+        // Save old values
+        var oldDizHistoryX: Int := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write)
+        // Inhale postconditions
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
         var temp: Int := m-1 //REWRITTEN
-        History__triple21(diz, temp, k, n)
+        // REWRITTEN
+        // History__triple21(diz, temp, k, n)
+        // Save old values
+        oldDizHistoryX := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (k >= 0) && (n >= 0)
+        // Inhale postconditions
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + k + n 
       } else {
-        History__empty(diz)
-        History__dual(diz, k, n)
+        // REWRITTEN
+        // History__empty(diz)
+        // Save old values
+        var oldDizHistoryX: Int := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write)
+        // Inhale postcondition
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+        // REWRITTEN
+        // History__dual(diz, k, n)
+        // Save old values
+        oldDizHistoryX := diz.History__x
+        // Exhale preconditions
+        exhale diz != null && acc(diz.History__x, write) && (k >= 0) && (n >= 0)
+        // Inhale postconditions
+        inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + k + n
       }
     } elseif (k > 0) {
-      History__incr(diz)
+      // REWRITTEN
+      // History__incr(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
       var temp: Int := k-1
-      History__triple21(diz, temp, m, n)
+      // REWRITTEN
+      // History__triple21(diz, temp, m, n)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (temp >= 0) && (m >= 0) && (n >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + m + n 
     } else {
-      History__empty(diz)
-      History__dual(diz, m, n)
+      // REWRITTEN
+      // History__empty(diz)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write)
+      // Inhale postcondition
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
+      // REWRITTEN
+      // History__dual(diz, m, n)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && acc(diz.History__x, write) && (m >= 0) && (n >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + m + n
     }
   }
 }
@@ -177,11 +422,32 @@ method History__destroy_check(diz: Ref)
 {
   var if_any_bool: Bool
   if (1 > 0) {
-    History__incr(diz)
+    // REWRITTEN
+    // History__incr(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1 
     var temp: Int := 1-1 //REWRITTEN
-    History__single(diz, temp)
+    // REWRITTEN
+    // History__single(diz, temp)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write) && temp >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp
   } else {
-    History__empty(diz)
+    // REWRITTEN
+    // History__empty(diz)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && acc(diz.History__x, write)
+    // Inhale postcondition
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX 
   }
 }
 

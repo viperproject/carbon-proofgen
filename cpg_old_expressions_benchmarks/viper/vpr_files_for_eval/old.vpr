@@ -50,7 +50,15 @@ method t5(this: Ref)
     requires acc(this.f, write)
 {
     this.f := 10
-    t2(this)
+    // REWRITTEN
+    // t2(this)
+    // Set up temporary variable for old() expression
+    var oldThisF: Int := this.f
+    // Exhale preconditions
+    exhale acc(this.f, write)
+    // Inhale postconditions
+    inhale acc(this.f, write) && this.f == (oldThisF + 1)
+
     assert (this.f) == 11
     //:: ExpectedOutput(assert.failed:assertion.false)
     assert false

@@ -16,9 +16,24 @@ method Main__main(diz: Ref, current_thread_id: Int)
   __flatten_2 := 16
   __flatten_8 := __flatten_2
   c.Counter__x := __flatten_8
-  Counter__incr(c, current_thread_id)
+  // REWRITTEN
+  // Counter__incr(c, current_thread_id)
+  // Save old values
+  var oldCCounterX: Int := c.Counter__x
+  // Exhale preconditions
+  exhale c != null && current_thread_id >= 0 && acc(c.Counter__x, write)
+  // Inhale postconditions
+  inhale acc(c.Counter__x, write) && c.Counter__x == oldCCounterX + 1 
+
   assert c.Counter__x == 17
-  Counter__incr(c, current_thread_id)
+  // REWRITTEN
+  // Counter__incr(c, current_thread_id)
+  // Save old values
+  oldCCounterX := c.Counter__x
+  // Exhale preconditions
+  exhale c != null && current_thread_id >= 0 && acc(c.Counter__x, write)
+  // Inhale postconditions
+  inhale acc(c.Counter__x, write) && c.Counter__x == oldCCounterX + 1 
   //:: ExpectedOutput(assert.failed:assertion.false)
   // confirmed by Stefan Blom
   assert c.Counter__x == 17

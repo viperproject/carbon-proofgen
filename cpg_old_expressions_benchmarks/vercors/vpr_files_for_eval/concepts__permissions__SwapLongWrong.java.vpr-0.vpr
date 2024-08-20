@@ -67,7 +67,16 @@ method wrong(this: Ref, tid: Int) returns (res: Int)
   var return: Int
   var res1: Int
   exc := null
-  res1 := n(this, tid)
+  // REWRITTEN
+  // res1 := n(this, tid)
+  // Save old state
+  var oldThisF: Int := this.F
+  var oldThisG: Int := this.G
+  // Exhale preconditions
+  exhale this != null && acc(this.F, 1 * write) && acc(this.G, 1 * write)
+  // Inhale postconditions
+  inhale acc(this.F, 1 * write) && acc(this.G, 1 * write) && this.F == oldThisG && this.G == oldThisF
+
   res := return
   assert exc == null
 }
