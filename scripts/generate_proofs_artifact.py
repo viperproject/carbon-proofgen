@@ -2,6 +2,23 @@ import os
 import shutil
 import subprocess
 import argparse
+from pathlib import Path
+from shutil import which
+
+# This is a slightly-modified version of the proof generation script from the artifact
+# https://zenodo.org/records/10802176 from "Towards Trustworthy Automated
+# Program Verifiers: Formally Validating Translations into an Intermediate
+# Verification Language" by Parthasarathy, et al.
+# It has been modified to run a built 'carbon.jar' on the provided set of benchmarks
+# This script is invoked with command:
+# ```
+# $ python scripts/generate_proofs_artifact.py --inputdir cpg_old_expressions_benchmarks --viperproofExe viper_proof_no_param --boogieproofExe $BOOGIE_EXE
+# ````
+# from the project root
+
+PROJECT_ROOT = Path(__file__).parent.parent
+
+CARBON_JAR_FILE = PROJECT_ROOT / 'target' / 'scala-2.13' / 'carbon.jar'
 
 def get_num_vpr_files(input_dir):
     return len ([f for dp, dn, fn in os.walk(input_dir) for f in fn])
@@ -41,13 +58,15 @@ def generate_proofs(testsuite, input_dir, output_dir, carbon_proofgen_bin, boogi
 
                     options = ["--genProofs", "--desugarPolymorphicMaps", "--disableAllocEncoding", "--print", boogie_file_name, "--boogieExe", boogie_proofgen_bin]
 
-                    errorcode = subprocess.run([carbon_proofgen_bin] + options + [viper_file_path], stdout=subprocess.DEVNULL)
+                    errorcode = subprocess.run(['java', '-jar', str(CARBON_JAR_FILE)] + options + [viper_file_path], stdout=subprocess.DEVNULL)
 
                     if(errorcode.returncode == 0):
                         print("Generated proofs for: {}".format(file))
+                        print("Verification successful for: {}".format(file))
                         n_success_verified += 1
                     elif(errorcode.returncode == 1):
                         print("Generated proofs for: {}".format(file))
+                        print("Verification failed for: {}".format(file))
                         # program does not verify, but proof should be generated
                         n_success_not_verified += 1
                     elif(errorcode.returncode == 17):
