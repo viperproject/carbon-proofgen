@@ -39,6 +39,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
   private val translationRecord0Name = relationalProofData.translationRecord0Def.id.toString
   private val translationRecord0DefLemma = IsaUtil.definitionLemmaFromName(translationRecord0Name)
 
+  // The second translation record is necessary to capture the state after the old state has been set up
   private val translationRecord1Name = relationalProofData.translationRecord1Def.id.toString
   private val translationRecord1DefLemma = IsaUtil.definitionLemmaFromName(translationRecord1Name)
 

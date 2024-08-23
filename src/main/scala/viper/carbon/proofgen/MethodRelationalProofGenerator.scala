@@ -118,6 +118,7 @@ case class MethodRelationalProofGenerator(
 
     outerDecls += varRelationBoundedBy
 
+    // First translation record: labelHMTranslation empty
     val translationRecord0 = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
       maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
@@ -135,6 +136,8 @@ case class MethodRelationalProofGenerator(
       stateRelOptions = TermIdent("default_state_rel_options")
     )
 
+    // Second translation record: labelHMTranslation now also has "old_label" mapped to the
+    // heap and mask vars
     val translationRecord1 = TranslationRecord.makeTranslationRecord(
       heapVar = NatConst(globalBplData.getVarId(HeapGlobalVar)),
       maskVar = NatConst(globalBplData.getVarId(MaskGlobalVar)),
@@ -652,6 +655,10 @@ case class MethodRelationalProofGenerator(
     )
   }
 
+  // This is the proof corresponding to the boogie code that sets up variables
+  // to store the initial state of the heap and mask within a method.
+  // TODO it should be better understood whether heap or mask are saved first,
+  // and how we can make sure our solution can accomodate unexpected orders
   private def oldHeapOldMaskSetupProof() : Seq[String] = {
     Seq(
       applyTac(introTac("exI")),
