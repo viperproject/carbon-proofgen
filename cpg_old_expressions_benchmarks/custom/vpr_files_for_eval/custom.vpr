@@ -1,5 +1,5 @@
-// Write ten of your own examples -> think of ten things one could test
-// one file with ten different methods
+// This is a collection of custom test cases to exercise proof generation for
+// old expressions in different contexts
 
 field f: Int
 field g: Ref
