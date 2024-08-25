@@ -1,0 +1,308 @@
+// We removed the methods test3 and test4 since they have nontrivial gotos and labels
+// that cannot be trivially removed.
+
+field Intint$$$$_E_$$$: Int
+
+method add_4b5075e4_F(x_V0: Ref, n_V0: Int)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) &&
+    x_V0.Intint$$$$_E_$$$ == old(x_V0.Intint$$$$_E_$$$) + n_V0
+{
+  
+  // decl x_V0_CN0: *int@°°, n_V0_CN1: int°°
+  {
+    var x_V0_CN0: Ref
+    var n_V0_CN1: Int
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // init n_V0_CN1
+    inhale n_V0_CN1 == 0
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // n_V0_CN1 = n_V0
+    n_V0_CN1 := n_V0
+    
+    // decl 
+    
+    // *x_V0_CN0 = *x_V0_CN0 + n_V0_CN1
+    x_V0_CN0.Intint$$$$_E_$$$ := x_V0_CN0.Intint$$$$_E_$$$ + n_V0_CN1
+    
+    // return
+  }
+}
+
+method mult_4b5075e4_F(x_V0: Ref, n_V0: Int)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) &&
+    x_V0.Intint$$$$_E_$$$ == old(x_V0.Intint$$$$_E_$$$) * n_V0
+{
+  
+  // decl x_V0_CN0: *int@°°, n_V0_CN1: int°°
+  {
+    var x_V0_CN0: Ref
+    var n_V0_CN1: Int
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // init n_V0_CN1
+    inhale n_V0_CN1 == 0
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // n_V0_CN1 = n_V0
+    n_V0_CN1 := n_V0
+    
+    // decl 
+    
+    // *x_V0_CN0 = *x_V0_CN0 * n_V0_CN1
+    x_V0_CN0.Intint$$$$_E_$$$ := x_V0_CN0.Intint$$$$_E_$$$ * n_V0_CN1
+    
+    // return
+  }
+}
+
+method test1_4b5075e4_F(x_V0: Ref)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 6
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    {
+      var fn$$0_activation: Bool
+      var fn$$0_0: Ref
+      var fn$$0_1: Int
+      fn$$0_activation := false
+      
+      // init x_V0_CN0
+      inhale x_V0_CN0 == null
+      
+      // x_V0_CN0 = x_V0
+      x_V0_CN0 := x_V0
+      
+      // decl 
+      
+      // defer add_4b5075e4_F(x_V0_CN0, 1)
+      fn$$0_0 := x_V0_CN0
+      fn$$0_1 := 1
+      fn$$0_activation := true
+      
+      // *x_V0_CN0 = 5
+      x_V0_CN0.Intint$$$$_E_$$$ := 5
+      if (fn$$0_activation) {
+        
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
+      }
+    }
+  }
+}
+
+method test2_4b5075e4_F(x_V0: Ref)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 11
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    {
+      var fn$$0_activation: Bool
+      var fn$$0_0: Ref
+      var fn$$0_1: Int
+      fn$$0_activation := false
+      {
+        var fn$$1_activation: Bool
+        var fn$$1_0: Ref
+        var fn$$1_1: Int
+        fn$$1_activation := false
+        
+        // init x_V0_CN0
+        inhale x_V0_CN0 == null
+        
+        // x_V0_CN0 = x_V0
+        x_V0_CN0 := x_V0
+        
+        // decl 
+        
+        // defer add_4b5075e4_F(x_V0_CN0, 1)
+        fn$$0_0 := x_V0_CN0
+        fn$$0_1 := 1
+        fn$$0_activation := true
+        
+        // defer mult_4b5075e4_F(x_V0_CN0, 2)
+        fn$$1_0 := x_V0_CN0
+        fn$$1_1 := 2
+        fn$$1_activation := true
+        
+        // *x_V0_CN0 = 5
+        x_V0_CN0.Intint$$$$_E_$$$ := 5
+        if (fn$$1_activation) {
+          
+          // mult_4b5075e4_F(fn$$1_0, fn$$1_1)
+          // REWRITTEN
+          // mult_4b5075e4_F(fn$$1_0, fn$$1_1)
+          // Save old values
+          var oldFn1_0IntintE: Int := fn$$1_0.Intint$$$$_E_$$$
+          // Exhale preconditions
+          exhale acc(fn$$1_0.Intint$$$$_E_$$$, write)
+          // Inhale postconditions
+          inhale acc(fn$$1_0.Intint$$$$_E_$$$, write) && fn$$1_0.Intint$$$$_E_$$$ == oldFn1_0IntintE * fn$$1_1
+        }
+      }
+      if (fn$$0_activation) {
+        
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
+      }
+    }
+  }
+}
+
+// We removed the methods test3 and test4 since they have nontrivial gotos and labels
+// that cannot be trivially removed. 
+
+method test5_4b5075e4_F(x_V0: Ref)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) &&
+    ((old(x_V0.Intint$$$$_E_$$$) <= 0 ==> x_V0.Intint$$$$_E_$$$ == 6) &&
+    (!(old(x_V0.Intint$$$$_E_$$$) <= 0) ==> x_V0.Intint$$$$_E_$$$ == 5))
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    {
+      var fn$$0_activation: Bool
+      var fn$$0_0: Ref
+      var fn$$0_1: Int
+      fn$$0_activation := false
+      
+      // init x_V0_CN0
+      inhale x_V0_CN0 == null
+      
+      // x_V0_CN0 = x_V0
+      x_V0_CN0 := x_V0
+      
+      // decl 
+      
+      // if(*x_V0_CN0 <= 0) {...} else {...}
+      if (x_V0_CN0.Intint$$$$_E_$$$ <= 0) {
+        
+        // decl 
+        
+        // defer add_4b5075e4_F(x_V0_CN0, 1)
+        fn$$0_0 := x_V0_CN0
+        fn$$0_1 := 1
+        fn$$0_activation := true
+      }
+      
+      // *x_V0_CN0 = 5
+      x_V0_CN0.Intint$$$$_E_$$$ := 5
+      if (fn$$0_activation) {
+        
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
+      }
+    }
+  }
+}
+
+method test6_4b5075e4_F(x_V0: Ref)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 6
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    {
+      var fn$$0_activation: Bool
+      var fn$$0_0: Ref
+      var fn$$0_1: Int
+      fn$$0_activation := false
+      
+      // init x_V0_CN0
+      inhale x_V0_CN0 == null
+      
+      // x_V0_CN0 = x_V0
+      x_V0_CN0 := x_V0
+      
+      // decl n_V1: int°°
+      {
+        var n_V1: Int
+        
+        // init n_V1
+        inhale n_V1 == 0
+        
+        // n_V1 = 1
+        n_V1 := 1
+        
+        // defer add_4b5075e4_F(x_V0_CN0, n_V1)
+        fn$$0_0 := x_V0_CN0
+        fn$$0_1 := n_V1
+        fn$$0_activation := true
+        
+        // n_V1 = 2
+        n_V1 := 2
+        
+        // *x_V0_CN0 = 5
+        x_V0_CN0.Intint$$$$_E_$$$ := 5
+        
+        // n_V1 = 3
+        n_V1 := 3
+      }
+      if (fn$$0_activation) {
+        
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // REWRITTEN
+        // add_4b5075e4_F(fn$$0_0, fn$$0_1)
+        // Save old values
+        var oldXV0IntintE: Int := fn$$0_0.Intint$$$$_E_$$$
+        // Exhale preconditions
+        exhale acc(fn$$0_0.Intint$$$$_E_$$$, write)
+        // Inhale postconditions
+        inhale acc(fn$$0_0.Intint$$$$_E_$$$, write) && fn$$0_0.Intint$$$$_E_$$$ == oldXV0IntintE + fn$$0_1
+      }
+    }
+  }
+}

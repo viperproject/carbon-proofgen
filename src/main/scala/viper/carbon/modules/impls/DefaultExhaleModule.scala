@@ -104,6 +104,7 @@ class DefaultExhaleModule(val verifier: Verifier) extends ExhaleModule {
 
   }
 
+
   /**
     * Emits a definedness check for the input expression if `defCheckData` demands a check and otherwise returns the
     * empty statement
@@ -219,7 +220,6 @@ class DefaultExhaleModule(val verifier: Verifier) extends ExhaleModule {
         /** We handle unfolding separately here so that exhale components have the option to gain more information by
           * executing the unfolding (and potentially other unfoldings inside the unfolding body) */
         val defCheck = maybeDefCheck(e, definednessCheckData)
-
         val definednessCheckDataRec =
           if(definednessCheckData.performDefinednessChecks.isDefined) {
             /**

@@ -1,0 +1,27 @@
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
+field val: Int
+
+// define alloc(x) {
+//   x := new();
+//   inhale acc(x.val)
+// }
+
+method test01() {
+  var y : Ref
+  //alloc(y) REWRITTEN
+  assume y != null // x := new()
+  inhale acc(y.val)
+  //:: ExpectedOutput(assert.failed:assertion.false)
+  assert false
+}
+
+method test02() {
+  var y : Ref
+  //y := new(); REWRITTEN 
+  assume y != null
+  inhale acc(y.val)
+  //:: ExpectedOutput(assert.failed:assertion.false)
+  assert false
+}

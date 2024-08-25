@@ -23,7 +23,7 @@ import viper.silver.verifier.{TypecheckerWarning, errors}
 import viper.carbon.verifier.Verifier
 import viper.silver.ast.Quasihavoc
 import viper.silver.ast.utility.rewriter.Traverse
-import viper.silver.reporter.{Reporter, WarningsDuringTypechecking}
+import viper.silver.reporter.{Reporter, WarningsDuringTypechecking, QuantifierChosenTriggersMessage}
 
 import java.nio.file.Path
 import scala.collection.mutable
@@ -65,6 +65,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             if (res.triggers.isEmpty) {
               reporter.report(WarningsDuringTypechecking(Seq(TypecheckerWarning("No triggers provided or inferred for quantifier.", res.pos))))
             }
+            reporter report QuantifierChosenTriggersMessage(res, res.triggers, f.triggers)
             res
           }
           case e: sil.Exists => {
@@ -72,6 +73,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             if (res.triggers.isEmpty) {
               reporter.report(WarningsDuringTypechecking(Seq(TypecheckerWarning("No triggers provided or inferred for quantifier.", res.pos))))
             }
+            reporter report QuantifierChosenTriggersMessage(res, res.triggers, e.triggers)
             res
           }
           case q: Quasihavoc => desugarQuasihavoc(q)
@@ -153,7 +155,8 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val ins: Seq[LocalVarDecl] = formalArgs map translateLocalVarDecl
             val outs: Seq[LocalVarDecl] = formalReturns map translateLocalVarDecl
             val init = MaybeCommentBlock("Initializing the state", stateModule.initBoogieState ++ assumeAllFunctionDefinitions ++ stmtModule.initStmt(method.bodyOrAssumeFalse))
-            val initOld = MaybeCommentBlock("Initializing the old state", stateModule.initOldState)
+            val stateModuleInitOldState = stateModule.initOldState
+            val initOld = MaybeCommentBlock("Initializing the old state", stateModuleInitOldState._1)
             val paramAssumptions = mWithLoopInfo.formalArgs map (a => allAssumptionsAboutValue(a.typ, translateLocalVarDecl(a), true))
             val (inhalePre, inhalePreHints) = translateMethodDeclPre(pres)
             val (checkPost: Stmt, postFramingHint) = if (posts.nonEmpty) {
@@ -168,18 +171,14 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             val proc = Procedure(Identifier(name), ins, outs,
               Seq(init,
                 MaybeCommentBlock("Assumptions about method arguments", paramAssumptions),
-                inhalePre) ++
-                (if(!generateProofs) {
-                  Seq(MaybeCommentBlock(initOldStateComment, initOld))
-                } else {
-                  //TODO proof_gen: currently do not handle old expressions in proofs
-                  Nil
-                }) ++
-                Seq(checkPost, body, exhalePostWithComment)
+                inhalePre,
+				MaybeCommentBlock(initOldStateComment, initOld),
+				checkPost, body, exhalePostWithComment
+			  )
             )
 
             if(verifier.generateProofs) {
-              val methodProofHint = MethodProofHint(inhalePreHints, postFramingHint, bodyProofHint, exhalePostHint)
+              val methodProofHint = MethodProofHint(inhalePreHints, postFramingHint, stateModuleInitOldState._2, bodyProofHint, exhalePostHint)
               verifier.proofGenInterface.generateProofForMethod(m, proc, env, methodProofHint)
             }
 
@@ -208,16 +207,16 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
     })
 
     val (stmts, resultInhaleProofHint) = (
-    if (Expressions.contains[sil.InhaleExhaleExp](posts)) {
-      // Postcondition contains InhaleExhale expression.
-      // Need to check inhale and exhale parts separately.
-      val onlyInhalePosts: Seq[Stmt] = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
-      posts, {
-        errors.ContractNotWellformed(_)
+      if (Expressions.contains[sil.InhaleExhaleExp](posts)) {
+        // Postcondition contains InhaleExhale expression.
+        // Need to check inhale and exhale parts separately.
+        val onlyInhalePosts: Seq[Stmt] = inhaleModule.inhaleInhaleSpecWithDefinednessCheck(
+        posts, {
+          errors.ContractNotWellformed(_)
       }).map(_._1)
 
       val resStmt =
-          NondetIf(
+        NondetIf(
             freshStateStmt ++
             MaybeComment("Checked inhaling of postcondition to check definedness",
               MaybeCommentBlock("Do welldefinedness check of the inhale part.",
@@ -225,11 +224,11 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
                 MaybeCommentBlock("Normally inhale the exhale part.",
                   onlyExhalePosts)
           ) ++
-            MaybeComment("Stop execution", Assume(FalseLit()))
-      )
+          MaybeComment("Stop execution", Assume(FalseLit()))
+        )
       (resStmt, NotSupportedInhaleHint) //do not support inhale-exhale assertions for proof generation
-    }
-    else {
+      }
+      else {
       val resStmt =
         NondetIf(
           freshStateStmt ++
@@ -237,7 +236,7 @@ class DefaultMainModule(val verifier: Verifier) extends MainModule with Stateles
             MaybeComment("Stop execution", Assume(FalseLit()))
         )
       (resStmt, inhaleProofHint)
-    })
+      })
 
     stateModule.replaceState(state)
 

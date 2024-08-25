@@ -1,0 +1,122 @@
+// Any copyright is dedicated to the Public Domain.
+// http://creativecommons.org/publicdomain/zero/1.0/
+
+field History__x: Int
+
+method History__incr(diz: Ref, current_thread_id: Int)
+  requires diz != null
+  requires current_thread_id >= 0
+  requires acc(diz.History__x, write)
+  ensures acc(diz.History__x, write)
+  ensures diz.History__x == old(diz.History__x) + 1
+{
+  inhale false
+}
+
+method History__single(diz: Ref, current_thread_id: Int, n: Int)
+  requires diz != null
+  requires current_thread_id >= 0
+  requires acc(diz.History__x, write)
+  requires n >= 0
+  ensures acc(diz.History__x, write)
+  ensures diz.History__x == old(diz.History__x) + n
+{
+  var if_any_bool: Bool
+  if (n > 0) {
+    // REWRITTEN
+    // History__incr(diz, current_thread_id)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1
+    var temp : Int := n-1
+    // REWRITTEN
+    // History__single(diz, current_thread_id, temp)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && temp >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp
+  }
+}
+
+method History__dual(diz: Ref, current_thread_id: Int, n: Int, m: Int)
+  requires diz != null
+  requires current_thread_id >= 0
+  requires acc(diz.History__x, write)
+  requires (n >= 0) && (m >= 0)
+  ensures acc(diz.History__x, write)
+  ensures diz.History__x == old(diz.History__x) + n + m
+{
+  var if_any_bool: Bool
+  var __flatten_3: Bool
+  __flatten_3 := History__if_any_random(diz, current_thread_id)
+  if_any_bool := __flatten_3
+  if (if_any_bool) {
+    if (n > 0) {
+      // REWRITTEN
+      // History__incr(diz, current_thread_id)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1
+      var temp : Int := n-1
+      // REWRITTEN
+      // History__dual(diz, current_thread_id, temp, m)
+      // Save old values
+      oldDizHistoryX := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && (temp >= 0) && (m >= 0)
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + m
+    } else {
+      // REWRITTEN
+      // History__single(diz, current_thread_id, m)
+      // Save old values
+      var oldDizHistoryX: Int := diz.History__x
+      // Exhale preconditions
+      exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && m >= 0
+      // Inhale postconditions
+      inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + m
+    }
+  } elseif (m > 0) {
+    // REWRITTEN
+    // History__incr(diz, current_thread_id)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + 1
+    var temp : Int := m-1
+    // REWRITTEN
+    // History__dual(diz, current_thread_id, temp, n)
+    // Save old values
+    oldDizHistoryX := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && (temp >= 0) && (n >= 0)
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + temp + n
+  } else {
+    // REWRITTEN
+    // History__single(diz, current_thread_id, n)
+    // Save old values
+    var oldDizHistoryX: Int := diz.History__x
+    // Exhale preconditions
+    exhale diz != null && current_thread_id >= 0 && acc(diz.History__x, write) && n >= 0
+    // Inhale postconditions
+    inhale acc(diz.History__x, write) && diz.History__x == oldDizHistoryX + n
+  }
+}
+
+method History__if_any_random(diz: Ref, current_thread_id: Int) returns (sys__result: Bool)
+  requires diz != null
+  requires current_thread_id >= 0
+{
+  inhale false
+}

@@ -87,7 +87,7 @@ class DefaultHeapModule(val verifier: Verifier)
   private val qpHeap = LocalVar(qpHeapName, heapTyp)
   private var heap: Var = originalHeap
   private def heapVar: Var = {assert (!usingOldState); heap}
-  private def heapExp: Exp = (if (usingOldState) Old(heap) else heap)
+  private def heapExp: Exp = if (usingPureState) dummyHeap else heap
   private val nullName = Identifier("null")
   private val nullLit = Const(nullName)
   private val freshObjectName = Identifier("freshObj")
@@ -101,10 +101,12 @@ class DefaultHeapModule(val verifier: Verifier)
   private var PredIdMap:Map[String, BigInt] = Map()
   private var NextPredicateId:BigInt = 0
   private val isWandFieldName = Identifier("IsWandField")
-  private val getPredicateIdName = Identifier("getPredicateId")
+  private val getPredicateOrWandIdName = Identifier("getPredWandId")
   private val sumHeapName = Identifier("SumHeap")
   private val readHeapName = Identifier("readHeap")
   private val updateHeapName = Identifier("updHeap")
+  private val dummyHeapName = Identifier("dummyHeap")
+  private val dummyHeap = Const(dummyHeapName)
 
   private val readHeapDefLemma = IsaUtil.definitionLemmaFromName("select_heap_aux")
 
@@ -128,6 +130,12 @@ class DefaultHeapModule(val verifier: Verifier)
       ConstDecl(nullName, refType) ++
       TypeDecl(fieldType) ++
       TypeDecl(normalFieldType) ++
+      (if(!verifier.generateProofs) {
+        ConstDecl(dummyHeapName, heapTyp)
+      } else {
+        //CARBON_CHANGE: proof generation does not support Viper functions yet
+        Nil
+      }) ++
       // Heap Type Definition :
       (if(verifier.usePolyMapsInEncoding) TypeAlias(heapTyp, MapType(Seq(refType, fieldType), TypeVar("B"), Seq(TypeVar("A"), TypeVar("B")))) else TypeDecl(heapTyp)) ++
       (if(enableAllocationEncoding) ConstDecl(allocName, NamedType(fieldTypeName, Seq(normalFieldType, Bool)), unique = true) ++
@@ -191,7 +199,7 @@ class DefaultHeapModule(val verifier: Verifier)
       ) ++
       (if(!verifier.generateProofs) {
         //CARBON_CHANGE: this function is not required for the subset supported by proof generation (since predicates are not supported)
-        Func(getPredicateIdName,
+        Func(getPredicateOrWandIdName,
           Seq(LocalVarDecl(Identifier("f"), fieldType)),
           Int)
       } else {
@@ -469,11 +477,11 @@ class DefaultHeapModule(val verifier: Verifier)
   }
 
   // returns predicate Id
-  override def getPredicateId(f:Exp): Exp = {
-    FuncApp(getPredicateIdName,Seq(f), Int)
+  override def getPredicateOrWandId(f:Exp): Exp = {
+    FuncApp(getPredicateOrWandIdName,Seq(f), Int)
   }
 
-  override def getPredicateId(s:String): BigInt = {
+  override def getPredicateOrWandId(s:String): BigInt = {
     if (!PredIdMap.contains(s)) {
       val predId:BigInt = getNewPredId;
       PredIdMap += (s -> predId)
@@ -507,7 +515,7 @@ class DefaultHeapModule(val verifier: Verifier)
     val pmT = predicateMaskFieldTypeOf(p)
     val varDecls = p.formalArgs map mainModule.translateLocalVarDecl
     val vars = varDecls map (_.l)
-    val predId:BigInt = getPredicateId(p.name)
+    val predId:BigInt = getPredicateOrWandId(p.name)
     val f0 = FuncApp(predicate, vars, t)
     val f1 = predicateMaskField(f0)
     val f2 = FuncApp(pmField, vars, pmT)
@@ -516,7 +524,7 @@ class DefaultHeapModule(val verifier: Verifier)
       Func(pmField, varDecls, pmT) ++
       Axiom(MaybeForall(varDecls, Trigger(f1), f1 === f2)) ++
       Axiom(MaybeForall(varDecls, Trigger(f0), isPredicateField(f0))) ++
-      Axiom(MaybeForall(varDecls, Trigger(f0), getPredicateId(f0) === IntLit(predId))) ++
+      Axiom(MaybeForall(varDecls, Trigger(f0), getPredicateOrWandId(f0) === IntLit(predId))) ++
       Func(predicateTriggerIdentifier(p), Seq(LocalVarDecl(heapName, heapTyp), LocalVarDecl(Identifier("pred"), predicateVersionFieldType())), Bool) ++
       Func(predicateTriggerAnyStateIdentifier(p), Seq(LocalVarDecl(Identifier("pred"), predicateVersionFieldType())), Bool) ++
       {
@@ -597,7 +605,7 @@ class DefaultHeapModule(val verifier: Verifier)
   }
   override def predicateTrigger(extras : Seq[Exp], pred: sil.PredicateAccess, anyState : Boolean = false): Exp = {
     val predicate = verifier.program.findPredicate(pred.predicateName)
-    val location = translateLocation(pred)
+    val location = translateResource(pred)
     if (anyState) predicateTriggerAnyState(predicate, location) else predicateTrigger(extras, predicate, location)
   }
 
@@ -622,10 +630,11 @@ class DefaultHeapModule(val verifier: Verifier)
     }
   }
 
-  def rcvAndFieldExp(f: sil.LocationAccess) : (Exp, Exp) =
+  def rcvAndFieldExp(f: sil.ResourceAccess) : (Exp, Exp) =
     f match {
-      case sil.FieldAccess(rcv, _) => (translateExp(rcv), translateLocation(f))
-      case sil.PredicateAccess(_, _) => (nullLit, translateLocation(f))
+      case sil.FieldAccess(rcv, _) => (translateExp(rcv), translateResource(f))
+      case sil.PredicateAccess(_, _) => (nullLit, translateResource(f))
+      case w: sil.MagicWand => (nullLit, translateResource(f))
     }
 
   override def currentHeapAssignUpdate(f: sil.LocationAccess, newVal: Exp): Stmt = {
@@ -649,10 +658,10 @@ class DefaultHeapModule(val verifier: Verifier)
       FuncApp(if(isPMask) { permModule.pmaskTypeDesugared.storeId } else { updateHeapName }, Seq(heap, rcv, field, newVal), Bool)
   }
 
-  override def translateLocationAccess(f: sil.LocationAccess): Exp = {
-    translateLocationAccess(f, heapExp)
+  override def translateResourceAccess(f: sil.ResourceAccess): Exp = {
+    translateResourceAccess(f, heapExp)
   }
-  private def translateLocationAccess(f: sil.LocationAccess, heap: Exp, isPMask: Boolean = false): Exp = {
+  private def translateResourceAccess(f: sil.ResourceAccess, heap: Exp, isPMask: Boolean = false): Exp = {
     val (rcvExp, fieldExp) = rcvAndFieldExp(f)
     lookup(heap, rcvExp, fieldExp, isPMask)
   }
@@ -662,7 +671,7 @@ class DefaultHeapModule(val verifier: Verifier)
     lookup(heap, rcv, loc)
   }
 
-  override def translateLocation(l: sil.LocationAccess): Exp = {
+  override def translateResource(l: sil.ResourceAccess): Exp = {
     l match {
       case sil.PredicateAccess(args, predName) =>
         val pred = verifier.program.findPredicate(predName)
@@ -670,6 +679,8 @@ class DefaultHeapModule(val verifier: Verifier)
         FuncApp(locationIdentifier(pred), args map translateExp, t)
       case sil.FieldAccess(rcv, field) =>
         Const(locationIdentifier(field))
+      case w: sil.MagicWand =>
+        wandModule.getWandRepresentation(w)
     }
   }
 
@@ -792,7 +803,7 @@ class DefaultHeapModule(val verifier: Verifier)
           MaybeComment("register all known folded permissions guarded by predicate " + loc.predicateName,
             Havoc(newPMask) ++
               Assume(Forall(Seq(obj, field), Seq(Trigger(pm2)), (pm1 ==> pm2))) ++
-                Assume(Forall(vsFresh.map(vFresh => translateLocalVarDecl(vFresh)),Seq(),translatedCond ==> (translateLocationAccess(renamingFieldAccess, newPMask, true) === TrueLit()) ))) ++
+                Assume(Forall(vsFresh.map(vFresh => translateLocalVarDecl(vFresh)),Seq(),translatedCond ==> (translateResourceAccess(renamingFieldAccess, newPMask, true) === TrueLit()) ))) ++
             curHeapAssignUpdatePredWandMask(pmask.maskField, newPMask)
         vsFresh.foreach(vFresh => env.undefine(vFresh.localVar))
         res
@@ -840,10 +851,6 @@ class DefaultHeapModule(val verifier: Verifier)
   def resetBoogieState: (Stmt, StateProofHint) = {
     (Havoc(heapVar), ResetStateComponentHint(identifier, Seq(heapVar)))
   }
-  def initOldState: Stmt = {
-    val hVar = heapVar
-    Assume(Old(hVar) === hVar)
-  }
 
   def staticStateContributions(withHeap: Boolean, withPermissions: Boolean): Seq[LocalVarDecl] = if(withHeap) Seq(LocalVarDecl(heapName, heapTyp)) else Seq()
   def currentStateContributions: Seq[LocalVarDecl] = Seq(LocalVarDecl(heap.name, heapTyp))
@@ -866,6 +873,7 @@ class DefaultHeapModule(val verifier: Verifier)
   override def usingOldState = stateModuleIsUsingOldState
 
   override val identifier: CarbonStateComponentIdentifier = HeapStateComponent
+  override def usingPureState = stateModuleIsUsingPureState
 
 
   override def beginExhale: Stmt = {

@@ -31,7 +31,8 @@ object ViperToIsa {
       case sil.Applying(_, exp) =>
         sys.error("applying not supported")
       case sil.Old(exp) =>
-        sys.error("old expression not supported")
+        // TODO consider making "old" into a constant?
+        ViperIsaTerm.labelledOld(translatePureExp(exp), "old")
       case sil.LabelledOld(exp, oldLabel) =>
         ViperIsaTerm.labelledOld(translatePureExp(exp), oldLabel)
       case sil.Let(lvardecl, exp, body) =>

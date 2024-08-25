@@ -1,0 +1,90 @@
+// This is a collection of custom test cases to exercise proof generation for
+// old expressions in different contexts
+
+field f: Int
+field g: Ref
+
+// A simple method with a postcondition
+method m1(x: Ref)
+requires acc(x.f)
+ensures acc(x.f) && x.f == 4 * old(x.f)
+{
+  x.f := x.f + x.f
+  x.f := x.f + x.f
+}
+
+// A method using old in the body
+method m2(x: Ref)
+requires acc(x.f) && x.f == 5
+{
+  x.f := 10
+  assert (old(x.f) * 5 + old(x.f * 5)) * old(x.f - 3) == 100
+}
+
+// The same method, but with everything inside the old expression
+method m3(x: Ref)
+requires acc(x.f) && x.f == 5
+{
+  x.f := 10
+  assert old((x.f * 5 + x.f * 5) * (x.f - 3) == 100)
+}
+
+// Non field-related expressions inside old()
+method m4(x: Ref)
+{
+  // Literal
+  assert old(4) == 4
+  // Arithmetic
+  assert old(1 + 2 + 3) == 6
+  // Variable reference
+  var n: Int := 12
+  assert old(n + n) == 24
+  // Conditional expression
+  assert old(2 + 3 == 5 ? 9 : 18) == 9
+  // Boolean expression
+  assert old(false || true && (true && true))
+}
+
+// Inhale
+method m5(x: Ref)
+requires acc(x.f)
+{
+  inhale old(x.f) == 5
+  assert old(x.f) + old(x.f) == 10
+}
+
+// Exhale
+method m6(x: Ref)
+requires acc(x.f) && x.f == 10
+{
+  x.f := 6
+  exhale acc(x.f) && old(x.f) == 10
+}
+
+// Repeated field access
+method m7(x: Ref)
+requires acc(x.g) && acc(x.g.g) && acc(x.g.g.g) && acc(x.g.g.g.f) && x.g.g.g.f == 5
+{
+  var y: Ref
+  // Set x.g to a fresh variable
+  x.g := y
+
+  // Now use a multiple field access
+  assert old(x.g.g.g.f) == 5
+}
+
+// Simulate a method call
+method m8(x: Ref)
+requires acc(x.f)
+{
+  x.f := 3
+  // REWRITTEN
+  // m1(x)
+  // Save old values
+  var oldXF: Int := x.f
+  // Exhale preconditions
+  exhale acc(x.f)
+  // Inhale postconditions
+  inhale acc(x.f) && x.f == 4 * oldXF
+  assert x.f == 12
+}

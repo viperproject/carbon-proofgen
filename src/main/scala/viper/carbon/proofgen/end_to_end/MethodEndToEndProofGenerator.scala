@@ -36,7 +36,12 @@ case class MethodEndToEndProofGenerator( theoryName: String,
                                          relationalProofData: RelationalProofData,
                                          boogieProgAccessor: IsaBoogieProcAccessor) {
 
-  private val translationRecordDefLemma = IsaUtil.definitionLemmaFromName(relationalProofData.translationRecordDef.id.toString)
+  private val translationRecord0Name = relationalProofData.translationRecord0Def.id.toString
+  private val translationRecord0DefLemma = IsaUtil.definitionLemmaFromName(translationRecord0Name)
+
+  // The second translation record is necessary to capture the state after the old state has been set up
+  private val translationRecord1Name = relationalProofData.translationRecord1Def.id.toString
+  private val translationRecord1DefLemma = IsaUtil.definitionLemmaFromName(translationRecord1Name)
 
   private val ctxtBplName = "ctxt_bpl"
   private val ctxtBplDefLemmaName = IsaUtil.definitionLemmaFromName("ctxt_bpl")
@@ -114,14 +119,15 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     outerDecls += intersectionBoundLemmas
 
     val disjVarsStateRel = LemmaDecl("disjoint_property_aux",
-      TermApp(TermIdent("disj_vars_state_relation"), Seq(relationalProofData.translationRecordDef, IsaTermUtil.emptyMap)),
+      TermApp(TermIdent("disjoint_list"), TermApp(TermIdent("state_rel0_disj_list"), Seq(TermIdent(translationRecord0Name), TermIdent("Map.empty")))),
       Proof(Seq(
         ProofUtil.applyTac(ProofUtil.ruleTac("disj_vars_state_relation_initialI")),
-        ProofUtil.applyTac(ProofUtil.simpTac(translationRecordDefLemma)),
-        ProofUtil.applyTac(ProofUtil.simpTac(translationRecordDefLemma)),
+        ProofUtil.applyTac(ProofUtil.simpTac(translationRecord0DefLemma)),
+        ProofUtil.applyTac(ProofUtil.simpTac(translationRecord0DefLemma)),
+        ProofUtil.applyTac(ProofUtil.simpTac(translationRecord0DefLemma)),
         ProofUtil.applyTac(ProofUtil.ruleTac("disj_helper_tr_vpr_bpl")),
         ProofUtil.byTac(ProofUtil.repeatTac(ProofUtil.forceTacWithSimps(
-          Seq(translationRecordDefLemma, IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString),
+          Seq(translationRecord0DefLemma, IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString),
             relationalProofData.basicDisjointnessLemma,
             intersectionBoundLemmas.name)))),
       ))
@@ -181,7 +187,8 @@ case class MethodEndToEndProofGenerator( theoryName: String,
        generateBoogiePropertiesProof().methods ++
         (generateMethodRelProof().methods :+ ProofUtil.applyTac(
           ProofUtil.simpTac(
-            Seq(translationRecordDefLemma,
+            // TODO here
+            Seq(translationRecord1DefLemma,
               IsaUtil.definitionLemmaFromName(ViperBoogieRelationIsa.defaultStateRelOptionsName)
             )
           )
@@ -284,25 +291,26 @@ case class MethodEndToEndProofGenerator( theoryName: String,
       ) ++
       globalsLocalsDisjointProof() ++
       Seq(
-        ProofUtil.simpTac(translationRecordDefLemma), // heap var and heap var def same
-        ProofUtil.simpTac(translationRecordDefLemma) // mask var and mask var def same
+        ProofUtil.simpTac(translationRecord0DefLemma), // heap var and heap var def same
+        ProofUtil.simpTac(translationRecord0DefLemma), // mask var and mask var def same
+        ProofUtil.simpTac(translationRecord0DefLemma) // label_hm_translation empty
       ) ++
       fieldRelInjectiveProof() ++
       Seq(
-        ProofUtil.simpTac(Seq(translationRecordDefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)) //injectivity const representation
+        ProofUtil.simpTac(Seq(translationRecord0DefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)) //injectivity const representation
       ) ++
       fieldRelPropertyFullProof(true) ++
       Seq(
         //the declared types for the heap and mask are correct
-        ProofUtil.simpTac(Seq(translationRecordDefLemma, ctxtBplDefLemmaName, typeReprBasicDefLemmaName,
+        ProofUtil.simpTac(Seq(translationRecord0DefLemma, ctxtBplDefLemmaName, typeReprBasicDefLemmaName,
             ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm, boogieProgAccessor.globalDataAccessor.getGlobalMapOfThm(HeapGlobalVar))
           )
         ),
-        ProofUtil.simpTac(Seq(translationRecordDefLemma, ctxtBplDefLemmaName, typeReprBasicDefLemmaName,
+        ProofUtil.simpTac(Seq(translationRecord0DefLemma, ctxtBplDefLemmaName, typeReprBasicDefLemmaName,
           ProofUtil.OF(BoogieIsaTerm.mapOfLookupVarDeclsTyThm, boogieProgAccessor.globalDataAccessor.getGlobalMapOfThm(MaskGlobalVar))
         ))
       ) ++
-        Seq( ProofUtil.simpTac(Seq(translationRecordDefLemma, ctxtBplDefLemmaName, endToEndData.constantsLookupWithGlobalsLemma)) //constant declarations match the expected types
+        Seq( ProofUtil.simpTac(Seq(translationRecord0DefLemma, ctxtBplDefLemmaName, endToEndData.constantsLookupWithGlobalsLemma)) //constant declarations match the expected types
         ) ++
         varRelPropertyProof() ++
         (ProofUtil.blastTac +: //state equality ++
@@ -315,7 +323,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
   private def varTranslationInjectiveProof() : Seq[String] = {
     Seq(
-      ProofUtil.simpTac(translationRecordDefLemma),
+      ProofUtil.simpTac(translationRecord0DefLemma),
       ProofUtil.ruleTac(IsaThmUtil.strictlyOrderedListInjMapOfLemma),
       ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(relationalProofData.varRelationListDef.id.toString))
     )
@@ -330,7 +338,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
   private def fieldRelInjectiveProof() : Seq[String] = {
     Seq(
-      ProofUtil.simpTac(translationRecordDefLemma),
+      ProofUtil.simpTac(translationRecord0DefLemma),
       ProofUtil.ruleTac(IsaThmUtil.strictlyOrderedListInjMapOfLemma),
       ProofUtil.simpTac(IsaUtil.definitionLemmaFromName(viperProgAccessor.fieldRel.id.toString))
     )
@@ -339,7 +347,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
   private def fieldRelPropertyFullProof(withGlobals: Boolean) : Seq[String] = {
     val helperThm = if(withGlobals) { endToEndData.fieldPropWithGlobalsLemma } else { endToEndData.fieldPropWithoutGlobalsLemma }
     Seq(
-      ProofUtil.simpTac(Seq(translationRecordDefLemma, varCtxtBplEqLemmaName, helperThm))
+      ProofUtil.simpTac(Seq(translationRecord0DefLemma, varCtxtBplEqLemmaName, helperThm))
     )
   }
 
@@ -361,7 +369,7 @@ case class MethodEndToEndProofGenerator( theoryName: String,
           ))
         )
       }) :+
-      ProofUtil.simpTac(translationRecordDefLemma)
+      ProofUtil.simpTac(translationRecord0DefLemma)
   }
 
   private def uniqueConstantsProof() : Seq[String] = {
@@ -369,11 +377,13 @@ case class MethodEndToEndProofGenerator( theoryName: String,
 
     Seq(
       ProofUtil.ruleTac("unique_constants_initial_global_state"),
-      disjointGlobalDeclarationsTac,
+    ) ++
+    disjointGlobalDeclarationsProof() ++
+    Seq(
       ProofUtil.simpTac(uniqueConstsDefLemma),
       ProofUtil.ruleTac("unique_consts_field_prop"),
-      ProofUtil.simpTac(Seq(uniqueConstsDefLemma, endToEndData.ranFieldRelLemma, translationRecordDefLemma)),
-      ProofUtil.simpTac(translationRecordDefLemma),
+      ProofUtil.simpTac(Seq(uniqueConstsDefLemma, endToEndData.ranFieldRelLemma, translationRecord0DefLemma)),
+      ProofUtil.simpTac(translationRecord0DefLemma),
       ProofUtil.ruleTac(endToEndData.declaredFieldsFieldRelDomEqLemma)
     )
   }
@@ -382,25 +392,31 @@ case class MethodEndToEndProofGenerator( theoryName: String,
     Seq(
       ProofUtil.ruleTac("boogie_axioms_state_restriction_aux"),
       ProofUtil.simpTac(ctxtBplDefLemmaName),
-      ProofUtil.simpTac(translationRecordDefLemma),
-      ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.constantsLookupWithoutGlobalsLemma))
+      ProofUtil.simpTac(translationRecord0DefLemma),
+      ProofUtil.simpTac(Seq(translationRecord0DefLemma, endToEndData.constantsLookupWithoutGlobalsLemma))
     ) ++
     fieldRelPropertyFullProof(false) ++
+    disjointGlobalDeclarationsProof() ++
     Seq(
-      disjointGlobalDeclarationsTac,
-      ProofUtil.simpTac(Seq(translationRecordDefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)),
-      ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.injFieldRelLemma)),
-      ProofUtil.simpTac(Seq(translationRecordDefLemma, IsaUtil.definitionLemmaFromName(boogieProgAccessor.globalDataAccessor.constDecls.id.toString))),
+      ProofUtil.simpTac(Seq(translationRecord0DefLemma, ViperBoogieRelationIsa.constReprBasicInjLemmaName)),
+      ProofUtil.simpTac(Seq(translationRecord0DefLemma, endToEndData.injFieldRelLemma)),
+      ProofUtil.simpTac(Seq(translationRecord0DefLemma, IsaUtil.definitionLemmaFromName(boogieProgAccessor.globalDataAccessor.constDecls.id.toString))),
       ProofUtil.simpTacOnly(Seq(ViperBoogieRelationIsa.constReprBasicRangeLemmaName, endToEndData.ranFieldRelLemma)),
       ProofUtil.fastforceTac,
       ProofUtil.cutTac(endToEndData.axiomSatLemma),
       ProofUtil.simpTac(ctxtBplDefLemmaName),
       ProofUtil.simp,
-      ProofUtil.simpTac(Seq(translationRecordDefLemma, endToEndData.programTotalProgEqLemma)),
+      ProofUtil.simpTac(Seq(translationRecord0DefLemma, endToEndData.programTotalProgEqLemma)),
     )
   }
 
-  private val disjointGlobalDeclarationsTac: String =
-    s"(disjoint_globals_aux_tac disj_prop_aux: ${ProofUtil.simplified("disjoint_property_aux", IsaUtil.definitionLemmaFromName("disj_vars_state_relation"))})"
+  private val disjointGlobalDeclarationsTac = ProofUtil.ruleTac(ProofUtil.OF("disjoint_list_helper_lemma_7_to_4", "disjoint_property_aux"))
+
+  private def disjointGlobalDeclarationsProof(): Seq[String] = {
+    Seq(
+      disjointGlobalDeclarationsTac,
+      ProofUtil.simpTac
+    )
+  }
 
 }

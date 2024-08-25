@@ -77,4 +77,8 @@ trait CarbonStateComponent extends Component {
 
   def identifier: CarbonStateComponentIdentifier
 
+  /**
+    * Are we currently using a pure state without a heap (i.e., translating a domain)?
+    */
+  def usingPureState: Boolean
 }

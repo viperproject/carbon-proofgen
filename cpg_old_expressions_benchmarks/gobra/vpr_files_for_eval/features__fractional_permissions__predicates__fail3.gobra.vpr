@@ -1,0 +1,50 @@
+field Intint$$$$_E_$$$: Int
+
+
+// predicate myPred_bda1d7d_F(x_V0: Ref) {
+//   acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+// }
+
+method zeroDividend1_bda1d7d_F(x_V0: Ref)
+  //requires acc(myPred_bda1d7d_F(x_V0), 1 / 0)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1/0) && x_V0.Intint$$$$_E_$$$ == 42
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+  }
+}
+
+method zeroDividend2_bda1d7d_F(x_V0: Ref)
+  //requires acc(myPred_bda1d7d_F(x_V0), 1 / 0)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1/0) && x_V0.Intint$$$$_E_$$$ == 42
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+  }
+}

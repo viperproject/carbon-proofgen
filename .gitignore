@@ -16,3 +16,6 @@ tmp/
 results.txt
 *.bpl
 *.bpl.*
+.DS_Store
+# Do not track generated proofs
+proofs_for_eval

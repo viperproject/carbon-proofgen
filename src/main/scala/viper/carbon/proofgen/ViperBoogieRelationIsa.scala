@@ -53,6 +53,7 @@ object ViperBoogieRelationIsa {
 
   def methodRel( stateRelEnter: Term,
                stateRelExit: Term,
+               stateRelOld: Term,
                totalContextVpr: Term,
                stateConsistency: Term,
                varContextVpr: Term,
@@ -61,7 +62,7 @@ object ViperBoogieRelationIsa {
                methodDecl: Term,
                configBplEnter: Term) : Term =
     TermApp(TermIdent(methodRelName),
-      Seq(stateRelEnter, stateRelExit, totalContextVpr, stateConsistency, varContextVpr, programVpr, expressionContextBpl, methodDecl, configBplEnter)
+      Seq(stateRelEnter, stateRelExit, stateRelOld, totalContextVpr, stateConsistency, varContextVpr, programVpr, expressionContextBpl, methodDecl, configBplEnter)
     )
 
   val methodRelName : String = "method_rel"
@@ -84,10 +85,10 @@ object ViperBoogieRelationIsa {
   val zeroMaskRelThm = "zero_mask_rel_2"
   val boogieConstValSimpsThm = "boogie_const_val.simps"
 
-  def redAssumeGoodStateTac(translationRecordDefThm: String, ctxtBplWfThm: String) = {
+  def redAssumeGoodStateTac(translationRecordDefThms: Seq[String], ctxtBplWfThm: String) = {
     MLUtil.mlTacticToIsa(
       MLUtil.app("red_assume_good_state_tac",
-        Seq(MLUtil.contextAniquotation, ctxtBplWfThm, MLUtil.isaToMLThm(translationRecordDefThm), "1")
+        Seq(MLUtil.contextAniquotation, ctxtBplWfThm, MLUtil.isaToMLThms(translationRecordDefThms), "1")
       )
     )
   }
@@ -174,9 +175,10 @@ object TranslationRecord {
                              funTranslation: Term,
                              varTranslation: Term,
                              constRepr: Term,
+                             labelHMTranslation: Term,
                              stateRelOptions: Term): Term =
     IsaTermUtil.makeRecord(translationRecordTypeName,
-      Seq(heapVar, maskVar, heapVarDef, maskVarDef, fieldTranslation, funTranslation, varTranslation, constRepr, stateRelOptions)
+      Seq(heapVar, maskVar, heapVarDef, maskVarDef, fieldTranslation, funTranslation, varTranslation, constRepr, labelHMTranslation, stateRelOptions)
     )
 
   def maskVar(translationRecord: Term) : Term = TermApp(TermIdent("mask_var"), translationRecord)
@@ -206,4 +208,3 @@ object BoogieExpressionContext {
     IsaTermUtil.makeRecord(exprContextRecordName, Seq(typeInterp, varContext, funInterp, rtypeInterp))
 
 }
-

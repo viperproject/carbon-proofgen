@@ -42,6 +42,8 @@ object TermApp {
   }
 }
 
+case class TermMap(mappings: Seq[(Term, Term)]) extends Term
+
 case class TermWithExplicitType(t: Term, ty: TypeIsa) extends Term
 
 case class TermList(list: Seq[Term]) extends Term

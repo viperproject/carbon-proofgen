@@ -14,7 +14,7 @@ class FunctionProofGenInterface(heapModule: HeapModule, permModule: PermModule) 
 
     Map.from(
       Seq(
-        (HeapRead, functionNameFromLookup(heapModule.translateLocationAccess(dummyFieldAccess))),
+        (HeapRead, functionNameFromLookup(heapModule.translateResourceAccess(dummyFieldAccess))),
         (HeapStore, functionNameFromLookup(heapModule.currentHeapAssignUpdate(dummyFieldAccess, IntLit(0)))),
         (MaskRead, functionNameFromLookup(permModule.currentPermission(dummyFieldAccess))),
         //the perm module current does not expose updating the mask, so we directly just use the mask store identifier
