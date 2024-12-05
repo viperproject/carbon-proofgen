@@ -64,11 +64,11 @@ the Viper file) to store the generated Boogie program in the file `nameToBoogieF
 
 To check the generated proofs, you need to install Isabelle 2022 and install 
 Isabelle dependencies for the Boogie formalization and the Viper total heap 
-formalization. You can do so directly via the `viper-roots-dev` subfolder 
+formalization. You can do so directly via the `viper-roots` subfolder 
 by running the following commands:
 
-`isabelle components -u viper-roots-dev/foundational_boogie/BoogieLang`
+`isabelle components -u viper-roots/foundational_boogie/BoogieLang`
 
-`isabelle components -u viper-roots-dev/vipersemcommon`
+`isabelle components -u viper-roots/vipersemcommon`
 
-`isabelle components -u viper-roots-dev/viper-total-heaps`
+`isabelle components -u viper-roots/viper-total-heaps`
