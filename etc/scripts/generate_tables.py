@@ -266,7 +266,7 @@ def compute_summary_table(testsuites_data : Dict[str, List[TestData]], output_di
 
         selected_files = [('viper', 'testHistoryProcesses.vpr'), 
                         ('gobra', 'features__defer__defer-simple-02.gobra.vpr'),
-                        ('vercors', 'concepts__permissions__SwapIntegerPass.java.vpr-0.vpr'),
+                        ('vercors', 'concepts__parallel__inv-test-fail2.pvl.vpr-0.vpr'),
                         ('MPP', 'banerjee.vpr'),
                         ('MPP', 'darvas.vpr'),
                         ('MPP', 'kusters.vpr')]
