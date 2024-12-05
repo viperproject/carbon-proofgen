@@ -5,7 +5,6 @@
 	path = boogie_proofgen
 	url = https://github.com/gauravpartha/boogie_proofgen
 	branch = adjust_interface
-[submodule "viper-roots-dev"]
-	path = viper-roots-dev
-	url = https://gitlab.inf.ethz.ch/gauravp/viper-roots-dev
-	branch = artifact
+[submodule "viper-roots"]
+	path = viper-roots
+	url = https://github.com/viperproject/viper-roots/
