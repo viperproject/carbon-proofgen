@@ -32,7 +32,10 @@ def generate_proofs(testsuite, input_dir, output_dir, carbon_proofgen_bin, boogi
     os.mkdir(output_dir)
     os.chdir(output_dir)
 
-    carbon_proofgen_bin_list = shlex.split(carbon_proofgen_bin)
+    if os.path.isfile(carbon_proofgen_bin):
+        carbon_proofgen_bin_list = [carbon_proofgen_bin]
+    else:
+        carbon_proofgen_bin_list = shlex.split(carbon_proofgen_bin)
 
     for root, dirs, files in os.walk(input_dir_absolute):
         for file in files:
