@@ -1,0 +1,96 @@
+field extraService: Bool
+
+field extraService1: Bool
+
+field balance: Int
+
+field balance1: Int
+
+method writeBalance_fixed(p0_0: Bool, p1_0: Bool, this: Ref, this_1: Ref, amount: Int, amount_1: Int)
+  requires (p0_0 ==> acc(this.extraService, write)) && (p1_0 ==> acc(this_1.extraService1, write))
+  requires (p0_0 ==> acc(this.balance, write)) && (p1_0 ==> acc(this_1.balance1, write))
+  requires (p0_0 ==> p0_0 && p1_0 ==> this.extraService == this_1.extraService1) && (p1_0 ==> true)
+  ensures (p0_0 ==> acc(this.extraService, write)) && (p1_0 ==> acc(this_1.extraService1, write))
+  ensures (p0_0 ==> acc(this.balance, write)) && (p1_0 ==> acc(this_1.balance1, write))
+  ensures (p0_0 ==> p0_0 && p1_0 ==> this.extraService == this_1.extraService1) && (p1_0 ==> true)
+{
+  var _cond0: Bool
+  var _cond0_1: Bool
+  if (p0_0) {
+    _cond0 := false
+  }
+  if (p1_0) {
+    _cond0_1 := false
+  }
+  inhale p0_0 && p1_0 ==> amount >= 10000 == amount_1 >= 10000
+  var pt0_0: Bool
+  var pt1_0: Bool
+  var pf0_0: Bool
+  var pf1_0: Bool
+  pt0_0 := p0_0 && amount >= 10000
+  pt1_0 := p1_0 && amount_1 >= 10000
+  pf0_0 := p0_0 && !(amount >= 10000)
+  pf1_0 := p1_0 && !(amount_1 >= 10000)
+  if (pt0_0) {
+    this.extraService := true
+  }
+  if (pt1_0) {
+    this_1.extraService1 := true
+  }
+  if (pf0_0) {
+    this.extraService := false
+  }
+  if (pf1_0) {
+    this_1.extraService1 := false
+  }
+  if (p0_0) {
+    this.balance := amount
+  }
+  if (p1_0) {
+    this_1.balance1 := amount_1
+  }
+}
+
+method writeBalance(p0: Bool, p1: Bool, this: Ref, this_0: Ref, amount: Int, amount_0: Int)
+  requires (p0 ==> acc(this.extraService, write)) && (p1 ==> acc(this_0.extraService1, write))
+  requires (p0 ==> acc(this.balance, write)) && (p1 ==> acc(this_0.balance1, write))
+  requires (p0 ==> p0 && p1 ==> this.extraService == this_0.extraService1) && (p1 ==> true)
+  ensures (p0 ==> acc(this.extraService, write)) && (p1 ==> acc(this_0.extraService1, write))
+  ensures (p0 ==> acc(this.balance, write)) && (p1 ==> acc(this_0.balance1, write))
+  ensures (p0 ==> p0 && p1 ==> this.extraService == this_0.extraService1) && (p1 ==> true)
+{
+  var _cond0: Bool
+  var _cond0_0: Bool
+  if (p0) {
+    _cond0 := false
+  }
+  if (p1) {
+    _cond0_0 := false
+  }
+  var pt0: Bool
+  var pt1: Bool
+  var pf0: Bool
+  var pf1: Bool
+  pt0 := p0 && amount >= 10000
+  pt1 := p1 && amount_0 >= 10000
+  pf0 := p0 && !(amount >= 10000)
+  pf1 := p1 && !(amount_0 >= 10000)
+  if (pt0) {
+    this.extraService := true
+  }
+  if (pt1) {
+    this_0.extraService1 := true
+  }
+  if (pf0) {
+    this.extraService := false
+  }
+  if (pf1) {
+    this_0.extraService1 := false
+  }
+  if (p0) {
+    this.balance := amount
+  }
+  if (p1) {
+    this_0.balance1 := amount_0
+  }
+}

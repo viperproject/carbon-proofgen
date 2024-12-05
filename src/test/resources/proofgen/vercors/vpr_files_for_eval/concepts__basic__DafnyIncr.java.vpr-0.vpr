@@ -1,0 +1,75 @@
+
+
+
+field y: Int
+
+
+method check_sat_Incr()
+{
+  assert false
+}
+
+//REWRITTEN method name: avoid name clash with above method in Isabelle
+method check_sat_incr2(this: Ref)
+  requires this != null
+{
+  assert false
+}
+
+method incr(this: Ref, tid: Int, x: Int) returns (res: Int)
+  requires this != null
+  //ensures res == old(x) + 1
+{
+  var exc: Ref
+  var return: Int
+  var flatten: Int
+  exc := null
+  flatten := x + 1
+  return := flatten
+  res := return
+  assert exc == null
+}
+
+method check_sat_incry(this: Ref)
+  requires this != null
+  requires acc(this.y, write)
+{
+  assert false
+}
+
+method incry(this: Ref, tid: Int) returns (res: Int)
+  requires this != null
+  requires acc(this.y, write)
+  ensures acc(this.y, write)
+  //ensures this.y == old(this.y) + 1
+{
+  var exc: Ref
+  var return: Int
+  var flatten: Ref
+  var flatten1: Int
+  exc := null
+  flatten := this
+  flatten1 := this.y + 1
+  flatten.y := flatten1
+  res := return
+  assert exc == null
+}
+
+method check_sat_Object()
+{
+  assert false
+}
+
+method check_sat_type()
+{
+  assert false
+}
+
+method check_sat_subtype(subtype1: Int, subtype2: Int)
+  requires subtype1 >= 0
+  requires subtype1 <= 2
+  requires subtype2 >= 0
+  requires subtype2 <= 2
+{
+  assert false
+}
