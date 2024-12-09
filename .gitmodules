@@ -1,10 +1,10 @@
 [submodule "silver"]
 	path = silver
 	url = https://github.com/viperproject/silver.git
-[submodule "boogie_proofgen"]
-	path = boogie_proofgen
-	url = https://github.com/gauravpartha/boogie_proofgen
-	branch = adjust_interface
 [submodule "viper-roots"]
 	path = viper-roots
 	url = https://github.com/viperproject/viper-roots/
+[submodule "boogie-proofgen"]
+	path = boogie-proofgen
+	url = https://github.com/viperproject/boogie-proofgen
+	branch = cfg_optimizations
