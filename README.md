@@ -8,13 +8,13 @@ This folder contains a proof-producing instrumentation of the
 * Z3 version 4.8.7: you can get the binary from the [Z3 releases](https://github.com/Z3Prover/z3/releases/tag/z3-4.8.7)
   * make sure the folder containing the binary is included in the `PATH` environment variable (required for Boogie)
 * Boogie version that embeds Boogie programs in Isabelle:
-  The correct version is included in the `boogie_proofgen` folder.
+  The correct version is included in the `boogie-proofgen` folder.
   To install it, you need to install the .NET Core 6 SDK and then compile the project using
 
-  ```dotnet build -c Release boogie_proofgen/Source/Boogie.sln```
+  ```dotnet build -c Release boogie-proofgen/Source/Boogie.sln```
 
   After the compilation, the corresponding executable `BoogieDriver` (for Linux and Mac) or 
-  `BoogieDriver.exe` is located in `boogie_proofgen/Source/BoogieDriver/bin/Release/net6.0`.
+  `BoogieDriver.exe` is located in `boogie-proofgen/Source/BoogieDriver/bin/Release/net6.0`.
 
   Our proof-producing instrumentation uses the executable to obtain an Isabelle 
   embedding of the Boogie AST (proofs for the Boogie pipeline are not generated) 
@@ -67,7 +67,7 @@ Isabelle dependencies for the Boogie formalization and the Viper total heap
 formalization. You can do so directly via the `viper-roots` subfolder 
 by running the following commands:
 
-`isabelle components -u viper-roots/foundational_boogie/BoogieLang`
+`isabelle components -u viper-roots/foundational-boogie/BoogieLang`
 
 `isabelle components -u viper-roots/vipersemcommon`
 
