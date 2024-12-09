@@ -4,7 +4,8 @@
 [submodule "viper-roots"]
 	path = viper-roots
 	url = https://github.com/viperproject/viper-roots/
+	branch = dissertation-gaurav
 [submodule "boogie-proofgen"]
 	path = boogie-proofgen
 	url = https://github.com/viperproject/boogie-proofgen
-	branch = cfg_optimizations
+	branch = dissertation-gaurav
