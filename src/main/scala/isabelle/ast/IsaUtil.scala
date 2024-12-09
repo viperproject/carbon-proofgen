@@ -25,7 +25,7 @@ object IsaUtil {
         }
       }
 
-    newId.replaceAll("-|\\$", "_")
+    newId.replaceAll("-|\\$|\\.", "_")
   }
 
 }
