@@ -1,0 +1,49 @@
+field Intint$$$$_E_$$$: Int
+
+
+// predicate myPred_bda1d7d_F(x_V0: Ref) {
+//   acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+// }
+
+method exprPerm_bda1d7d_F(x_V0: Ref)
+  //requires acc(myPred_bda1d7d_F(x_V0), 1 / 1)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1 / 1) && x_V0.Intint$$$$_E_$$$ == 42
+  //ensures acc(myPred_bda1d7d_F(x_V0), 1 / 1)
+  ensures acc(x_V0.Intint$$$$_E_$$$, 1 / 1) && x_V0.Intint$$$$_E_$$$ == 42
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+    // unfold acc(myPred_bda1d7d_F(x_V0_CN0))
+    //unfold acc(myPred_bda1d7d_F(x_V0_CN0), write)
+  	assert acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+    
+    // assert *x_V0_CN0 == 42
+    assert x_V0_CN0.Intint$$$$_E_$$$ == 42
+    
+    // *x_V0_CN0 = 0
+    x_V0_CN0.Intint$$$$_E_$$$ := 0
+    
+    // assert *x_V0_CN0 == 0
+    assert x_V0_CN0.Intint$$$$_E_$$$ == 0
+    
+    // *x_V0_CN0 = 42
+    x_V0_CN0.Intint$$$$_E_$$$ := 42
+    
+    // fold acc(myPred_bda1d7d_F(x_V0_CN0))
+    //fold acc(myPred_bda1d7d_F(x_V0_CN0), write)
+  	assert acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+  }
+}

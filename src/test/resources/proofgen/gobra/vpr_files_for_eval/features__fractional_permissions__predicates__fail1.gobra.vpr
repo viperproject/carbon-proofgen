@@ -1,0 +1,113 @@
+field Intint$$$$_E_$$$: Int
+
+// predicate myPred_bda1d7d_F(x_V0: Ref) {
+//  acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+//}
+
+method main_bda1d7d_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl val_V0: int@@, x_V0: *int@°°
+    {
+      var val_V0: Ref
+      var x_V0: Ref
+      
+      // init val_V0
+      inhale acc(val_V0.Intint$$$$_E_$$$, write) &&
+        (val_V0.Intint$$$$_E_$$$ == 0 && !(val_V0 == null))
+      
+      // val_V0 = 42
+      val_V0.Intint$$$$_E_$$$ := 42
+      
+      // init x_V0
+      inhale x_V0 == null
+      
+      // x_V0 = &val_V0
+      x_V0 := val_V0
+      
+      // fold acc(myPred_bda1d7d_F(x_V0))
+      // fold acc(myPred_bda1d7d_F(x_V0), write)
+	  assert acc(x_V0.Intint$$$$_E_$$$, write) && x_V0.Intint$$$$_E_$$$ == 42
+      
+      // test_bda1d7d_F(x_V0)
+      test_bda1d7d_F(x_V0)
+      
+      // test_bda1d7d_F(x_V0)
+      test_bda1d7d_F(x_V0)
+      
+      // assert *x_V0 == 42
+      assert x_V0.Intint$$$$_E_$$$ == 42
+    }
+  }
+}
+
+method test2_bda1d7d_F(x_V0: Ref)
+  //requires acc(myPred_bda1d7d_F(x_V0), 1 / 4)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1/4) && x_V0.Intint$$$$_E_$$$ == 42
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+    // assert unfolding acc(myPred_bda1d7d_F(x_V0_CN0), 1/4) in *x_V0_CN0 == 42
+    //assert (unfolding acc(myPred_bda1d7d_F(x_V0_CN0), 1 / 4) in
+    assert x_V0_CN0.Intint$$$$_E_$$$ == 42
+    
+    // assert false
+    assert false
+  }
+}
+
+method test_bda1d7d_F(x_V0: Ref)
+  //requires acc(myPred_bda1d7d_F(x_V0), 1 / 2)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1/2) && x_V0.Intint$$$$_E_$$$ == 42
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+    // assert unfolding acc(myPred_bda1d7d_F(x_V0_CN0), 1/2) in *x_V0_CN0 == 42
+    //assert (unfolding acc(myPred_bda1d7d_F(x_V0_CN0), 1 / 2) in
+    assert   x_V0_CN0.Intint$$$$_E_$$$ == 42
+    
+    // test2_bda1d7d_F(x_V0_CN0)
+    test2_bda1d7d_F(x_V0_CN0)
+    
+    // assert unfolding acc(myPred_bda1d7d_F(x_V0_CN0), 1/4) in *x_V0_CN0 == 42
+    //assert (unfolding acc(myPred_bda1d7d_F(x_V0_CN0), 1 / 4) in
+    assert   x_V0_CN0.Intint$$$$_E_$$$ == 42
+    
+    // test2_bda1d7d_F(x_V0_CN0)
+    test2_bda1d7d_F(x_V0_CN0)
+    
+    // assert *x_V0_CN0 == 42
+    assert x_V0_CN0.Intint$$$$_E_$$$ == 42
+  }
+}

@@ -1,0 +1,377 @@
+field Intint$$$$_E_$$$: Int
+
+
+//function getPerm_4b5075e4_F(): Perm
+//{
+//  3 / 4
+//}
+
+method test10_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl m5_V0: perm°°
+    {
+      var m5_V0: Perm
+      
+      // init m5_V0
+      inhale m5_V0 == none
+      
+      // m5_V0 = 1/2
+      m5_V0 := 1 / 2
+      
+      // assert m5_V0 + 1/2 == 1/2
+      assert m5_V0 + 1 / 2 == 1 / 2
+    }
+  }
+}
+
+method test11_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert getPerm_4b5075e4_F() != perm°(3/4)
+    //assert !(getPerm_4b5075e4_F() == 3 / 4)
+    assert !(3/4 == 3 / 4)
+  }
+}
+
+method test12_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert getPerm_4b5075e4_F() != 3/4
+    //assert !(getPerm_4b5075e4_F() == 3 / 4)
+    assert !(3/4 == 3 / 4)
+  }
+}
+
+method test13_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert getPerm_4b5075e4_F() == none
+    //assert getPerm_4b5075e4_F() == none
+    assert 3/4 == none
+  }
+}
+
+method test14_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert getPerm_4b5075e4_F() == write
+    //assert getPerm_4b5075e4_F() == write
+    assert 3/4 == write
+  }
+}
+
+method test15_4b5075e4_F(i_V0: Ref)
+  requires acc(i_V0.Intint$$$$_E_$$$, 1 / 2 / 2)
+  ensures acc(i_V0.Intint$$$$_E_$$$, 1 / 4)
+{
+  
+  // decl i_V0_CN0: *int@°°
+  {
+    var i_V0_CN0: Ref
+    
+    
+    
+    // init i_V0_CN0
+    inhale i_V0_CN0 == null
+    
+    // i_V0_CN0 = i_V0
+    i_V0_CN0 := i_V0
+    
+    // decl 
+    
+  }
+}
+
+method test1_4b5075e4_F(i_V0: Ref)
+  requires acc(i_V0.Intint$$$$_E_$$$, 1 / 2)
+  requires acc(i_V0.Intint$$$$_E_$$$, 1 / 4)
+  ensures acc(i_V0.Intint$$$$_E_$$$, 1 / 1)
+{
+  
+  // decl i_V0_CN0: *int@°°
+  {
+    var i_V0_CN0: Ref
+    
+    
+    
+    // init i_V0_CN0
+    inhale i_V0_CN0 == null
+    
+    // i_V0_CN0 = i_V0
+    i_V0_CN0 := i_V0
+    
+    // decl 
+    
+    // return
+  }
+}
+
+method test2_4b5075e4_F(i_V0: Ref, p_V0: Perm) returns (P0_PO0: Int)
+  requires p_V0 >= 0 / 1
+  requires acc(i_V0.Intint$$$$_E_$$$, p_V0)
+  ensures acc(i_V0.Intint$$$$_E_$$$, p_V0)
+{
+  inhale P0_PO0 == 0
+  
+  // decl i_V0_CN0: *int@°°, p_V0_CN1: perm°°
+  {
+    var i_V0_CN0: Ref
+    var p_V0_CN1: Perm
+    
+    
+    
+    // init i_V0_CN0
+    inhale i_V0_CN0 == null
+    
+    // init p_V0_CN1
+    inhale p_V0_CN1 == none
+    
+    // i_V0_CN0 = i_V0
+    i_V0_CN0 := i_V0
+    
+    // p_V0_CN1 = p_V0
+    p_V0_CN1 := p_V0
+    
+    // decl 
+    
+    // P0_PO0 = *i_V0_CN0
+    P0_PO0 := i_V0_CN0.Intint$$$$_E_$$$
+    
+    // return
+  }
+}
+
+method test3_4b5075e4_F(i_V0: Ref, p_V0: Perm) returns (P0_PO0: Int)
+  requires 0 / 1 <= p_V0 && p_V0 < 1 / 2
+  requires acc(i_V0.Intint$$$$_E_$$$, p_V0)
+  ensures acc(i_V0.Intint$$$$_E_$$$, 1 / 2)
+{
+  inhale P0_PO0 == 0
+  
+  // decl i_V0_CN0: *int@°°, p_V0_CN1: perm°°
+  {
+    var i_V0_CN0: Ref
+    var p_V0_CN1: Perm
+    
+    
+    
+    // init i_V0_CN0
+    inhale i_V0_CN0 == null
+    
+    // init p_V0_CN1
+    inhale p_V0_CN1 == none
+    
+    // i_V0_CN0 = i_V0
+    i_V0_CN0 := i_V0
+    
+    // p_V0_CN1 = p_V0
+    p_V0_CN1 := p_V0
+    
+    // decl 
+    
+    // P0_PO0 = *i_V0_CN0
+    P0_PO0 := i_V0_CN0.Intint$$$$_E_$$$
+    
+    // return
+  }
+}
+
+method test4_4b5075e4_F(i_V0: Ref, v_V0: Int, p_V0: Perm)
+  requires p_V0 == 0 / 1
+  requires acc(i_V0.Intint$$$$_E_$$$, p_V0)
+  ensures acc(i_V0.Intint$$$$_E_$$$, p_V0)
+{
+  
+  // decl i_V0_CN0: *int@°°, v_V0_CN1: int°°, p_V0_CN2: perm°°
+  {
+    var i_V0_CN0: Ref
+    var v_V0_CN1: Int
+    var p_V0_CN2: Perm
+    
+    
+    
+    // init i_V0_CN0
+    inhale i_V0_CN0 == null
+    
+    // init v_V0_CN1
+    inhale v_V0_CN1 == 0
+    
+    // init p_V0_CN2
+    inhale p_V0_CN2 == none
+    
+    // i_V0_CN0 = i_V0
+    i_V0_CN0 := i_V0
+    
+    // v_V0_CN1 = v_V0
+    v_V0_CN1 := v_V0
+    
+    // p_V0_CN2 = p_V0
+    p_V0_CN2 := p_V0
+    
+    // decl 
+    
+    // *i_V0_CN0 = v_V0_CN1
+    i_V0_CN0.Intint$$$$_E_$$$ := v_V0_CN1
+  }
+}
+
+method test5_4b5075e4_F(i_V0: Ref, v_V0: Int)
+  requires acc(i_V0.Intint$$$$_E_$$$, none)
+  ensures acc(i_V0.Intint$$$$_E_$$$, none)
+{
+  
+  // decl i_V0_CN0: *int@°°, v_V0_CN1: int°°
+  {
+    var i_V0_CN0: Ref
+    var v_V0_CN1: Int
+    
+    
+    
+    // init i_V0_CN0
+    inhale i_V0_CN0 == null
+    
+    // init v_V0_CN1
+    inhale v_V0_CN1 == 0
+    
+    // i_V0_CN0 = i_V0
+    i_V0_CN0 := i_V0
+    
+    // v_V0_CN1 = v_V0
+    v_V0_CN1 := v_V0
+    
+    // decl 
+    
+    // *i_V0_CN0 = v_V0_CN1
+    i_V0_CN0.Intint$$$$_E_$$$ := v_V0_CN1
+  }
+}
+
+method test6_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl m1_V0: int°°
+    {
+      var m1_V0: Int
+      
+      // init m1_V0
+      inhale m1_V0 == 0
+      
+      // m1_V0 = 1 / 2 + 1 / 2
+      m1_V0 := 1 / 2 + 1 / 2
+      
+      // assert m1_V0/1 == write
+      assert m1_V0 / 1 == write
+    }
+  }
+}
+
+method test7_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl m2_V0: perm°°
+    {
+      var m2_V0: Perm
+      
+      // init m2_V0
+      inhale m2_V0 == none
+      
+      // m2_V0 = perm°(1/2) + perm°(1/2)
+      m2_V0 := 1 / 2 + 1 / 2
+      
+      // assert m2_V0 == none
+      assert m2_V0 == none
+    }
+  }
+}
+
+method test8_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl m3_V0: perm°°
+    {
+      var m3_V0: Perm
+      
+      // init m3_V0
+      inhale m3_V0 == none
+      
+      // m3_V0 = perm°(1/2) + 1/2
+      m3_V0 := 1 / 2 + 1 / 2
+      
+      // assert m3_V0 == 1/2
+      assert m3_V0 == 1 / 2
+    }
+  }
+}
+
+method test9_4b5075e4_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl m4_V0: int°°
+    {
+      var m4_V0: Int
+      
+      // init m4_V0
+      inhale m4_V0 == 0
+      
+      // m4_V0 = 1 / 2 + 1 / 2
+      m4_V0 := 1 / 2 + 1 / 2
+      
+      // assert m4_V0/1 == write
+      assert m4_V0 / 1 == write
+    }
+  }
+}

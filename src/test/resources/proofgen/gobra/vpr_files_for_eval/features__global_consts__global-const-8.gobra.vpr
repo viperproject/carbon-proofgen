@@ -1,0 +1,119 @@
+field Intint$$$$_E_$$$: Int
+
+method test1_bda1d7d_F(x_V0: Ref) returns (P0_PO0: Int)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1 / 2)
+{
+  inhale P0_PO0 == 0
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+    // P0_PO0 = *x_V0_CN0
+    P0_PO0 := x_V0_CN0.Intint$$$$_E_$$$
+    
+    // return
+  }
+}
+
+method test2_bda1d7d_F(x_V0: Ref) returns (P0_PO0: Int)
+  requires acc(x_V0.Intint$$$$_E_$$$, 1 / 4)
+{
+  inhale P0_PO0 == 0
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+    // P0_PO0 = *x_V0_CN0
+    P0_PO0 := x_V0_CN0.Intint$$$$_E_$$$
+    
+    // return
+  }
+}
+
+method test3_bda1d7d_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert perm(1/1) == perm°(1/1)
+    assert 1 / 1 == 1 / 1
+    
+    // assert perm(1/2) == perm°(1/2)
+    assert 1 / 2 == 1 / 2
+    
+    // assert perm(1/3) == perm°(1/3)
+    assert 1 / 3 == 1 / 3
+  }
+}
+
+method test4_bda1d7d_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert perm(1/1) == write
+    assert 1 / 1 == write
+  }
+}
+
+method test5_bda1d7d_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert perm(1/1) <= perm(1/2)
+    assert 1 / 1 <= 1 / 2
+  }
+}
+
+method test6_bda1d7d_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl 
+    
+    // assert perm(1/1) == none
+    assert 1 / 1 == none
+  }
+}

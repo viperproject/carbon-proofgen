@@ -1,0 +1,22 @@
+field Intint$$$$_E_$$$: Int
+
+method test_4b5075e4_F(p_V0: Ref)
+  requires acc(p_V0.Intint$$$$_E_$$$, write)
+{
+  
+  // decl p_V0_CN0: *int@°°
+  {
+    var p_V0_CN0: Ref
+    
+    
+    
+    // init p_V0_CN0
+    inhale p_V0_CN0 == null
+    
+    // p_V0_CN0 = p_V0
+    p_V0_CN0 := p_V0
+    
+    // decl 
+    
+  }
+}

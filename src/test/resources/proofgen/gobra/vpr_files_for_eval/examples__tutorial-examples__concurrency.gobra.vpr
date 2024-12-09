@@ -1,0 +1,50 @@
+field Intint$$$$_E_$$$: Int
+
+method concurrentInc_76e1b866_F()
+{
+  
+  // decl 
+  {
+    
+    
+    
+    // decl x_V0: int@@
+    {
+      var x_V0: Ref
+      
+      // init x_V0
+      inhale acc(x_V0.Intint$$$$_E_$$$, write) &&
+        (x_V0.Intint$$$$_E_$$$ == 0 && !(x_V0 == null))
+      
+      // x_V0 = 1
+      x_V0.Intint$$$$_E_$$$ := 1
+      
+      // go inc_76e1b866_F(&x_V0)
+      exhale acc(x_V0.Intint$$$$_E_$$$, write)
+    }
+  }
+}
+
+method inc_76e1b866_F(x_V0: Ref)
+  requires acc(x_V0.Intint$$$$_E_$$$, write)
+  ensures acc(x_V0.Intint$$$$_E_$$$, write)
+{
+  
+  // decl x_V0_CN0: *int@°°
+  {
+    var x_V0_CN0: Ref
+    
+    
+    
+    // init x_V0_CN0
+    inhale x_V0_CN0 == null
+    
+    // x_V0_CN0 = x_V0
+    x_V0_CN0 := x_V0
+    
+    // decl 
+    
+    // *x_V0_CN0 = *x_V0_CN0 + 1
+    x_V0_CN0.Intint$$$$_E_$$$ := x_V0_CN0.Intint$$$$_E_$$$ + 1
+  }
+}
