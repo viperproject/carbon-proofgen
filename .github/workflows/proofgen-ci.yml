@@ -2,9 +2,9 @@ name: Carbon CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ proofgen ]
   pull_request:
-    branches: [ master ]
+    branches: [ proofgen ]
   workflow_dispatch:
 
 jobs:
