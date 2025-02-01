@@ -66,11 +66,11 @@ jobs:
     - name: Compile Boogie
       run: |
         dotnet build -c Release boogie-proofgen/Source/Boogie.sln
-        echo "BOOGIE_EXE=$(readlink -f boogie-proofgen/Source/bin/Debug/net6.0/BoogieDriver)" >> "$GITHUB_ENV"
+        echo "BOOGIE_EXE=$(readlink -f boogie-proofgen/Source/BoogieDriver/bin/Release/net6.0/BoogieDriver)" >> "$GITHUB_ENV"
     - name: Check Boogie executable
       run: |
         chmod +x "$BOOGIE_EXE"
-        $BOOGIE_EXE
+        $BOOGIE_EXE /version
 
     - name: Compile Carbon
       run: |
@@ -80,7 +80,7 @@ jobs:
       run: | 
         echo "CARBON_EXE=$(readlink -f viper_proof_no_param)" >> "$GITHUB_ENV"
         chmod +x "$CARBON_EXE"
-        $CARBON_EXE
+        $CARBON_EXE --help
 
     - name: Upload Carbon fat JAR
       uses: actions/upload-artifact@v4
