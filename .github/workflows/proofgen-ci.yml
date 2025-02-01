@@ -75,10 +75,9 @@ jobs:
     - name: Compile Carbon
       run: |
         sbt assembly
-    
+        echo "CARBON_EXE=$(readlink -f viper_proof_no_param)" >> "$GITHUB_ENV"
     - name: Check Carbon executable
       run: | 
-        echo "CARBON_EXE=$(readlink -f viper_proof_no_param)" >> "$GITHUB_ENV"
         chmod +x "$CARBON_EXE"
         $CARBON_EXE --help
 
