@@ -22,7 +22,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: Install wget (needed for setting up Isabelle)
-      run: sudo apt-get update && sudo apt-get install -y wget
+      run: apt-get update && apt-get install -y wget
     - name: Set up Isabelle
       uses: gauravpartha/setup-isabelle@v1
       with: 
