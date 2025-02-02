@@ -42,6 +42,11 @@ jobs:
         dotnet --version
         python --version
         isabelle version
+    - name: Install Isabelle sessions
+      run: |
+        isabelle components -u boogie-proofgen/foundational-boogie/BoogieLang
+        isabelle components -u viper-roots/vipersemcommon
+        isabelle components -u viper-roots/viper-total-heaps
     - name: Create version file
       run: |
         echo "Carbon: commit $(git -C . rev-parse HEAD)" >> versions.txt
@@ -82,11 +87,7 @@ jobs:
         chmod +x $CARBON_EXE
         python etc/scripts/generate_proof.py --inputdir src/test/resources/proofgen --viperproofExe $CARBON_EXE --boogieproofExe $BOOGIE_EXE
     - name: Check certificates
-      run: |
-        isabelle components -u boogie-proofgen/foundational-boogie/BoogieLang
-        isabelle components -u viper-roots/vipersemcommon
-        isabelle components -u viper-roots/viper-total-heaps
-        python etc/scripts/check_proofs.py --inputdir src/test/resources/proofgen --reps 1
+      run: python etc/scripts/check_proofs.py --inputdir src/test/resources/proofgen --reps 1
 
     - name: Upload Carbon fat JAR
       uses: actions/upload-artifact@v4
