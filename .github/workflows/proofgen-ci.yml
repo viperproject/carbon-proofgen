@@ -44,9 +44,11 @@ jobs:
         isabelle version
     - name: Install Isabelle sessions
       run: |
-        isabelle components -u viper-roots/foundational_boogie/BoogieLang
+        ls viper-roots/foundational_boogie
+        ls viper-roots/foundational-boogie/BoogieLang
         isabelle components -u viper-roots/vipersemcommon
         isabelle components -u viper-roots/viper-total-heaps
+        isabelle components -u viper-roots/foundational-boogie/BoogieLang
     - name: Create version file
       run: |
         echo "Carbon: commit $(git -C . rev-parse HEAD)" >> versions.txt
