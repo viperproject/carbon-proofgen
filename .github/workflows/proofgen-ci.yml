@@ -44,7 +44,6 @@ jobs:
         isabelle version
     - name: Install Isabelle sessions
       run: |
-        ls viper-roots/foundational_boogie
         ls viper-roots/foundational-boogie/BoogieLang
         isabelle components -u viper-roots/vipersemcommon
         isabelle components -u viper-roots/viper-total-heaps
