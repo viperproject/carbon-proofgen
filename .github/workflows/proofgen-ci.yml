@@ -1,0 +1,101 @@
+name: Carbon CI
+
+on:
+  push:
+    branches: [ proofgen ]
+  pull_request:
+    branches: [ proofgen ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container: gobraverifier/gobra-base:v5_z3_4.8.7 # Thank you, Gobra team
+    steps:
+    - name: Checkout Carbon
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    - name: Debug
+      run: |
+        ls viper-roots/foundational-boogie
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+    - name: Set up Python 
+      uses: actions/setup-python@v5
+      with:
+        # certain newer versions require glibc version that the gobra-base container does not have
+        python-version: '3.6' 
+    - name: Install wget (needed for setting up Isabelle)
+      # the file `sbt.list` must be deleted, otherwise the apt-get update command fails
+      run: |
+        rm -f /etc/apt/sources.list.d/sbt.list 
+        apt-get update && apt-get install -y wget
+    - name: Set up Isabelle
+      uses: gauravpartha/setup-isabelle@v1
+      with: 
+        isabelle-version: 2024
+    - name: Dependency versions
+      run: |
+        java --version
+        z3 -version
+        dotnet --version
+        python --version
+        isabelle version
+    - name: Install Isabelle sessions
+      run: |
+        isabelle components -u viper-roots/foundational-boogie/BoogieLang
+        isabelle components -u viper-roots/vipersemcommon
+        isabelle components -u viper-roots/viper-total-heaps
+    - name: Create version file
+      run: |
+        echo "Carbon: commit $(git -C . rev-parse HEAD)" >> versions.txt
+        echo "Silver: commit $(git -C silver rev-parse HEAD)" >> versions.txt
+      # first line overwrites versions.txt in case it already exists, all other append to the file
+    - name: Upload version file
+      uses: actions/upload-artifact@v4
+      with:
+        name: versions-${{ matrix.name }}.txt
+        path: versions.txt
+
+    - name: Set sbt cache variables
+      run: echo "SBT_OPTS=-Dsbt.global.base=sbt-cache/.sbtboot -Dsbt.boot.directory=sbt-cache/.boot -Dsbt.ivy.home=sbt-cache/.ivy" >> $GITHUB_ENV
+      # note that the cache path is relative to the directory in which sbt is invoked.
+    - name: Cache SBT
+      uses: actions/cache@v4
+      with:
+        path: |
+          sbt-cache/.sbtboot
+          sbt-cache/.boot
+          sbt-cache/.ivy/cache
+        # project/target and target, are intentionally not included as several occurrences
+        # of NoSuchMethodError exceptions have been observed during CI runs. It seems
+        # like sbt is unable to correctly compute source files that require a recompilation. Therefore, we have
+        # disabled caching of compiled source files altogether
+        key: ${{ runner.os }}-sbt-no-precompiled-sources-${{ hashFiles('**/build.sbt') }}
+    - name: Compile Boogie
+      run: |
+        dotnet build -c Release boogie-proofgen/Source/Boogie.sln
+        echo "BOOGIE_EXE=$(readlink -f boogie-proofgen/Source/BoogieDriver/bin/Release/net6.0/BoogieDriver)" >> "$GITHUB_ENV"
+    - name: Compile Carbon
+      run: |
+        sbt assembly
+        echo "CARBON_EXE=$(readlink -f viper_proof_no_param)" >> "$GITHUB_ENV"
+    - name: Generate certificates
+      run: |
+        chmod +x $BOOGIE_EXE
+        chmod +x $CARBON_EXE
+        python etc/scripts/generate_proof.py --inputdir src/test/resources/proofgen --viperproofExe $CARBON_EXE --boogieproofExe $BOOGIE_EXE
+    - name: Check certificates
+      run: python etc/scripts/check_proofs.py --inputdir src/test/resources/proofgen --reps 1
+
+    - name: Upload Carbon fat JAR
+      uses: actions/upload-artifact@v4
+      with:
+        name: carbon-jar
+        path: target/scala-2.13/carbon.jar
+        retention-days: 14
+        if-no-files-found: error        

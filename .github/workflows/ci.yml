@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-
+    if: false # Skip workflow (just test generated certificates on this repository)
     runs-on: ubuntu-latest
     container: gobraverifier/gobra-base:v5_z3_4.8.7 # Thank you, Gobra team
     env:
