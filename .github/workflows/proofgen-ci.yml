@@ -16,11 +16,10 @@ jobs:
     - name: Checkout Carbon
       uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: recursive
     - name: Debug
       run: |
-        ls
-        ls viper-roots
+        ls viper-roots/foundational-boogie
     - name: Set up .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -48,12 +47,9 @@ jobs:
         isabelle version
     - name: Install Isabelle sessions
       run: |
-        # ls viper-roots/foundational-boogie/BoogieLang
-        ls
-        ls viper-roots
+        isabelle components -u viper-roots/foundational-boogie/BoogieLang
         isabelle components -u viper-roots/vipersemcommon
         isabelle components -u viper-roots/viper-total-heaps
-        isabelle components -u viper-roots/foundational-boogie/BoogieLang
     - name: Create version file
       run: |
         echo "Carbon: commit $(git -C . rev-parse HEAD)" >> versions.txt
