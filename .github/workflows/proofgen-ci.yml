@@ -24,7 +24,7 @@ jobs:
     - name: Set up Python 
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13' 
+        python-version: '3.6' 
     - name: Install wget (needed for setting up Isabelle)
       # the file `sbt.list` must be deleted, otherwise the apt-get update command fails
       run: |
@@ -39,6 +39,7 @@ jobs:
         java --version
         z3 -version
         dotnet --version
+        python --version
         isabelle version
     - name: Create version file
       run: |
